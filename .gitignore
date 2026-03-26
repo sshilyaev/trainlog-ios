@@ -1,0 +1,32 @@
+# Xcode
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# User-specific Xcode data
+**/xcuserdata/
+
+# SwiftPM
+.swiftpm/
+**/.swiftpm/
+
+# Build products
+build/
+
+# macOS
+.DS_Store
+
+# Cursor / IDE
+.cursor/
+.vscode/
+
+# Firebase (secrets)
+**/GoogleService-Info.plist
+
+# Optional: fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+

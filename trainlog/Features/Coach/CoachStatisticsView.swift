@@ -1,0 +1,710 @@
+//
+//  CoachStatisticsView.swift
+//  TrainLog
+//
+
+import SwiftUI
+import Charts
+
+/// Экран «Статистика» для тренера (открывается с экрана подопечных): визуализация по данным API (period, trainees, visits, memberships).
+struct CoachStatisticsView: View {
+    let coachProfileId: String
+    let statisticsService: CoachStatisticsServiceProtocol
+
+    @State private var stats: CoachStatisticsDTO?
+    /// Для периода > 1 месяц: массив по месяцам от старого к новому (первый — самый ранний).
+    @State private var statsForPeriod: [CoachStatisticsDTO] = []
+    @State private var selectedMonth: Date = Date()
+    @State private var periodMonths: Int = 3
+    @State private var showVisitsChartValues = false
+    @State private var showVisitsBySubscription = true
+    @State private var showVisitsOneTimePaid = true
+    @State private var showVisitsOneTimeDebt = true
+    @State private var showVisitsCancelled = true
+    @State private var showVisitsFilterSheet = false
+    @State private var isLoading = true
+    @State private var hasInitialLoadFinished = false
+    @State private var errorMessage: String?
+
+    private let calendar = Calendar.current
+
+    private var monthParameter: String {
+        let c = calendar.dateComponents([.year, .month], from: selectedMonth)
+        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 1)
+    }
+
+    private var periodTitle: String {
+        let f = DateFormatter()
+        f.locale = .ru
+        f.dateFormat = "LLLL yyyy"
+        return f.string(from: selectedMonth).capitalized
+    }
+
+    var body: some View {
+        Group {
+            if isLoading && !hasInitialLoadFinished {
+                CoachStatisticsSkeletonView()
+            } else if let stats {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        periodPicker
+                        visitsChartCard(stats)
+                        metricsGrid(stats)
+                        endingSoonCard(stats)
+                    }
+                    .padding(.horizontal, AppDesign.cardPadding)
+            .padding(.bottom, AppDesign.sectionSpacing)
+                }
+            } else if !isLoading {
+                VStack(spacing: 18) {
+                    Spacer().frame(height: 24)
+                    AppTablerIcon("grid-dashboard-circle")
+                        .appIcon(.s44)
+                        .foregroundStyle(AppColors.accent.opacity(0.85))
+                        .symbolRenderingMode(.hierarchical)
+                    Text("Статистика пока недоступна")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(errorMessage ?? "Попробуйте обновить позже.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 28)
+                    Text("Подсказка: данные обновляются не чаще чем раз в 5 минут.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                AppColors.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .background(AdaptiveScreenBackground())
+        .overlay {
+            if isLoading && hasInitialLoadFinished {
+                LoadingOverlayView(message: "Загружаю")
+            }
+        }
+        .navigationTitle("Статистика")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: "\(monthParameter)-\(periodMonths)") { await load() }
+        .refreshable { await load() }
+        .appConfirmationDialog(
+            title: "Ошибка",
+            message: errorMessage ?? "Произошла ошибка.",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            ),
+            confirmTitle: "OK",
+            onConfirm: { errorMessage = nil },
+            onCancel: { errorMessage = nil }
+        )
+        .sheet(isPresented: $showVisitsFilterSheet) {
+            NavigationStack {
+                List {
+                    Section("Типы посещений на графике") {
+                        visitsFilterRow(
+                            title: "По абонементу",
+                            color: AppColors.visitsBySubscription,
+                            isOn: $showVisitsBySubscription
+                        )
+                        visitsFilterRow(
+                            title: "Разовые (оплаченные)",
+                            color: AppColors.visitsOneTimePaid,
+                            isOn: $showVisitsOneTimePaid
+                        )
+                        visitsFilterRow(
+                            title: "Разовые (в долг)",
+                            color: AppColors.visitsOneTimeDebt,
+                            isOn: $showVisitsOneTimeDebt
+                        )
+                        visitsFilterRow(
+                            title: "Отменённые",
+                            color: AppColors.visitsCancelled,
+                            isOn: $showVisitsCancelled
+                        )
+                    }
+                }
+                .navigationTitle("Типы посещений")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Готово") {
+                            showVisitsFilterSheet = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents(AppSheetDetents.mediumOnly)
+        }
+    }
+
+    private var periodPicker: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                AppTablerIcon("calendar-default")
+                    .foregroundStyle(AppColors.accent)
+                Text("Период")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                MonthPicker(selection: $selectedMonth)
+                    .labelsHidden()
+            }
+            Picker("", selection: $periodMonths) {
+                Text("1 месяц").tag(1)
+                Text("3 месяца").tag(3)
+                Text("6 месяцев").tag(6)
+            }
+            .pickerStyle(.segmented)
+            Text("Обновляется не чаще чем раз в 5 минут")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, AppDesign.cardPadding)
+        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+        .padding(.top, AppDesign.blockSpacing)
+    }
+
+    private func visitsChartCard(_ s: CoachStatisticsDTO) -> some View {
+        let points = visitsChartDataForDisplay(s)
+        let isEmptyVisits = points.allSatisfy { $0.value == 0 }
+        let typeOrder: [String: Int] = [
+            "По абонементу": 0,
+            "Разовые (в долг)": 1,
+            "Разовые (оплаченные)": 2,
+            "Отменённые": 3
+        ]
+        let typeColor: [String: Color] = [
+            "По абонементу": AppColors.visitsBySubscription,
+            "Разовые (в долг)": AppColors.visitsOneTimeDebt.opacity(0.9),
+            "Разовые (оплаченные)": AppColors.visitsOneTimePaid,
+            "Отменённые": AppColors.visitsCancelled
+        ]
+
+        struct MonthLabelItem: Identifiable {
+            let id: String
+            let monthLabel: String
+            let orderedParts: [(type: String, value: Int)]
+            let total: Int
+        }
+
+        // Одна подпись на столбик: "24 / 7 / 2 / 4" цветами серий.
+        var monthOrder: [String] = []
+        var byMonth: [String: [String: Int]] = [:]
+        for p in points {
+            if !monthOrder.contains(p.monthLabel) { monthOrder.append(p.monthLabel) }
+            byMonth[p.monthLabel, default: [:]][p.type] = p.value
+        }
+        let monthLabels: [MonthLabelItem] = monthOrder.map { month in
+            let values = byMonth[month, default: [:]]
+            let parts = values
+                .sorted { (typeOrder[$0.key] ?? 0) < (typeOrder[$1.key] ?? 0) }
+                .map { (type: $0.key, value: $0.value) }
+                .filter { $0.value > 0 }
+            let total = parts.reduce(0) { $0 + $1.value }
+            return MonthLabelItem(id: month, monthLabel: month, orderedParts: parts, total: total)
+        }
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                AppTablerIcon("calendar-filled")
+                    .font(.body)
+                    .foregroundStyle(AppColors.accent)
+                Text("Посещения")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+            HStack(spacing: 8) {
+                Button {
+                    showVisitsFilterSheet = true
+                } label: {
+                    Label("Фильтр", appIcon: "filter-horizontal")
+                        .font(.caption.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    showVisitsChartValues.toggle()
+                } label: {
+                    Text(showVisitsChartValues ? "Скрыть значения" : "Показать значения")
+                        .font(.caption.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            if isEmptyVisits {
+                VStack(spacing: 10) {
+                    AppTablerIcon("calendar-filled")
+                        .appIcon(.s32)
+                        .foregroundStyle(AppColors.accent.opacity(0.85))
+                        .symbolRenderingMode(.hierarchical)
+                    Text("Пока нет посещений")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("Начните отмечать посещения у подопечных — и здесь появится динамика по месяцам.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                Chart {
+                    ForEach(points) { point in
+                        BarMark(
+                            x: .value("Месяц", point.monthLabel),
+                            y: .value("Визиты", point.value)
+                        )
+                        .foregroundStyle(by: .value("Тип", point.type))
+                        .cornerRadius(6)
+                    }
+                    // Подписи значений над каждым столбиком.
+                    if showVisitsChartValues {
+                        ForEach(monthLabels) { item in
+                            if item.total > 0 {
+                                PointMark(
+                                    x: .value("Месяц", item.monthLabel),
+                                    y: .value("Визиты", item.total)
+                                )
+                                .opacity(0.0)
+                                .annotation(position: .top, alignment: .center) {
+                                    HStack(spacing: 0) {
+                                        ForEach(Array(item.orderedParts.enumerated()), id: \.offset) { i, part in
+                                            Text("\(part.value)")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(typeColor[part.type] ?? .primary)
+                                            if i != item.orderedParts.count - 1 {
+                                                Text(" ")
+                                                    .font(.caption2.weight(.semibold))
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(AppColors.secondarySystemGroupedBackground.opacity(0.5), in: Capsule())
+                                    .overlay(
+                                        Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                    )
+                                    .offset(y: -2)
+                                }
+                            }
+                        }
+                    }
+                }
+                .chartForegroundStyleScale([
+                    "По абонементу": AppColors.visitsBySubscription,
+                    "Разовые (в долг)": AppColors.visitsOneTimeDebt.opacity(0.9),
+                    "Разовые (оплаченные)": AppColors.visitsOneTimePaid,
+                    "Отменённые": AppColors.visitsCancelled
+                ])
+                .chartYAxis {
+                    AxisMarks(values: .automatic(desiredCount: 6))
+                }
+                .chartXAxis {
+                    AxisMarks { _ in
+                        AxisValueLabel()
+                    }
+                }
+                .frame(height: 200)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                // Подписи-значения над графиком для текущего месяца
+                if periodMonths == 1 {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        visitsSummaryPill(
+                            title: "Абонемент",
+                            value: s.visits.thisMonthBySubscription ?? 0,
+                            color: AppColors.visitsBySubscription
+                        )
+                        visitsSummaryPill(
+                            title: "Разовые опл",
+                            value: (s.visits.thisMonthOneTimePaid ?? 0),
+                            color: AppColors.visitsOneTimePaid
+                        )
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        visitsSummaryPill(
+                            title: "Разовые долг",
+                            value: (s.visits.thisMonthOneTimeDebt ?? 0),
+                            color: AppColors.visitsOneTimeDebt
+                        )
+                        visitsSummaryPill(
+                            title: "Отменённые",
+                            value: (s.visits.thisMonthCancelled ?? 0),
+                            color: AppColors.visitsCancelled
+                        )
+                    }
+                }
+                HStack(spacing: 16) {
+                    visitsTrendLabel(current: s.visits.thisMonth, previous: s.visits.previousMonth)
+                    Spacer()
+                    Text("Всего: \(s.visits.total)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(AppDesign.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+        .padding(.top, AppDesign.blockSpacing)
+    }
+
+    private struct VisitsChartPoint: Identifiable {
+        let id = UUID()
+        let monthLabel: String
+        let type: String
+        let value: Int
+    }
+
+    private func visitsChartDataForDisplay(_ s: CoachStatisticsDTO) -> [VisitsChartPoint] {
+        let base: [VisitsChartPoint]
+        if periodMonths > 1, !statsForPeriod.isEmpty {
+            base = visitsChartDataFromPeriod(statsForPeriod)
+        } else {
+            base = visitsChartData(s)
+        }
+        return base.filter { point in
+            switch point.type {
+            case "По абонементу":
+                return showVisitsBySubscription
+            case "Разовые (в долг)":
+                return showVisitsOneTimeDebt
+            case "Разовые (оплаченные)":
+                return showVisitsOneTimePaid
+            case "Отменённые":
+                return showVisitsCancelled
+            default:
+                return true
+            }
+        }
+    }
+
+    private func visitsChartData(_ s: CoachStatisticsDTO) -> [VisitsChartPoint] {
+        let prevLabel = previousMonthTitle
+        let currLabel = periodTitle.split(separator: " ").first.map(String.init) ?? "Текущий"
+        let prevBySub = s.visits.previousMonthBySubscription ?? 0
+        let prevOnePaid = s.visits.previousMonthOneTimePaid ?? 0
+        let prevOneDebt = s.visits.previousMonthOneTimeDebt ?? 0
+        let prevCancelled = s.visits.previousMonthCancelled ?? 0
+        let currBySub = s.visits.thisMonthBySubscription ?? 0
+        let currOnePaid = s.visits.thisMonthOneTimePaid ?? 0
+        let currOneDebt = s.visits.thisMonthOneTimeDebt ?? 0
+        let currCancelled = s.visits.thisMonthCancelled ?? 0
+        return [
+            VisitsChartPoint(monthLabel: prevLabel, type: "По абонементу", value: prevBySub),
+            VisitsChartPoint(monthLabel: prevLabel, type: "Разовые (оплаченные)", value: prevOnePaid),
+            VisitsChartPoint(monthLabel: prevLabel, type: "Разовые (в долг)", value: prevOneDebt),
+            VisitsChartPoint(monthLabel: prevLabel, type: "Отменённые", value: prevCancelled),
+            VisitsChartPoint(monthLabel: currLabel, type: "По абонементу", value: currBySub),
+            VisitsChartPoint(monthLabel: currLabel, type: "Разовые (оплаченные)", value: currOnePaid),
+            VisitsChartPoint(monthLabel: currLabel, type: "Разовые (в долг)", value: currOneDebt),
+            VisitsChartPoint(monthLabel: currLabel, type: "Отменённые", value: currCancelled)
+        ]
+    }
+
+    private func visitsChartDataFromPeriod(_ arr: [CoachStatisticsDTO]) -> [VisitsChartPoint] {
+        var points: [VisitsChartPoint] = []
+        for dto in arr {
+            let label = monthLabelFromYearMonth(dto.period)
+            let bySub = dto.visits.thisMonthBySubscription ?? 0
+            let onePaid = dto.visits.thisMonthOneTimePaid ?? 0
+            let oneDebt = dto.visits.thisMonthOneTimeDebt ?? 0
+            let cancelled = dto.visits.thisMonthCancelled ?? 0
+            points.append(VisitsChartPoint(monthLabel: label, type: "По абонементу", value: bySub))
+            points.append(VisitsChartPoint(monthLabel: label, type: "Разовые (оплаченные)", value: onePaid))
+            points.append(VisitsChartPoint(monthLabel: label, type: "Разовые (в долг)", value: oneDebt))
+            points.append(VisitsChartPoint(monthLabel: label, type: "Отменённые", value: cancelled))
+        }
+        return points
+    }
+
+    private func monthLabelFromYearMonth(_ yearMonth: String) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM"
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = TimeZone.current
+        guard let date = fmt.date(from: yearMonth) else { return yearMonth }
+        let f = DateFormatter()
+        f.locale = .ru
+        f.dateFormat = "LLL"
+        return f.string(from: date).capitalized
+    }
+
+    private func traineesSubtitle(_ s: CoachStatisticsDTO) -> String {
+        if periodMonths > 1, !statsForPeriod.isEmpty {
+            let newInPeriod = statsForPeriod.reduce(0) { $0 + $1.trainees.newThisMonth }
+            return newInPeriod > 0 ? "+\(newInPeriod) за период" : "активных"
+        }
+        return s.trainees.newThisMonth > 0 ? "+\(s.trainees.newThisMonth) за месяц" : "активных"
+    }
+
+    private func membershipsSubtitle(_ m: CoachStatisticsDTO.MembershipsBlock) -> String {
+        let unlim = m.unlimitedCount ?? 0
+        let byVis = m.byVisitsCount ?? 0
+        var parts: [String] = []
+        if unlim > 0 { parts.append("безлимит: \(unlim)") }
+        if byVis > 0 { parts.append("по занятиям: \(byVis)") }
+        if parts.isEmpty { return "активных" }
+        return parts.joined(separator: ", ")
+    }
+
+    private var previousMonthTitle: String {
+        guard let prev = calendar.date(byAdding: .month, value: -1, to: selectedMonth) else { return "Прошлый" }
+        let f = DateFormatter()
+        f.locale = .ru
+        f.dateFormat = "LLLL"
+        return f.string(from: prev).capitalized
+    }
+
+    @ViewBuilder
+    private func visitsTrendLabel(current: Int, previous: Int) -> some View {
+        let diff = current - previous
+        if diff > 0 {
+            Label("+\(diff) к прошлому месяцу", appIcon: "arrow-up-right")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(AppColors.genderMale)
+        } else if diff < 0 {
+            Label("\(diff) к прошлому месяцу", appIcon: "arrow-down-right")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.gray)
+        } else {
+            Text("Без изменений")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func visitsFilterChip(title: String, color: Color, isOn: Binding<Bool>) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 6, height: 6)
+                Text(title)
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isOn.wrappedValue ? AppColors.secondarySystemGroupedBackground : AppColors.clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func visitsFilterRow(title: String, color: Color, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 10, height: 10)
+                Text(title)
+            }
+        }
+    }
+
+    private func visitsSummaryPill(title: String, value: Int, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text("\(value)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(AppColors.secondarySystemGroupedBackground)
+        )
+    }
+
+    private func metricsGrid(_ s: CoachStatisticsDTO) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppDesign.blockSpacing) {
+            StatMetricCard(
+                icon: "user-default",
+                title: "Подопечных",
+                value: "\(s.trainees.activeCount)",
+                subtitle: traineesSubtitle(s)
+            )
+            StatMetricCard(
+                icon: "tag",
+                title: "Абонементов",
+                value: "\(s.memberships.activeCount)",
+                subtitle: membershipsSubtitle(s.memberships)
+            )
+        }
+        .padding(.top, AppDesign.blockSpacing)
+    }
+
+    @ViewBuilder
+    private func endingSoonCard(_ s: CoachStatisticsDTO) -> some View {
+        if s.memberships.endingSoonCount > 0 {
+            HStack(spacing: 12) {
+                AppTablerIcon("message-exclamation")
+                    .font(.title2)
+                    .foregroundStyle(AppColors.visitsOneTimeDebt)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Скоро заканчиваются")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("\(s.memberships.endingSoonCount) абонемент(ов) — осталось 1–2 занятия или окончание в ближайшие 14 дней")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(AppDesign.cardPadding)
+            .background(AppColors.visitsOneTimeDebt.opacity(0.08), in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+            .padding(.top, AppDesign.blockSpacing)
+        }
+    }
+
+    private func load() async {
+        await MainActor.run { isLoading = true; errorMessage = nil }
+        defer {
+            Task { @MainActor in
+                isLoading = false
+                hasInitialLoadFinished = true
+            }
+        }
+        do {
+            if periodMonths > 1 {
+                var arr: [CoachStatisticsDTO] = []
+                let cal = Calendar.current
+                for i in 0..<periodMonths {
+                    guard let monthDate = cal.date(byAdding: .month, value: -i, to: selectedMonth),
+                          let startOfMonth = cal.dateInterval(of: .month, for: monthDate)?.start else { break }
+                    let comps = cal.dateComponents([.year, .month], from: startOfMonth)
+                    let ym = String(format: "%04d-%02d", comps.year ?? 0, comps.month ?? 1)
+                    let r = try await statisticsService.fetchStatistics(coachProfileId: coachProfileId, month: ym)
+                    arr.append(r)
+                }
+                let ordered = arr.reversed()
+                await MainActor.run {
+                    statsForPeriod = Array(ordered)
+                    stats = statsForPeriod.last
+                }
+            } else {
+                let result = try await statisticsService.fetchStatistics(coachProfileId: coachProfileId, month: monthParameter)
+                await MainActor.run { statsForPeriod = [result] }
+                await MainActor.run { stats = result }
+            }
+        } catch {
+            await MainActor.run {
+                if let msg = AppErrors.userMessageIfNeeded(for: error) {
+                    stats = nil
+                    statsForPeriod = []
+                    errorMessage = msg
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Выбор месяца (компактный)
+
+private struct MonthPicker: View {
+    @Binding var selection: Date
+    private let calendar = Calendar.current
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Button {
+                if let prev = calendar.date(byAdding: .month, value: -1, to: selection) {
+                    selection = prev
+                }
+            } label: {
+                AppTablerIcon("chevron-left")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 36, height: 36)
+            }
+            Text(monthYearString(selection))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+                .frame(minWidth: 140)
+            Button {
+                guard let next = calendar.date(byAdding: .month, value: 1, to: selection) else { return }
+                let now = Date()
+                if next <= now || calendar.isDate(next, equalTo: now, toGranularity: .month) {
+                    selection = next
+                }
+            } label: {
+                AppTablerIcon("chevron-right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(canSelectNextMonth ? .secondary : .tertiary)
+                    .frame(width: 36, height: 36)
+            }
+            .disabled(!canSelectNextMonth)
+        }
+    }
+
+    private var canSelectNextMonth: Bool {
+        guard let next = calendar.date(byAdding: .month, value: 1, to: selection) else { return false }
+        return next <= Date()
+    }
+
+    private func monthYearString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = .ru
+        f.dateFormat = "LLLL yyyy"
+        return f.string(from: date).capitalized
+    }
+}
+
+// MARK: - Карточка одного показателя
+
+private struct StatMetricCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                AppTablerIcon(icon)
+                    .font(.body)
+                    .foregroundStyle(AppColors.accent)
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(value)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.primary)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppDesign.cardPadding)
+        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+    }
+}
+
+#Preview {
+    NavigationStack {
+        CoachStatisticsView(
+            coachProfileId: "preview",
+            statisticsService: MockCoachStatisticsService()
+        )
+    }
+}
