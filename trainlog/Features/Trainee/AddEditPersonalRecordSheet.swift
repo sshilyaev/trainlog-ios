@@ -19,6 +19,7 @@ struct AddEditPersonalRecordSheet: View {
     @State private var errorMessage: String?
     @State private var catalogActivities: [RecordActivity] = []
     @State private var isLoadingCatalog = false
+    @State private var showActivityPicker = false
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,9 @@ struct AddEditPersonalRecordSheet: View {
             .task {
                 await ensureActivitiesLoaded()
             }
+            .onChange(of: selectedActivitySlug) { _, _ in
+                applyDefaultMetricsIfNeeded()
+            }
             .appConfirmationDialog(
                 title: "Ошибка",
                 message: errorMessage ?? "Произошла ошибка.",
@@ -65,6 +69,17 @@ struct AddEditPersonalRecordSheet: View {
                 }
             }
             .allowsHitTesting(!isSaving)
+        }
+        .sheet(isPresented: $showActivityPicker) {
+            RecordActivityPickerSheet(
+                title: "Выбор упражнения",
+                activities: availableActivities,
+                selectedSlug: $selectedActivitySlug,
+                onClose: { showActivityPicker = false }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .sheetPresentationStyle()
         }
     }
 
@@ -92,14 +107,19 @@ struct AddEditPersonalRecordSheet: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .trailing)
                         } else {
-                            Picker("Упражнение", selection: $selectedActivitySlug) {
-                                Text("Выберите").tag("")
-                                ForEach(availableActivities) { activity in
-                                    Text(activity.name).tag(activity.slug)
+                            Button {
+                                showActivityPicker = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text(selectedActivityDisplayName)
+                                        .foregroundStyle(selectedActivitySlug.isEmpty ? AppColors.tertiaryLabel : AppColors.label)
+                                        .lineLimit(1)
+                                    AppTablerIcon("chevron-right")
+                                        .foregroundStyle(AppColors.tertiaryLabel)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                             }
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .buttonStyle(.plain)
                         }
                     }
                 } else {
@@ -183,6 +203,11 @@ struct AddEditPersonalRecordSheet: View {
 
     private var availableActivities: [RecordActivity] {
         catalogActivities.isEmpty ? activities : catalogActivities
+    }
+
+    private var selectedActivityDisplayName: String {
+        guard !selectedActivitySlug.isEmpty else { return "Выберите" }
+        return availableActivities.first(where: { $0.slug == selectedActivitySlug })?.name ?? "Выберите"
     }
 
     @ViewBuilder
@@ -277,6 +302,31 @@ struct AddEditPersonalRecordSheet: View {
         }
     }
 
+    private func applyDefaultMetricsIfNeeded() {
+        guard record == nil else { return }
+        guard sourceType == .catalog else { return }
+        guard !selectedActivitySlug.isEmpty else { return }
+        guard let activity = availableActivities.first(where: { $0.slug == selectedActivitySlug }) else { return }
+        guard !activity.defaultMetrics.isEmpty else { return }
+
+        // Не затираем метрики, если пользователь уже явно добавил/изменил их.
+        let looksLikeFreshDefault = metrics.count == 1
+            && metrics.first?.metricType == .weight
+            && (metrics.first?.value ?? 0) == 0
+            && (metrics.first?.unit ?? "") == (PersonalRecordMetricType.weight.defaultUnit ?? "")
+        guard looksLikeFreshDefault || metrics.isEmpty else { return }
+
+        metrics = activity.defaultMetrics.enumerated().map { index, type in
+            PersonalRecordMetric(
+                rawId: nil,
+                metricType: type,
+                value: 0,
+                unit: type.defaultUnit ?? "",
+                displayOrder: index
+            )
+        }
+    }
+
     private func normalizeMetricOrder() {
         for index in metrics.indices {
             metrics[index].displayOrder = index
@@ -305,5 +355,141 @@ struct AddEditPersonalRecordSheet: View {
                 if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
             }
         }
+    }
+}
+
+private struct RecordActivityPickerSheet: View {
+    let title: String
+    let activities: [RecordActivity]
+    @Binding var selectedSlug: String
+    let onClose: () -> Void
+
+    @AppStorage("records.activities.favorites") private var favoritesRaw = ""
+    @AppStorage("records.activities.recent") private var recentRaw = ""
+    @State private var query = ""
+
+    private var favorites: Set<String> { Set(Self.csv(favoritesRaw)) }
+    private var recent: [String] { Self.csv(recentRaw) }
+
+    private var activitiesBySlug: [String: RecordActivity] {
+        Dictionary(uniqueKeysWithValues: activities.map { ($0.slug, $0) })
+    }
+
+    private var filteredAll: [RecordActivity] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return activities }
+        return activities.filter { a in
+            a.name.localizedCaseInsensitiveContains(q)
+            || (a.activityType?.localizedCaseInsensitiveContains(q) ?? false)
+        }
+    }
+
+    private var recentActivities: [RecordActivity] {
+        recent.compactMap { activitiesBySlug[$0] }.filter { filteredAll.contains($0) }
+    }
+
+    private var favoriteActivities: [RecordActivity] {
+        filteredAll.filter { favorites.contains($0.slug) }.sorted { $0.displayOrder < $1.displayOrder }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if !query.isEmpty, filteredAll.isEmpty {
+                    ContentUnavailableView(
+                        "Ничего не найдено",
+                        image: "tabler-outline-circle-x",
+                        description: Text("Попробуйте другой запрос.")
+                    )
+                }
+
+                if query.isEmpty, !recentActivities.isEmpty {
+                    Section("Недавние") {
+                        ForEach(recentActivities) { activity in
+                            row(activity)
+                        }
+                    }
+                }
+
+                if !favoriteActivities.isEmpty {
+                    Section("Избранные") {
+                        ForEach(favoriteActivities) { activity in
+                            row(activity)
+                        }
+                    }
+                }
+
+                Section(query.isEmpty ? "Каталог" : "Результаты") {
+                    ForEach(filteredAll) { activity in
+                        row(activity)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Поиск упражнения")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Закрыть") { onClose() }
+                }
+            }
+        }
+    }
+
+    private func row(_ activity: RecordActivity) -> some View {
+        let isFavorite = favorites.contains(activity.slug)
+        return Button {
+            select(activity)
+            onClose()
+        } label: {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(activity.name)
+                        .foregroundStyle(AppColors.label)
+                    if let t = activity.activityType, !t.isEmpty {
+                        Text(t)
+                            .font(.caption)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                    }
+                }
+                Spacer()
+                Button {
+                    toggleFavorite(activity.slug)
+                } label: {
+                    AppTablerIcon(isFavorite ? "star.circle.fill" : "star.circle")
+                        .foregroundStyle(isFavorite ? AppColors.accent : AppColors.tertiaryLabel)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isFavorite ? "Убрать из избранного" : "Добавить в избранное")
+
+                if selectedSlug == activity.slug {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(AppColors.accent)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func select(_ activity: RecordActivity) {
+        selectedSlug = activity.slug
+        var nextRecent = recent.filter { $0 != activity.slug }
+        nextRecent.insert(activity.slug, at: 0)
+        nextRecent = Array(nextRecent.prefix(12))
+        recentRaw = nextRecent.joined(separator: ",")
+    }
+
+    private func toggleFavorite(_ slug: String) {
+        var set = favorites
+        if set.contains(slug) { set.remove(slug) } else { set.insert(slug) }
+        favoritesRaw = Array(set).sorted().joined(separator: ",")
+    }
+
+    private static func csv(_ raw: String) -> [String] {
+        raw
+            .split(separator: ",")
+            .map { String($0) }
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 }
