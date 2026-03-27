@@ -264,7 +264,7 @@ extension AppDesign {
     }
 
     /// Размер иконки в заглушке «нет данных»
-    static let emptyStateIconSize: CGFloat = 48
+    static let emptyStateIconSize: CGFloat = 64
     /// Отступ между элементами в заглушке
     static let emptyStateSpacing: CGFloat = 12
     /// Вертикальный отступ заглушки

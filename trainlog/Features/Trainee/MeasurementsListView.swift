@@ -68,13 +68,10 @@ struct MeasurementsListView: View {
             }
         }
         .sheet(isPresented: $showMeasurementGuideSheet) {
-            NavigationStack {
+            MainSheet(title: "Как делать замеры", onBack: { showMeasurementGuideSheet = false }) {
                 MeasurementGuideView()
-                    .navigationBarTitleDisplayMode(.inline)
             }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            .mainSheetPresentation(.half)
         }
     }
 
@@ -133,7 +130,7 @@ struct MeasurementsListView: View {
     private var readOnlyEmptyState: some View {
         VStack(spacing: 16) {
             AppTablerIcon("pencil-scale")
-                .appIcon(.s44)
+                .appIcon(.s56)
                 .foregroundStyle(AppColors.accent.opacity(0.85))
             Text("Пока нет замеров")
                 .font(.headline)
@@ -151,7 +148,7 @@ struct MeasurementsListView: View {
         VStack(spacing: 24) {
             Spacer().frame(height: 40)
             AppTablerIcon("pencil-scale")
-                .appIcon(.s44)
+                .appIcon(.s56)
                 .foregroundStyle(AppColors.accent.opacity(0.8))
                 .emptyStateIconPulse()
             Text("Пока нет замеров")

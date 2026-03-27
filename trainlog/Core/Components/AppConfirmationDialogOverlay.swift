@@ -41,6 +41,11 @@ struct AppConfirmationDialogOverlayHost: View {
         return p.confirmRole == .destructive ? AppColors.destructive : AppColors.accent
     }
 
+    private var confirmBackground: Color {
+        guard let p = model.payload else { return AppColors.accent }
+        return p.confirmRole == .destructive ? AppColors.destructive : AppColors.accent
+    }
+
     var body: some View {
         Group {
             if let p = model.payload {
@@ -50,44 +55,65 @@ struct AppConfirmationDialogOverlayHost: View {
                         .contentShape(Rectangle())
                         .onTapGesture { p.dismiss(false) }
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text(p.title)
-                            .font(.headline)
-                            .foregroundStyle(AppColors.label)
+                    VStack(spacing: 18) {
+                        VStack(spacing: 8) {
+                            Text(p.title)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(AppColors.label)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
 
-                        Text(p.message)
-                            .font(.subheadline)
-                            .foregroundStyle(AppColors.secondaryLabel)
+                            Text(p.message)
+                                .font(.subheadline)
+                                .foregroundStyle(AppColors.secondaryLabel)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+                                .frame(maxWidth: .infinity)
+                        }
 
                         HStack(spacing: 10) {
                             Button {
                                 p.dismiss(false)
                             } label: {
                                 Text("Отмена")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(AppColors.label)
                                     .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        AppColors.secondarySystemGroupedBackground,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    )
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(PressableButtonStyle(cornerRadius: 12))
 
                             Button {
                                 p.dismiss(true)
                             } label: {
                                 Text(p.confirmTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(AppColors.white)
                                     .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        confirmBackground,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    )
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(PressableButtonStyle(cornerRadius: 12))
                             .tint(confirmColor)
                         }
-                        .padding(.top, 2)
                     }
-                    .padding(16)
-                    .frame(maxWidth: 360)
-                    .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(20)
+                    .frame(maxWidth: 380)
+                    .background(AppColors.systemGroupedBackground, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(AppColors.separator.opacity(0.35), lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(AppColors.separator.opacity(0.3), lineWidth: 0.8)
                     )
                     .padding(.horizontal, 24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .shadow(color: AppColors.label.opacity(0.08), radius: 18, x: 0, y: 10)
                 }
                 .transition(.opacity)
             }

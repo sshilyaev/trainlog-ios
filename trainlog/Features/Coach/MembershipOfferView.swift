@@ -14,69 +14,61 @@ struct MembershipOfferView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     AppTablerIcon("tag")
-                        .appIcon(.s44)
+                        .appIcon(.s56)
                         .foregroundStyle(AppColors.accent)
                         .symbolRenderingMode(.hierarchical)
-                        .padding(.top, 20)
+                        .padding(.top, 12)
 
-                    Text("Создать абонемент для \(traineeName)?")
-                        .font(.title2.weight(.semibold))
+                    Text("Оформим абонемент для \(traineeName)?")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 12)
 
-                    Text("Абонементы помогают вести учёт посещений и не терять прогресс. Вы создаёте абонемент — клиент ходит, вы отмечаете занятия. Всё в одном месте.")
-                        .font(.subheadline)
+                    Text("Один абонемент — порядок в посещениях: остаток занятий, безлимит на срок, календарь и история. Клиент видит то же в дневнике.")
+                        .font(.footnote)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 20)
+                        .lineSpacing(3)
 
                     VStack(alignment: .leading, spacing: 12) {
                         offerRow(
                             icon: "tag",
                             title: "По посещениям",
-                            subtitle: "Например, 8 или 12 занятий. Отмечаете каждое посещение — остаток списывается автоматически"
+                            subtitle: "8 / 12 занятий и меньше — отмечаете занятие, счётчик уменьшается."
                         )
                         offerRow(
                             icon: "calendar-filled",
-                            title: "Безлимитный",
-                            subtitle: "На срок: неделя, месяц или дольше. Удобно для неограниченного доступа в зал или к тренировкам"
+                            title: "Безлимит",
+                            subtitle: "Фиксированный период — удобно для полного доступа или пакета тренировок."
                         )
                         offerRow(
                             icon: "check-tick-circle",
-                            title: "Календарь и отчёты",
-                            subtitle: "Все посещения в календаре подопечного, история по абонементам. Можно заморозить абонемент при необходимости"
+                            title: "Контроль",
+                            subtitle: "Заморозка, разовые визиты, отчёты — остаются под рукой в карточке клиента."
                         )
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
 
-                    Spacer(minLength: 16)
+                    Spacer(minLength: 12)
 
                     CTAButton(title: "Создать абонемент", action: onCreateMembership)
 
                     Button(action: onSkip) {
-                        Text("Позже")
+                        Text("Настрою позже")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 4)
                     .padding(.bottom, 28)
                 }
             }
             .background(AdaptiveScreenBackground())
-            .navigationTitle("Абонемент")
+            .navigationTitle("Следующий шаг")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Закрыть") {
-                        onSkip()
-                    }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(AppColors.secondaryLabel)
-                }
-            }
         }
     }
 

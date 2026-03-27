@@ -15,8 +15,7 @@ struct PersonalRecordsView: View {
     @State private var showHelpSheet = false
     @State private var mode: RecordsMode = .feed
     @State private var query: String = ""
-    @State private var metricFilter: PersonalRecordMetricType? = nil
-    @State private var period: RecordsPeriod = .all
+    @State private var showSearch = false
 
     private var groupedByDay: [(String, [PersonalRecord])] {
         let calendar = Calendar.current
@@ -31,17 +30,6 @@ struct PersonalRecordsView: View {
 
     private var filteredRecords: [PersonalRecord] {
         var base = records
-
-        if period != .all {
-            let start = period.startDate(reference: Date())
-            base = base.filter { $0.recordDate >= start }
-        }
-
-        if let metricFilter {
-            base = base.filter { record in
-                record.metrics.contains(where: { $0.metricType == metricFilter })
-            }
-        }
 
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if !q.isEmpty {
@@ -71,15 +59,20 @@ struct PersonalRecordsView: View {
             }
     }
 
+    private var hasAnyRecords: Bool {
+        !records.isEmpty
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
                 heroCard
 
-                modePicker
-                filtersBar
+                if hasAnyRecords {
+                    modePicker
+                }
 
-                if !readOnly {
+                if hasAnyRecords, !readOnly {
                     addAchievementButton
                 }
 
@@ -88,7 +81,6 @@ struct PersonalRecordsView: View {
                 } else if filteredRecords.isEmpty {
                     emptyState
                 } else {
-                    summaryCard
                     switch mode {
                     case .feed:
                         ForEach(Array(groupedByDay.enumerated()), id: \.offset) { _, pair in
@@ -120,7 +112,30 @@ struct PersonalRecordsView: View {
         .background(AdaptiveScreenBackground())
         .navigationTitle("Мои достижения")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Упражнение, тип или заметка")
+        .toolbar {
+            if hasAnyRecords {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSearch = true
+                    } label: {
+                        AppTablerIcon("magnifyingglass")
+                            .foregroundStyle(AppColors.accent)
+                    }
+                }
+            }
+        }
+        .searchable(
+            text: $query,
+            isPresented: $showSearch,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Упражнение, тип или заметка"
+        )
+        .onChange(of: hasAnyRecords) { _, hasData in
+            if !hasData {
+                showSearch = false
+                query = ""
+            }
+        }
         .task {
             await loadData()
         }
@@ -139,9 +154,7 @@ struct PersonalRecordsView: View {
                 },
                 onCancel: { showCreateSheet = false }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            .mainSheetPresentation(.full)
         }
         .sheet(item: $editingRecord) { record in
             AddEditPersonalRecordSheet(
@@ -155,18 +168,28 @@ struct PersonalRecordsView: View {
                 },
                 onCancel: { editingRecord = nil }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            .mainSheetPresentation(.full)
         }
         .sheet(isPresented: $showHelpSheet) {
-            PersonalRecordsHelpSheet(
-                onAddTapped: readOnly ? nil : { showHelpSheet = false; showCreateSheet = true },
+            RecordsGuideSheet(
+                title: "Мои достижения",
+                headline: "Зачем это нужно",
+                description: "Это личные рекорды и лучшие результаты по упражнениям — чтобы видеть прогресс в цифрах, сравнивать себя с собой и не забывать удачные попытки.",
+                examples: [
+                    RecordsGuideExample(title: "Жим лёжа", subtitle: "Вес: 100 кг · Повторения: 5 раз"),
+                    RecordsGuideExample(title: "Бег", subtitle: "Дистанция: 5 км · Время: 22:10"),
+                    RecordsGuideExample(title: "Подтягивания", subtitle: "Повторения: 15 раз"),
+                ],
+                tips: [
+                    "Делайте отдельные записи под разные упражнения.",
+                    "Добавляйте 1–2 показателя: вес + повторы, время + дистанция и т.д.",
+                    "Пишите комментарий, если важно: техника, условия, самочувствие.",
+                ],
+                onPrimaryAction: readOnly ? nil : { showHelpSheet = false; showCreateSheet = true },
+                primaryActionTitle: "Добавить",
                 onClose: { showHelpSheet = false }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            .mainSheetPresentation(.full)
         }
         .appConfirmationDialog(
             title: "Ошибка",
@@ -197,46 +220,27 @@ struct PersonalRecordsView: View {
             : "Записывайте лучшие результаты по упражнениям и возвращайтесь к ним, чтобы видеть прогресс.",
             accent: AppColors.visitsOneTimeDebt
         )
-    }
-
-    private var summaryCard: some View {
-        let total = filteredRecords.count
-        let calendar = Calendar.current
-        let last30Start = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        let prs30 = filteredRecords.filter { $0.recordDate >= last30Start && isPersonalBest($0) }.count
-        let top = exercisesSummary.prefix(3)
-
-        return SettingsCard(title: nil) {
-            VStack(alignment: .leading, spacing: 12) {
-                InfoValueTripleRow(
-                    items: [
-                        InfoValueItem(title: "Записей", value: "\(total)"),
-                        InfoValueItem(title: "PR за 30 дней", value: "\(prs30)"),
-                        InfoValueItem(title: "Упражнений", value: "\(exercisesSummary.count)"),
-                    ],
-                    chipSize: .standard
-                )
-
-                if !top.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Чаще всего")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppColors.secondaryLabel)
-                        ForEach(Array(top.enumerated()), id: \.offset) { _, item in
-                            HStack {
-                                Text(item.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(AppColors.label)
-                                    .lineLimit(1)
-                                Spacer()
-                                Text("\(item.count)")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                            }
-                        }
-                    }
-                }
+        {
+            InfoValueTripleRow(
+                items: [
+                    InfoValueItem(title: "Записей", value: "\(filteredRecords.count)"),
+                    InfoValueItem(title: "PR", value: "\(filteredRecords.filter(isPersonalBest).count)"),
+                    InfoValueItem(title: "Упражнений", value: "\(exercisesSummary.count)"),
+                ],
+                chipSize: .standard
+            )
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                showHelpSheet = true
+            } label: {
+                AppTablerIcon("info-circle")
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .padding(8)
+                    .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
             }
+            .buttonStyle(.plain)
+            .padding(10)
         }
     }
 
@@ -246,64 +250,6 @@ struct PersonalRecordsView: View {
             Text("Упражнения").tag(RecordsMode.exercises)
         }
         .pickerStyle(.segmented)
-    }
-
-    private var filtersBar: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Button {
-                    metricFilter = nil
-                } label: {
-                    if metricFilter == nil {
-                        Label("Все показатели", systemImage: "checkmark")
-                    } else {
-                        Text("Все показатели")
-                    }
-                }
-                ForEach(PersonalRecordMetricType.allCases) { type in
-                    Button {
-                        metricFilter = type
-                    } label: {
-                        if metricFilter == type {
-                            Label(type.title, systemImage: "checkmark")
-                        } else {
-                            Text(type.title)
-                        }
-                    }
-                }
-            } label: {
-                filterChip(title: metricFilter?.title ?? "Показатель", icon: "filter-horizontal")
-            }
-
-            Menu {
-                ForEach(RecordsPeriod.allCases) { p in
-                    Button {
-                        period = p
-                    } label: {
-                        if period == p {
-                            Label(p.title, systemImage: "checkmark")
-                        } else {
-                            Text(p.title)
-                        }
-                    }
-                }
-            } label: {
-                filterChip(title: period.title, icon: "calendar-default")
-            }
-
-            Spacer()
-
-            Button(action: { showHelpSheet = true }) {
-                HStack(spacing: 6) {
-                    AppTablerIcon("info-circle")
-                    Text("Что это")
-                        .font(.subheadline.weight(.semibold))
-                }
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(AppColors.secondaryLabel)
-        }
-        .padding(.top, 2)
     }
 
     private func filterChip(title: String, icon: String) -> some View {
@@ -337,7 +283,7 @@ struct PersonalRecordsView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             AppTablerIcon("award-medal")
-                .appIcon(.s44)
+                .appIcon(.s56)
                 .foregroundStyle(AppColors.accent.opacity(0.85))
             Text(readOnly ? "Пока нет достижений" : "Создайте первое достижение")
                 .font(.headline)
@@ -351,39 +297,17 @@ struct PersonalRecordsView: View {
                 .padding(.horizontal, AppDesign.cardPadding)
 
             if !readOnly {
-                VStack(spacing: 10) {
-                    Button(action: { showCreateSheet = true }) {
-                        HStack(spacing: 10) {
-                            AppTablerIcon("plus-circle")
-                                .font(.title3)
-                            Text("Добавить достижение")
-                                .font(.headline.weight(.semibold))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(AppColors.accent, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+                Button(action: { showCreateSheet = true }) {
+                    HStack(spacing: 10) {
+                        AppTablerIcon("plus-circle")
+                            .font(.title3)
+                        Text("Добавить достижение")
+                            .font(.headline.weight(.semibold))
                     }
-                    .buttonStyle(PressableButtonStyle())
-
-                    Button(action: { showHelpSheet = true }) {
-                        Text("Зачем это и как пользоваться")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-                    }
-                    .buttonStyle(PressableButtonStyle())
-                }
-                .padding(.top, 4)
-                .padding(.horizontal, 4)
-            } else {
-                Button(action: { showHelpSheet = true }) {
-                    Text("Что это такое")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(AppColors.accent, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
                 }
                 .buttonStyle(PressableButtonStyle())
                 .padding(.top, 4)
@@ -606,114 +530,9 @@ struct PersonalRecordsView: View {
     }
 }
 
-private struct PersonalRecordsHelpSheet: View {
-    let onAddTapped: (() -> Void)?
-    let onClose: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    HeroCard(
-                        icon: "award-medal",
-                        title: "Мои достижения",
-                        headline: "Зачем это нужно",
-                        description: "Это личные рекорды и лучшие результаты по упражнениям — чтобы видеть прогресс в цифрах, сравнивать себя с собой и не забывать удачные попытки.",
-                        accent: AppColors.visitsOneTimeDebt
-                    )
-
-                    SettingsCard(title: "Примеры") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            exampleRow(title: "Жим лёжа", subtitle: "Вес: 100 кг · Повторения: 5 раз")
-                            exampleRow(title: "Бег", subtitle: "Дистанция: 5 км · Время: 22:10")
-                            exampleRow(title: "Подтягивания", subtitle: "Повторения: 15 раз")
-                        }
-                    }
-
-                    SettingsCard(title: "Советы") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            tipLine("Делайте отдельные записи под разные упражнения.")
-                            tipLine("Добавляйте 1–2 показателя: вес + повторы, время + дистанция и т.д.")
-                            tipLine("Пишите комментарий, если важно: техника, условия, самочувствие.")
-                        }
-                    }
-                }
-                .padding(.horizontal, AppDesign.cardPadding)
-                .padding(.top, AppDesign.blockSpacing)
-                .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .background(AdaptiveScreenBackground())
-            .navigationTitle("О достижениях")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Закрыть") { onClose() }
-                }
-                if let onAddTapped {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Добавить") { onAddTapped() }
-                    }
-                }
-            }
-        }
-    }
-
-    private func exampleRow(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppColors.label)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 6)
-    }
-
-    private func tipLine(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•")
-                .foregroundStyle(AppColors.secondaryLabel)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(AppColors.secondaryLabel)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 private enum RecordsMode: String, CaseIterable {
     case feed
     case exercises
-}
-
-private enum RecordsPeriod: String, CaseIterable, Identifiable {
-    case all
-    case days30
-    case days90
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .all: return "Всё время"
-        case .days30: return "30 дней"
-        case .days90: return "90 дней"
-        }
-    }
-
-    func startDate(reference: Date) -> Date {
-        let calendar = Calendar.current
-        switch self {
-        case .all:
-            return .distantPast
-        case .days30:
-            return calendar.date(byAdding: .day, value: -30, to: reference) ?? reference
-        case .days90:
-            return calendar.date(byAdding: .day, value: -90, to: reference) ?? reference
-        }
-    }
 }
 
 private struct ExerciseSummary: Identifiable {

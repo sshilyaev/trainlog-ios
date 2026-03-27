@@ -142,28 +142,29 @@ struct ToastHost: View {
     @State private var toastCenter = ToastCenter.shared
 
     var body: some View {
-        ZStack(alignment: .top) {
-            GeometryReader { geo in
+        GeometryReader { geo in
+            let targetTop = max(geo.safeAreaInsets.top + 8, geo.size.height * 0.125)
+
+            ZStack(alignment: .top) {
                 Color.clear
                     .frame(width: geo.size.width, height: geo.size.height)
-            }
-            VStack(spacing: 8) {
-                ForEach(toastCenter.toasts) { toast in
-                    ToastView(
-                        toast: toast,
-                        onClose: { toastCenter.hide(toastId: toast.id) }
-                    )
-                    .onTapGesture {
-                        toastCenter.hide(toastId: toast.id)
+
+                VStack(spacing: 8) {
+                    ForEach(toastCenter.toasts) { toast in
+                        ToastView(toast: toast)
+                            .onTapGesture {
+                                toastCenter.hide(toastId: toast.id)
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
+                .frame(maxWidth: 560)
+                .padding(.top, targetTop)
+                .padding(.horizontal, 12)
+                .animation(.spring(response: 0.24, dampingFraction: 0.9), value: toastCenter.toasts)
+                .allowsHitTesting(true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: 560)
-            .padding(.top, 72)
-            .padding(.horizontal, 12)
-            .animation(.spring(response: 0.24, dampingFraction: 0.9), value: toastCenter.toasts)
-            .allowsHitTesting(true)
         }
         .zIndex(250)
     }
@@ -217,52 +218,36 @@ final class PassthroughWindow: UIWindow {
 
 private struct ToastView: View {
     let toast: ToastModel
-    let onClose: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(toast.kind.iconForeground)
-                .frame(width: 4)
+        HStack(alignment: .center, spacing: 10) {
+            AppTablerIcon(toast.kind.iconName)
+                .appIcon(.s16, weight: .bold)
+                .foregroundStyle(toast.kind.iconForeground)
+                .frame(width: 28, height: 28)
+                .background(toast.kind.iconBackground, in: Circle())
 
-            HStack(alignment: .top, spacing: 8) {
-                AppTablerIcon(toast.kind.iconName)
-                    .appIcon(.s14, weight: .bold)
-                    .foregroundStyle(toast.kind.iconForeground)
-                    .frame(width: 22, height: 22)
-                    .background(toast.kind.iconBackground, in: Circle())
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(toast.title)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(AppColors.label)
-                    Text(toast.message)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(2)
-                }
-
-                Spacer(minLength: 0)
-
-                Button(action: onClose) {
-                    AppTablerIcon("multiple-cross-cancel-square")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .frame(width: 16, height: 16)
-                }
-                .buttonStyle(.plain)
-                .contentShape(Rectangle())
-                .allowsHitTesting(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(toast.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.label)
+                Text(toast.message)
+                    .font(.footnote)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+
+            Spacer(minLength: 0)
         }
-        .background(toast.kind.containerBackground.opacity(0.88), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(toast.kind.containerBackground.opacity(0.96), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(toast.kind.containerBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(toast.kind.containerBorder.opacity(0.7), lineWidth: 0.8)
         )
+        .shadow(color: AppColors.label.opacity(0.06), radius: 10, x: 0, y: 5)
         .fixedSize(horizontal: false, vertical: true)
     }
 }

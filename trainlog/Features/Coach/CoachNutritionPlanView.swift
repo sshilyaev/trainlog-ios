@@ -110,9 +110,7 @@ struct CoachNutritionPlanView: View {
                 }
             )
             .sheetContentEntrance()
-            .sheetPresentationStyle()
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .navigationDestination(isPresented: $showSupplementsEditorScreen) {
             CoachSupplementsEditorSheet(
@@ -408,9 +406,7 @@ private struct CoachSupplementsEditorSheet: View {
                     }
                 )
                 .sheetContentEntrance()
-                .sheetPresentationStyle()
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .mainSheetPresentation(.half)
                 }
             }
         }
@@ -871,87 +867,85 @@ private struct SupplementAssignmentEditScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: supplementName) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Все поля необязательны. Заполняйте только то, что важно для назначения.")
-                                .font(.footnote)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                            HStack(alignment: .top, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Дозировка")
-                                        .font(.caption)
-                                        .foregroundStyle(AppColors.secondaryLabel)
-                                    TextField("1 капсула", text: $form.dosage)
-                                        .font(.subheadline)
-                                        .textFieldStyle(.plain)
-                                        .formInputStyle()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Время приема")
-                                        .font(.caption)
-                                        .foregroundStyle(AppColors.secondaryLabel)
-                                    TextField("После завтрака", text: $form.timing)
-                                        .font(.subheadline)
-                                        .textFieldStyle(.plain)
-                                        .formInputStyle()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            HStack(alignment: .top, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Частота")
-                                        .font(.caption)
-                                        .foregroundStyle(AppColors.secondaryLabel)
-                                    TextField("Ежедневно", text: $form.frequency)
-                                        .font(.subheadline)
-                                        .textFieldStyle(.plain)
-                                        .formInputStyle()
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                Spacer(minLength: 0)
-                            }
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Заметка")
-                                    .font(.caption)
+        MainSheet(
+            title: "Параметры добавки",
+            onBack: { dismiss() },
+            trailing: {
+                if isSaving {
+                    ProgressView().scaleEffect(0.9)
+                } else {
+                    Button("Сохранить") { submit() }
+                        .fontWeight(.regular)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: supplementName) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Все поля необязательны. Заполняйте только то, что важно для назначения.")
+                                    .font(.footnote)
                                     .foregroundStyle(AppColors.secondaryLabel)
-                                TextEditor(text: $form.note)
+                                HStack(alignment: .top, spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Дозировка")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.secondaryLabel)
+                                        TextField("1 капсула", text: $form.dosage)
+                                            .font(.subheadline)
+                                            .textFieldStyle(.plain)
+                                            .formInputStyle()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Время приема")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.secondaryLabel)
+                                        TextField("После завтрака", text: $form.timing)
+                                            .font(.subheadline)
+                                            .textFieldStyle(.plain)
+                                            .formInputStyle()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                HStack(alignment: .top, spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Частота")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.secondaryLabel)
+                                        TextField("Ежедневно", text: $form.frequency)
+                                            .font(.subheadline)
+                                            .textFieldStyle(.plain)
+                                            .formInputStyle()
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Spacer(minLength: 0)
+                                }
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("Заметка")
+                                        .font(.caption)
+                                        .foregroundStyle(AppColors.secondaryLabel)
+                                    TextEditor(text: $form.note)
+                                        .font(.subheadline)
+                                        .frame(minHeight: 120)
+                                        .scrollContentBackground(.hidden)
+                                        .formInputStyle()
+                                }
+                            }
+                        }
+                        if let errorMessage, !errorMessage.isEmpty {
+                            SettingsCard {
+                                Text(errorMessage)
                                     .font(.subheadline)
-                                    .frame(minHeight: 120)
-                                    .scrollContentBackground(.hidden)
-                                    .formInputStyle()
+                                    .foregroundStyle(AppColors.destructive)
                             }
                         }
                     }
-                    if let errorMessage, !errorMessage.isEmpty {
-                        SettingsCard {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.destructive)
-                        }
-                    }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AdaptiveScreenBackground())
             }
-            .background(AdaptiveScreenBackground())
-            .navigationTitle("Параметры добавки")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Отмена") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isSaving {
-                        ProgressView().scaleEffect(0.9)
-                    } else {
-                        Button("Сохранить") { submit() }
-                    }
-                }
-            }
-        }
+        )
     }
 
     private func submit() {
@@ -1022,76 +1016,71 @@ private struct EditNutritionPlanSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Расчёт") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Нормы на кг веса (Б/Ж/У).")
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                            Text("Значения считаются автоматически.")
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.secondaryLabel)
-                            
-                            if canEditWeight {
-                                weightKeyboardInput
-                            } else {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Вес для расчёта")
-                                        .font(.caption)
-                                        .foregroundStyle(AppColors.secondaryLabel)
-                                    Text("\(lockedWeightKg.measurementFormatted) кг")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(AppColors.label)
+        MainSheet(
+            title: "Питание",
+            onBack: { dismiss() },
+            trailing: {
+                if isSaving {
+                    ProgressView()
+                        .scaleEffect(0.9)
+                } else {
+                    Button("Сохранить") {
+                        submit()
+                    }
+                    .disabled(!canSave)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Расчёт") {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Нормы на кг веса (Б/Ж/У).")
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppColors.secondaryLabel)
+                                Text("Значения считаются автоматически.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppColors.secondaryLabel)
+                                
+                                if canEditWeight {
+                                    weightKeyboardInput
+                                } else {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Вес для расчёта")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.secondaryLabel)
+                                        Text("\(lockedWeightKg.measurementFormatted) кг")
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(AppColors.label)
+                                    }
                                 }
+
+                                MacroTripleInputRow(
+                                    proteinPerKg: $proteinPerKg,
+                                    fatPerKg: $fatPerKg,
+                                    carbsPerKg: $carbsPerKg
+                                )
                             }
-
-                            MacroTripleInputRow(
-                                proteinPerKg: $proteinPerKg,
-                                fatPerKg: $fatPerKg,
-                                carbsPerKg: $carbsPerKg
-                            )
                         }
-                    }
 
-                    SettingsCard(title: "Итог") {
-                        NutritionPreviewCard(preview: nutritionPreview)
-                    }
-
-                    if let errorMessage, !errorMessage.isEmpty {
-                        SettingsCard {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.destructive)
+                        SettingsCard(title: "Итог") {
+                            NutritionPreviewCard(preview: nutritionPreview)
                         }
-                    }
 
+                        if let errorMessage, !errorMessage.isEmpty {
+                            SettingsCard {
+                                Text(errorMessage)
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppColors.destructive)
+                            }
+                        }
+
+                    }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AdaptiveScreenBackground())
             }
-            .background(AdaptiveScreenBackground())
-            .navigationTitle("Питание")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Отмена") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isSaving {
-                        ProgressView()
-                            .scaleEffect(0.9)
-                    } else {
-                        Button("Сохранить") {
-                            submit()
-                        }
-                        .disabled(!canSave)
-                    }
-                }
-            }
-        }
+        )
     }
 
     private var canSave: Bool {

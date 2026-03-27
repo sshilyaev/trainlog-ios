@@ -18,52 +18,49 @@ struct ConnectionTokenSheet: View {
     @State private var copied = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    AppColors.clear
+        MainSheet(
+            title: "Поделиться с тренером",
+            onBack: onDismiss,
+            content: {
+                Group {
+                    if isLoading {
+                        AppColors.clear
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(AppColors.systemGroupedBackground)
+                    } else if let t = token, t.isValid {
+                        tokenContent(token: t)
+                    } else if let msg = errorMessage, !msg.isEmpty {
+                        ScrollView {
+                            SettingsCard(title: "Ошибка") {
+                                Text(msg)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.top, 24)
+                        }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(AppColors.systemGroupedBackground)
-                } else if let t = token, t.isValid {
-                    tokenContent(token: t)
-                } else if let msg = errorMessage, !msg.isEmpty {
-                    ScrollView {
-                        SettingsCard(title: "Ошибка") {
-                            Text(msg)
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding(.top, 24)
+                    } else {
+                        ContentUnavailableView(
+                            "Код не найден",
+                            image: "tabler-outline-key-left",
+                            description: Text("Не удалось создать код. Попробуйте позже.")
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(AppColors.systemGroupedBackground)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(AppColors.systemGroupedBackground)
-                } else {
-                    ContentUnavailableView(
-                        "Код не найден",
-                        image: "tabler-outline-key-left",
-                        description: Text("Не удалось создать код. Попробуйте позже.")
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(AppColors.systemGroupedBackground)
                 }
-            }
-            .navigationTitle("Поделиться с тренером")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onDismiss)
+                .overlay {
+                    if isLoading {
+                        LoadingOverlayView(message: "Загружаю")
+                    }
                 }
+                .task { await createToken() }
             }
-            .overlay {
-                if isLoading {
-                    LoadingOverlayView(message: "Загружаю")
-                }
-            }
-            .task { await createToken() }
-        }
+        )
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
     }
 
     private func tokenContent(token t: ConnectionToken) -> some View {

@@ -37,76 +37,58 @@ struct EditProfileView: View {
     private var profileType: ProfileType { loadedProfile?.type ?? .trainee }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoaded && loadedProfile == nil {
-                    ContentUnavailableView(
-                        "Профиль не найден",
-                        image: "tabler-outline-user-circle",
-                        description: Text("Не удалось загрузить данные профиля.")
-                    )
-                } else {
-                    formContent
+        MainSheet(
+            title: "Редактировать",
+            onBack: onCancel,
+            trailing: {
+                Button("Обновить") {
+                    AppDesign.dismissKeyboardThen { save() }
                 }
-            }
-            .background(AppColors.systemGroupedBackground)
-            .overlay {
-                if !isLoaded {
-                    LoadingOverlayView(message: "Загружаю")
-                }
-            }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .scrollDismissesKeyboard(.interactively)
-            .dismissKeyboardOnTap()
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        Text("Редактировать")
-                            .font(.headline)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        onCancel()
-                    } label: {
-                        BackToolbarButton(action: onCancel)
+                .disabled(isSaving || !isLoaded || loadedProfile == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            },
+            content: {
+                Group {
+                    if isLoaded && loadedProfile == nil {
+                        ContentUnavailableView(
+                            "Профиль не найден",
+                            image: "tabler-outline-user-circle",
+                            description: Text("Не удалось загрузить данные профиля.")
+                        )
+                    } else {
+                        formContent
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Обновить") {
-                        AppDesign.dismissKeyboardThen { save() }
+                .background(AppColors.systemGroupedBackground)
+                .overlay {
+                    if !isLoaded {
+                        LoadingOverlayView(message: "Загружаю")
                     }
-                        .disabled(isSaving || !isLoaded || loadedProfile == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-            }
-            .overlay {
-                if isSaving {
-                    LoadingOverlayView(message: "Сохранение…")
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
+                .navigationBarBackButtonHidden(true)
+                .overlay {
+                    if isSaving {
+                        LoadingOverlayView(message: "Сохранение…")
+                    }
                 }
+                .allowsHitTesting(!isSaving)
+                .appConfirmationDialog(
+                    title: "Ошибка",
+                    message: saveError ?? "Произошла ошибка.",
+                    isPresented: Binding(
+                        get: { saveError != nil },
+                        set: { if !$0 { saveError = nil } }
+                    ),
+                    confirmTitle: "OK",
+                    onConfirm: { saveError = nil },
+                    onCancel: { saveError = nil }
+                )
+                .task { await loadProfile() }
             }
-            .allowsHitTesting(!isSaving)
-            .appConfirmationDialog(
-                title: "Ошибка",
-                message: saveError ?? "Произошла ошибка.",
-                isPresented: Binding(
-                    get: { saveError != nil },
-                    set: { if !$0 { saveError = nil } }
-                ),
-                confirmTitle: "OK",
-                onConfirm: { saveError = nil },
-                onCancel: { saveError = nil }
-            )
-            .task {
-                await loadProfile()
-            }
-        }
+        )
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
     }
 
     private var formContent: some View {

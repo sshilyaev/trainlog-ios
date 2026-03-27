@@ -60,6 +60,10 @@ struct TraineeMainView: View {
     @State private var showMeasurementsAndCharts = false
     @State private var showAddMeasurementOrGoal = false
     @State private var progressAddSheetKind: ProgressAddSheetKind = .measurement
+    @State private var standaloneMeasurementSavePulse = 0
+    @State private var standaloneGoalSavePulse = 0
+    @State private var standaloneMeasurementToolbar = ProgressAddFormToolbarState(canSave: false, isLoading: false)
+    @State private var standaloneGoalToolbar = ProgressAddFormToolbarState(canSave: false, isLoading: false)
 
     private var shouldShowHealthIntegration: Bool {
         AppConfig.enableAppleHealthIntegration || profile.isDeveloperModeEnabled
@@ -86,13 +90,17 @@ struct TraineeMainView: View {
         .fullScreenCover(isPresented: $showPostRegistrationOnboarding) {
             TraineePostRegistrationOnboardingView(
                 userName: profile.name,
-                onAddGoals: {
+                onAddMeasurementsGoals: {
                     showPostRegistrationOnboarding = false
-                    showAddGoal = true
+                    progressAddSheetKind = .measurement
+                    showAddMeasurementOrGoal = true
                 },
-                onAddMeasurement: {
+                onAddAchievement: {
                     showPostRegistrationOnboarding = false
-                    showAddMeasurement = true
+                    Task {
+                        await ensureRecordActivitiesLoaded()
+                        await MainActor.run { showQuickAddRecordSheet = true }
+                    }
                 },
                 onSkip: { showPostRegistrationOnboarding = false }
             )
@@ -101,42 +109,89 @@ struct TraineeMainView: View {
             GoalCreatedMeasurementOfferView(
                 onAddMeasurement: {
                     showGoalCreatedMeasurementOffer = false
-                    showAddMeasurement = true
+                    progressAddSheetKind = .measurement
+                    showAddMeasurementOrGoal = true
                 },
                 onSkip: { showGoalCreatedMeasurementOffer = false }
             )
         }
         .sheet(isPresented: $showAddMeasurement) {
-            AddMeasurementView(
-                profile: profile,
-                lastMeasurement: measurements.sorted { $0.date > $1.date }.first,
-                onSave: { m in
-                    let ok = await saveMeasurement(m)
-                    guard ok else { return }
-                    await MainActor.run { showAddMeasurement = false }
-                    await showToastAfterSheetDismiss(kind: .success, message: "Замер сохранен")
+            MainSheet(
+                title: "Добавить замер",
+                onBack: { showAddMeasurement = false },
+                trailing: {
+                    Button {
+                        standaloneMeasurementSavePulse += 1
+                    } label: {
+                        if standaloneMeasurementToolbar.isLoading {
+                            ProgressView().scaleEffect(0.9)
+                        } else {
+                            Text("Сохранить")
+                                .font(.body)
+                                .fontWeight(.regular)
+                        }
+                    }
+                    .disabled(!standaloneMeasurementToolbar.canSave || standaloneMeasurementToolbar.isLoading)
                 },
-                onCancel: { showAddMeasurement = false }
+                content: {
+                    AddMeasurementView(
+                        profile: profile,
+                        lastMeasurement: measurements.sorted { $0.date > $1.date }.first,
+                        embedsNavigationStack: false,
+                        useHostNavigationChrome: true,
+                        hostSavePulse: $standaloneMeasurementSavePulse,
+                        onSave: { m in
+                            let ok = await saveMeasurement(m)
+                            guard ok else { return }
+                            await MainActor.run { showAddMeasurement = false }
+                            await showToastAfterSheetDismiss(kind: .success, message: "Замер сохранен")
+                        },
+                        onCancel: { showAddMeasurement = false }
+                    )
+                    .onPreferenceChange(ProgressAddFormToolbarPreferenceKey.self) { standaloneMeasurementToolbar = $0 }
+                }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showAddGoal) {
-            AddGoalView(
-                profile: profile,
-                onSave: { goals in
-                    let ok = await saveGoalsBatch(goals)
-                    guard ok else { return }
-                    await MainActor.run { showAddGoal = false }
-                    await showToastAfterSheetDismiss(kind: .success, message: "Цели сохранены")
-                    await MainActor.run {
-                        showGoalCreatedMeasurementOffer = true
+            MainSheet(
+                title: "Добавить цель",
+                onBack: { showAddGoal = false },
+                trailing: {
+                    Button {
+                        standaloneGoalSavePulse += 1
+                    } label: {
+                        if standaloneGoalToolbar.isLoading {
+                            ProgressView().scaleEffect(0.9)
+                        } else {
+                            Text("Сохранить")
+                                .font(.body)
+                                .fontWeight(.regular)
+                        }
                     }
+                    .disabled(!standaloneGoalToolbar.canSave || standaloneGoalToolbar.isLoading)
                 },
-                onCancel: { showAddGoal = false }
+                content: {
+                    AddGoalView(
+                        profile: profile,
+                        embedsNavigationStack: false,
+                        useHostNavigationChrome: true,
+                        hostSavePulse: $standaloneGoalSavePulse,
+                        onSave: { goals in
+                            let ok = await saveGoalsBatch(goals)
+                            guard ok else { return }
+                            await MainActor.run { showAddGoal = false }
+                            await showToastAfterSheetDismiss(kind: .success, message: "Цели сохранены")
+                            await MainActor.run {
+                                showGoalCreatedMeasurementOffer = true
+                            }
+                        },
+                        onCancel: { showAddGoal = false }
+                    )
+                    .onPreferenceChange(ProgressAddFormToolbarPreferenceKey.self) { standaloneGoalToolbar = $0 }
+                }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showAddMeasurementOrGoal) {
             AddMeasurementOrGoalSheet(
@@ -160,8 +215,7 @@ struct TraineeMainView: View {
                 },
                 onCancel: { showAddMeasurementOrGoal = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .sheet(item: $addForTodayItem) { item in
             AddMeasurementForTodaySheet(
@@ -176,8 +230,7 @@ struct TraineeMainView: View {
                 },
                 onCancel: { addForTodayItem = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showConnectionTokenSheet) {
             ConnectionTokenSheet(
@@ -185,8 +238,7 @@ struct TraineeMainView: View {
                 tokenService: connectionTokenService,
                 onDismiss: { showConnectionTokenSheet = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showQuickAddRecordSheet) {
             AddEditPersonalRecordSheet(
@@ -200,9 +252,7 @@ struct TraineeMainView: View {
                 },
                 onCancel: { showQuickAddRecordSheet = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            .mainSheetPresentation(.half)
         }
         .task {
             await loadMeasurements()
@@ -360,7 +410,7 @@ struct TraineeMainView: View {
                 onCancel: { showEditProfile = false },
                 onDismiss: { showEditProfile = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .trackAPIScreen("Профиль")
         .tabItem {

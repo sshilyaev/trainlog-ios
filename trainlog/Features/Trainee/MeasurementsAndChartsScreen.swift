@@ -10,6 +10,7 @@ struct MeasurementsAndChartsScreen: View {
     let profile: Profile
     let measurements: [Measurement]
     let goals: [Goal]
+    @State private var showHelpSheet = false
 
     /// Цель по весу, ближайшая по дате к сегодня.
     private var nearestWeightGoal: Goal? {
@@ -139,6 +140,27 @@ struct MeasurementsAndChartsScreen: View {
         .navigationTitle("Замеры и графики")
         .navigationBarTitleDisplayMode(.inline)
         .trackAPIScreen("Замеры и графики")
+        .sheet(isPresented: $showHelpSheet) {
+            RecordsGuideSheet(
+                title: "Замеры и графики",
+                headline: "О разделе",
+                description: "Здесь сводка по весу и целям, история замеров и графики динамики по каждому показателю.",
+                examples: [
+                    RecordsGuideExample(title: "Вес", subtitle: "Добавляйте замеры и следите за трендом по неделе/месяцу/году."),
+                    RecordsGuideExample(title: "Объёмы", subtitle: "Талия, грудь, бёдра и другие метрики — удобно для контроля прогресса."),
+                    RecordsGuideExample(title: "Цели", subtitle: "Поставьте цель и сверяйте динамику на графиках."),
+                ],
+                tips: [
+                    "Делайте замеры в одно и то же время суток для честного сравнения.",
+                    "Если график выглядит “рваным” — увеличьте период и смотрите тренд.",
+                    "Цели и замеры лучше работают вместе: цель задаёт направление, замеры — факты.",
+                ],
+                onPrimaryAction: nil,
+                primaryActionTitle: "",
+                onClose: { showHelpSheet = false }
+            )
+            .mainSheetPresentation(.full)
+        }
     }
 
     private var heroCard: some View {
@@ -151,6 +173,18 @@ struct MeasurementsAndChartsScreen: View {
             decoration: .glow
         ) {
             InfoValueTripleRow(items: weightSummaryItems, chipSize: .standard)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                showHelpSheet = true
+            } label: {
+                AppTablerIcon("info-circle")
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .padding(8)
+                    .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(10)
         }
     }
 }

@@ -121,7 +121,7 @@ struct AddTraineeView: View {
                 onCancel: { showCreateManagedTrainee = false },
                 onError: { errorMessage = $0 }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showAddByCodeSheet) {
             AddByTokenSheet(
@@ -136,7 +136,7 @@ struct AddTraineeView: View {
                 },
                 onDismiss: { showAddByCodeSheet = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showMyProfilesSheet) {
             AddFromMyProfilesSheet(
@@ -150,7 +150,7 @@ struct AddTraineeView: View {
                 },
                 onDismiss: { showMyProfilesSheet = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
     }
 
@@ -181,71 +181,68 @@ private struct CreateManagedTraineeSheet: View {
     @State private var showDatePickerSheet = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Основное") {
-                        VStack(spacing: 0) {
-                            FormRowTextField(icon: "writing-sign", title: "Имя", placeholder: "Имя подопечного", text: $name, textContentType: .name, autocapitalization: .words)
-                            FormSectionDivider()
-                            FormRow(icon: "user-default", title: "Пол") {
-                                Picker("", selection: Binding(
-                                    get: { gender ?? .male },
-                                    set: { gender = $0 }
-                                )) {
-                                    Text("Муж").tag(ProfileGender.male)
-                                    Text("Жен").tag(ProfileGender.female)
+        MainSheet(
+            title: "Создать подопечного",
+            onBack: onCancel,
+            trailing: {
+                Button(isSaving ? "Создаю…" : "Создать") { create() }
+                    .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Основное") {
+                            VStack(spacing: 0) {
+                                FormRowTextField(icon: "writing-sign", title: "Имя", placeholder: "Имя подопечного", text: $name, textContentType: .name, autocapitalization: .words)
+                                FormSectionDivider()
+                                FormRow(icon: "user-default", title: "Пол") {
+                                    Picker("", selection: Binding(
+                                        get: { gender ?? .male },
+                                        set: { gender = $0 }
+                                    )) {
+                                        Text("Муж").tag(ProfileGender.male)
+                                        Text("Жен").tag(ProfileGender.female)
+                                    }
+                                    .pickerStyle(.segmented)
                                 }
-                                .pickerStyle(.segmented)
+                                FormSectionDivider()
+                                FormRowTextField(
+                                    icon: "pencil-scale",
+                                    title: "Вес",
+                                    placeholder: "кг",
+                                    text: $weight,
+                                    autocapitalization: .never,
+                                    keyboardType: .decimalPad
+                                )
                             }
-                            FormSectionDivider()
-                            FormRowTextField(
-                                icon: "pencil-scale",
-                                title: "Вес",
-                                placeholder: "кг",
-                                text: $weight,
-                                autocapitalization: .never,
-                                keyboardType: .decimalPad
-                            )
                         }
-                    }
 
-                    SettingsCard(title: "Контакты") {
-                        VStack(spacing: 0) {
-                            FormRowPhone(icon: "phone", title: "Телефон", text: $phoneNumber)
-                            FormSectionDivider()
-                            FormRowTextField(icon: "send-plane-horizontal", title: "Telegram", placeholder: "Логин без @", text: $telegramUsername, textContentType: .username, autocapitalization: .never)
+                        SettingsCard(title: "Контакты") {
+                            VStack(spacing: 0) {
+                                FormRowPhone(icon: "phone", title: "Телефон", text: $phoneNumber)
+                                FormSectionDivider()
+                                FormRowTextField(icon: "send-plane-horizontal", title: "Telegram", placeholder: "Логин без @", text: $telegramUsername, textContentType: .username, autocapitalization: .never)
+                            }
                         }
-                    }
 
-                    SettingsCard(title: "Дата рождения") {
-                        FormRowDateOfBirth(selection: $dateOfBirth, onTap: { showDatePickerSheet = true })
-                    }
-                    .sheet(isPresented: $showDatePickerSheet) {
-                        FormDatePickerSheet(selection: $dateOfBirth, isPresented: $showDatePickerSheet, title: "Дата рождения")
-                    }
+                        SettingsCard(title: "Дата рождения") {
+                            FormRowDateOfBirth(selection: $dateOfBirth, onTap: { showDatePickerSheet = true })
+                        }
+                        .sheet(isPresented: $showDatePickerSheet) {
+                            FormDatePickerSheet(selection: $dateOfBirth, isPresented: $showDatePickerSheet, title: "Дата рождения")
+                                .mainSheetPresentation(.calendar)
+                        }
 
-                    FormNotesCard(notes: $notes)
+                        FormNotesCard(notes: $notes)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AppColors.systemGroupedBackground)
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
             }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Создать подопечного")
-            .navigationBarTitleDisplayMode(.inline)
-            .scrollDismissesKeyboard(.interactively)
-            .dismissKeyboardOnTap()
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                        .disabled(isSaving)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSaving ? "Создаю…" : "Создать") { create() }
-                        .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
+        )
     }
 
     private func create() {
@@ -315,57 +312,54 @@ struct AddFromMyProfilesSheet: View {
     @State private var selectedProfile: Profile?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    if profiles.isEmpty {
-                        ContentUnavailableView(
-                            "Нет профилей",
-                            image: "tabler-outline-user",
-                            description: Text("Все ваши профили подопечного уже добавлены или у вас нет такого профиля.")
-                        )
-                        .padding(.vertical, 32)
-                    } else {
-                        VStack(spacing: 10) {
-                            ForEach(profiles) { p in
-                                Button {
-                                    selectedProfile = p
-                                } label: {
-                                    ProfileRow(profile: p, showTypeLabel: false)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+        MainSheet(
+            title: "Мои профили",
+            onBack: onDismiss,
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        if profiles.isEmpty {
+                            ContentUnavailableView(
+                                "Нет профилей",
+                                image: "tabler-outline-user",
+                                description: Text("Все ваши профили подопечного уже добавлены или у вас нет такого профиля.")
+                            )
+                            .padding(.vertical, 32)
+                        } else {
+                            VStack(spacing: 10) {
+                                ForEach(profiles) { p in
+                                    Button {
+                                        selectedProfile = p
+                                    } label: {
+                                        ProfileRow(profile: p, showTypeLabel: false)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(PressableButtonStyle())
                                 }
-                                .buttonStyle(PressableButtonStyle())
                             }
+                            .padding(.horizontal, AppDesign.cardPadding)
+                            .padding(.top, AppDesign.blockSpacing)
                         }
-                        .padding(.horizontal, AppDesign.cardPadding)
-                        .padding(.top, AppDesign.blockSpacing)
                     }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Мои профили")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onDismiss)
+                .background(AppColors.systemGroupedBackground)
+                .navigationDestination(item: $selectedProfile) { p in
+                    TraineeLinkFormView(
+                        trainee: p,
+                        coachProfileId: coachProfileId,
+                        linkService: linkService,
+                        tokenService: nil,
+                        pendingToken: nil,
+                        onLinkAdded: {
+                            selectedProfile = nil
+                            onLinkAdded()
+                        },
+                        onDismiss: { selectedProfile = nil }
+                    )
                 }
             }
-            .navigationDestination(item: $selectedProfile) { p in
-                TraineeLinkFormView(
-                    trainee: p,
-                    coachProfileId: coachProfileId,
-                    linkService: linkService,
-                    tokenService: nil,
-                    pendingToken: nil,
-                    onLinkAdded: {
-                        selectedProfile = nil
-                        onLinkAdded()
-                    },
-                    onDismiss: { selectedProfile = nil }
-                )
-            }
-        }
+        )
     }
 }
 

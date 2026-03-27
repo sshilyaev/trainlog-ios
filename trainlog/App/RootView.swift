@@ -121,9 +121,7 @@ struct RootView: View {
                 await loadProfiles(userId: uid)
                 await MainActor.run {
                     if let p = appState.profiles.first(where: { $0.id == created.id }) {
-                        if p.type == .trainee {
-                            appState.profileIdForPostRegistrationOnboarding = p.id
-                        }
+                        appState.profileIdForPostRegistrationOnboarding = p.id
                         appState.selectProfile(p)
                     }
                 }
@@ -141,15 +139,13 @@ struct RootView: View {
                     profileService: profileService,
                     measurementService: measurementService,
                     initialName: authService.currentUserDisplayName,
-                    onCreated: { createdId, createdType in
+                    onCreated: { createdId, _ in
                         Task {
                             await MainActor.run { appState.createProfileError = nil }
                             await loadProfiles(userId: uid)
                             await MainActor.run {
                                 guard let p = appState.profiles.first(where: { $0.id == createdId }) else { return }
-                                if createdType == .trainee {
-                                    appState.profileIdForPostRegistrationOnboarding = p.id
-                                }
+                                appState.profileIdForPostRegistrationOnboarding = p.id
                                 appState.selectProfile(p)
                             }
                         }
@@ -162,8 +158,7 @@ struct RootView: View {
                     onClearError: { appState.createProfileError = nil },
                     onError: { appState.createProfileError = $0 }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
-                .presentationDragIndicator(.visible)
+                .mainSheetPresentation(.half)
             } else {
                 SplashView()
             }

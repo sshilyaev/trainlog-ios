@@ -61,27 +61,23 @@ struct AddGoalView: View {
         }
         .environment(\.locale, .ru)
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
         .sheet(isPresented: $showDatePickerSheet) {
-            NavigationStack {
-                DatePicker("", selection: $targetDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .environment(\.locale, .ru)
-                    .padding()
-                    .navigationTitle("Целевая дата")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Готово") {
-                                showDatePickerSheet = false
-                            }
-                            .fontWeight(.regular)
-                        }
-                    }
-            }
-            .presentationDetents(AppSheetDetents.calendar)
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            MainSheet(
+                title: "Целевая дата",
+                onBack: { showDatePickerSheet = false },
+                trailing: {
+                    Button("Готово") { showDatePickerSheet = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $targetDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
         }
     }
 
@@ -94,17 +90,15 @@ struct AddGoalView: View {
                 )
 
                 SettingsCard(title: nil) {
-                    FormRow(icon: "calendar-default", title: "Дата") {
-                        Button {
-                            showDatePickerSheet = true
-                        } label: {
-                            Text(Self.dateFormatter.string(from: targetDate))
-                                .foregroundStyle(.primary)
-                                .font(.subheadline)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    FormRowDateSelection(
+                        title: "Дата",
+                        selection: Binding<Date?>(
+                            get: { targetDate },
+                            set: { if let value = $0 { targetDate = value } }
+                        ),
+                        allowsClear: false,
+                        onTap: { showDatePickerSheet = true }
+                    )
                     FormSectionDivider()
                     FormRowTextField(
                         icon: "pencil-scale",

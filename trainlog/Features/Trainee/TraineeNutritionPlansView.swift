@@ -100,9 +100,7 @@ struct TraineeNutritionPlansView: View {
                 }
             )
             .sheetContentEntrance()
-            .sheetPresentationStyle()
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.half)
         }
     }
 
@@ -318,75 +316,72 @@ private struct EditTraineeWeightSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Вес") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Значения Б/Ж/У не изменяются — пересчёт делается по новому весу.")
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.secondaryLabel)
-
-                            TextField("0.1", text: $weightText)
-                                .keyboardType(.decimalPad)
-                                .textFieldStyle(.plain)
-                                .font(.subheadline.weight(.semibold))
-                                .multilineTextAlignment(.leading)
-                                .formInputStyle()
-                                .onChange(of: weightText) { _, newValue in
-                                    let sanitized = sanitizeDecimalInput(newValue)
-                                    if sanitized != newValue {
-                                        weightText = sanitized
-                                        return
-                                    }
-                                    guard let d = Double(sanitized) else { return }
-                                    let rounded = max(0, roundTo0_1(d))
-                                    weightKg = rounded
-                                    let formatted = rounded.measurementFormatted
-                                    if weightText != formatted {
-                                        weightText = formatted
-                                    }
-                                }
-                        }
-                    }
-
-                    if !previews.isEmpty {
-                        SettingsCard(title: "Пересчёт") {
+        MainSheet(
+            title: "Питание",
+            onBack: { dismiss() },
+            trailing: {
+                if isSaving {
+                    ProgressView().scaleEffect(0.9)
+                } else {
+                    Button("Сохранить") { submit() }
+                        .disabled(weightKg <= 0)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Вес") {
                             VStack(alignment: .leading, spacing: 12) {
-                                ForEach(previews.indices, id: \.self) { idx in
-                                    NutritionPreviewCard(preview: previews[idx])
+                                Text("Значения Б/Ж/У не изменяются — пересчёт делается по новому весу.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppColors.secondaryLabel)
+
+                                TextField("0.1", text: $weightText)
+                                    .keyboardType(.decimalPad)
+                                    .textFieldStyle(.plain)
+                                    .font(.subheadline.weight(.semibold))
+                                    .multilineTextAlignment(.leading)
+                                    .formInputStyle()
+                                    .onChange(of: weightText) { _, newValue in
+                                        let sanitized = sanitizeDecimalInput(newValue)
+                                        if sanitized != newValue {
+                                            weightText = sanitized
+                                            return
+                                        }
+                                        guard let d = Double(sanitized) else { return }
+                                        let rounded = max(0, roundTo0_1(d))
+                                        weightKg = rounded
+                                        let formatted = rounded.measurementFormatted
+                                        if weightText != formatted {
+                                            weightText = formatted
+                                        }
+                                    }
+                            }
+                        }
+
+                        if !previews.isEmpty {
+                            SettingsCard(title: "Пересчёт") {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    ForEach(previews.indices, id: \.self) { idx in
+                                        NutritionPreviewCard(preview: previews[idx])
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if let errorMessage, !errorMessage.isEmpty {
-                        SettingsCard {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundStyle(AppColors.destructive)
+                        if let errorMessage, !errorMessage.isEmpty {
+                            SettingsCard {
+                                Text(errorMessage)
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppColors.destructive)
+                            }
                         }
                     }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AdaptiveScreenBackground())
             }
-            .background(AdaptiveScreenBackground())
-            .navigationTitle("Питание")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Отмена") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isSaving {
-                        ProgressView().scaleEffect(0.9)
-                    } else {
-                        Button("Сохранить") { submit() }
-                            .disabled(weightKg <= 0)
-                    }
-                }
-            }
-        }
+        )
     }
 
     private func submit() {

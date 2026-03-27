@@ -8,6 +8,7 @@ struct PersonalRecordExerciseDetailView: View {
 
     @State private var selectedMetricType: PersonalRecordMetricType?
     @State private var period: DetailPeriod = .days90
+    @State private var showAllValues = false
 
     private var availableMetricTypes: [PersonalRecordMetricType] {
         let set = Set(records.flatMap(\.metrics).map(\.metricType))
@@ -34,6 +35,30 @@ struct PersonalRecordExerciseDetailView: View {
         }
     }
 
+    private var chartYDomain: ClosedRange<Double> {
+        guard !points.isEmpty else { return 0...1 }
+        let minV = points.map(\.value).min()!
+        let maxV = points.map(\.value).max()!
+        if minV == maxV {
+            let pad = max(abs(minV) * 0.1, 1.0)
+            return (minV - pad)...(maxV + pad)
+        }
+        let span = max(maxV - minV, 1.0)
+        return (minV - span * 0.05)...(maxV + span * 0.1)
+    }
+
+    private var chartXDomain: ClosedRange<Double> {
+        guard !points.isEmpty else { return -0.5...0.5 }
+        return -0.5...(Double(points.count) - 0.5)
+    }
+
+    private func shortDateLabel(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = .ru
+        f.dateFormat = "d MMM"
+        return f.string(from: date)
+    }
+
     private var bestValue: Double? {
         guard let type = effectiveMetricType else { return nil }
         return records
@@ -57,14 +82,11 @@ struct PersonalRecordExerciseDetailView: View {
                 hero
 
                 if !availableMetricTypes.isEmpty {
-                    metricAndPeriodRow
-                    chartCard
-                    bestAndLastRow
+                    chartSection
                 }
 
                 historySection
             }
-            .padding(.horizontal, AppDesign.cardPadding)
             .padding(.top, AppDesign.blockSpacing)
             .padding(.bottom, AppDesign.sectionSpacing)
         }
@@ -86,45 +108,132 @@ struct PersonalRecordExerciseDetailView: View {
             description: "Выберите показатель и посмотрите динамику. PR отмечается как максимальное значение (для времени это может быть не всегда корректно).",
             accent: AppColors.profileAccent
         )
+        .padding(.horizontal, AppDesign.cardPadding)
     }
 
-    private var metricAndPeriodRow: some View {
-        HStack(spacing: 10) {
-            Menu {
-                ForEach(availableMetricTypes) { type in
-                    Button {
-                        selectedMetricType = type
-                    } label: {
-                        if effectiveMetricType == type {
-                            Label(type.title, systemImage: "checkmark")
-                        } else {
-                            Text(type.title)
+    private var chartSection: some View {
+        SettingsCard(title: nil) {
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    Menu {
+                        ForEach(availableMetricTypes) { type in
+                            Button {
+                                selectedMetricType = type
+                            } label: {
+                                if effectiveMetricType == type {
+                                    Label(type.title, systemImage: "checkmark")
+                                } else {
+                                    Text(type.title)
+                                }
+                            }
                         }
+                    } label: {
+                        chip(title: effectiveMetricType?.title ?? "Показатель", icon: "filter-horizontal")
+                            .frame(maxWidth: .infinity)
+                    }
+
+                    Menu {
+                        ForEach(DetailPeriod.allCases) { p in
+                            Button {
+                                period = p
+                            } label: {
+                                if period == p {
+                                    Label(p.title, systemImage: "checkmark")
+                                } else {
+                                    Text(p.title)
+                                }
+                            }
+                        }
+                    } label: {
+                        chip(title: period.title, icon: "calendar-default")
+                            .frame(maxWidth: .infinity)
                     }
                 }
-            } label: {
-                chip(title: effectiveMetricType?.title ?? "Показатель", icon: "filter-horizontal")
-            }
 
-            Menu {
-                ForEach(DetailPeriod.allCases) { p in
-                    Button {
-                        period = p
-                    } label: {
-                        if period == p {
-                            Label(p.title, systemImage: "checkmark")
-                        } else {
-                            Text(p.title)
+                if points.isEmpty {
+                    Text("Недостаточно данных для графика.")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 6)
+                } else {
+                    HStack {
+                        Text(effectiveMetricType?.title ?? "График")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppColors.label)
+                        Spacer()
+                        Button {
+                            showAllValues.toggle()
+                        } label: {
+                            Text(showAllValues ? "Скрыть значения" : "Показать значения")
+                                .font(.caption.weight(.medium))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+
+                    Chart(Array(points.enumerated()), id: \.element.id) { index, p in
+                        LineMark(
+                            x: .value("Индекс", index),
+                            y: .value("Значение", p.value)
+                        )
+                        .foregroundStyle(AppColors.profileAccent)
+                        .interpolationMethod(.catmullRom)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+
+                        PointMark(
+                            x: .value("Индекс", index),
+                            y: .value("Значение", p.value)
+                        )
+                        .foregroundStyle(AppColors.profileAccent)
+                        .symbolSize(showAllValues ? 80 : 40)
+                        .annotation(position: .top, spacing: 2) {
+                            if showAllValues {
+                                Text(p.value.measurementFormatted)
+                                    .font(.caption2)
+                                    .foregroundStyle(AppColors.label)
+                            }
                         }
                     }
+                    .frame(maxWidth: .infinity)
+                    .chartXScale(domain: chartXDomain)
+                    .chartYScale(domain: chartYDomain)
+                    .chartXAxis {
+                        AxisMarks(values: .stride(by: 1)) { value in
+                            AxisValueLabel {
+                                if let i = value.as(Int.self), i >= 0, i < points.count {
+                                    Text(shortDateLabel(points[i].date))
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
+                                .foregroundStyle(Color.primary.opacity(0.06))
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+                            AxisValueLabel()
+                                .foregroundStyle(.secondary)
+                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
+                                .foregroundStyle(Color.primary.opacity(0.06))
+                        }
+                    }
+                    .chartPlotStyle { plotArea in
+                        plotArea
+                            .padding(.leading, 24)
+                            .padding(.trailing, 8)
+                            .padding(.top, 8)
+                            .padding(.bottom, AppDesign.sectionSpacing)
+                    }
+                    .frame(height: 220)
+                    .clipped()
                 }
-            } label: {
-                chip(title: period.title, icon: "calendar-default")
-            }
 
-            Spacer()
+                bestAndLastRow
+                    .frame(maxWidth: .infinity)
+            }
         }
-        .padding(.top, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func chip(title: String, icon: String) -> some View {
@@ -144,48 +253,7 @@ struct PersonalRecordExerciseDetailView: View {
         )
     }
 
-    private var chartCard: some View {
-        SettingsCard(title: nil) {
-            VStack(alignment: .leading, spacing: 10) {
-                if points.isEmpty {
-                    Text("Недостаточно данных для графика.")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 6)
-                } else {
-                    Chart(points) { p in
-                        LineMark(
-                            x: .value("Дата", p.date),
-                            y: .value("Значение", p.value)
-                        )
-                        .foregroundStyle(AppColors.profileAccent)
-
-                        PointMark(
-                            x: .value("Дата", p.date),
-                            y: .value("Значение", p.value)
-                        )
-                        .foregroundStyle(AppColors.profileAccent)
-                    }
-                    .frame(height: 180)
-                    .chartXAxis {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                            AxisGridLine().foregroundStyle(AppColors.separator.opacity(0.25))
-                            AxisTick().foregroundStyle(AppColors.separator.opacity(0.35))
-                            AxisValueLabel()
-                        }
-                    }
-                    .chartYAxis {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                            AxisGridLine().foregroundStyle(AppColors.separator.opacity(0.25))
-                            AxisTick().foregroundStyle(AppColors.separator.opacity(0.35))
-                            AxisValueLabel()
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // chartCard removed (merged into chartSection)
 
     private var bestAndLastRow: some View {
         let unit = effectiveMetricType?.defaultUnit ?? ""

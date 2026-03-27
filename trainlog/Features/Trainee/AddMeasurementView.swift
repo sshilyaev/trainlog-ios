@@ -56,27 +56,23 @@ struct AddMeasurementView: View {
             }
         }
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
         .sheet(isPresented: $showDatePickerSheet) {
-            NavigationStack {
-                DatePicker("", selection: $date, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .environment(\.locale, .ru)
-                    .padding()
-                    .navigationTitle("Дата замера")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Готово") {
-                                showDatePickerSheet = false
-                            }
-                            .fontWeight(.regular)
-                        }
-                    }
-            }
-            .presentationDetents(AppSheetDetents.calendar)
-            .presentationDragIndicator(.visible)
-            .sheetPresentationStyle()
+            MainSheet(
+                title: "Дата замера",
+                onBack: { showDatePickerSheet = false },
+                trailing: {
+                    Button("Готово") { showDatePickerSheet = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $date, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
         }
         .onAppear {
             // Чтобы ввод веса был как при редактировании профиля: подставляем последнее значение.
@@ -91,17 +87,15 @@ struct AddMeasurementView: View {
         ScrollView {
             VStack(spacing: 0) {
                 SettingsCard(title: nil) {
-                    FormRow(icon: "calendar-default", title: "Дата замера") {
-                        Button {
-                            showDatePickerSheet = true
-                        } label: {
-                            Text(Self.dateFormatter.string(from: date))
-                                .foregroundStyle(.primary)
-                                .font(.subheadline)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    FormRowDateSelection(
+                        title: "Дата замера",
+                        selection: Binding<Date?>(
+                            get: { date },
+                            set: { if let value = $0 { date = value } }
+                        ),
+                        allowsClear: false,
+                        onTap: { showDatePickerSheet = true }
+                    )
                     FormSectionDivider()
                     FormRowTextField(
                         icon: "pencil-scale",

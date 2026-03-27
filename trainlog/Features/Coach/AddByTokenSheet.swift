@@ -22,79 +22,76 @@ struct AddByTokenSheet: View {
     @FocusState private var codeFieldFocused: Bool
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Подопечный создаёт временный код в разделе «Подключить по коду» в своём профиле.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, AppDesign.cardPadding)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
-
-                    SettingsCard(title: "Код") {
-                        VStack(spacing: 0) {
-                            FormRow(icon: "key-left", title: "Код") {
-                            TextField("Код из приложения подопечного", text: $codeInput)
-                                .textInputAutocapitalization(.characters)
-                                .autocorrectionDisabled()
-                                .focused($codeFieldFocused)
-                                .textFieldStyle(.plain)
-                                .formInputStyle()
-                        }
-                            Button {
-                                if let paste = UIPasteboard.general.string {
-                                    codeInput = paste.trimmingCharacters(in: .whitespacesAndNewlines)
-                                }
-                            } label: {
-                                Label("Вставить из буфера", appIcon: "copy-default")
-                                    .font(.subheadline)
-                                    .foregroundStyle(AppColors.accent)
-                            }
+        MainSheet(
+            title: "Добавить по коду",
+            onBack: onDismiss,
+            trailing: {
+                Button("Подтвердить") {
+                    Task { await submitCode(codeInput.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                }
+                .disabled(isLoading || codeInput.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
+            },
+            content: {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Подопечный создаёт временный код в разделе «Подключить по коду» в своём профиле.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, AppDesign.cardPadding)
                             .padding(.top, 8)
-                            if let msg = errorMessage, !msg.isEmpty {
-                                Text(msg)
-                                    .font(.footnote)
-                                    .foregroundStyle(AppColors.destructive)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.top, 6)
+                            .padding(.bottom, 12)
+
+                        SettingsCard(title: "Код") {
+                            VStack(spacing: 0) {
+                                FormRow(icon: "key-left", title: "Код") {
+                                TextField("Код из приложения подопечного", text: $codeInput)
+                                    .textInputAutocapitalization(.characters)
+                                    .autocorrectionDisabled()
+                                    .focused($codeFieldFocused)
+                                    .textFieldStyle(.plain)
+                                    .formInputStyle()
+                            }
+                                Button {
+                                    if let paste = UIPasteboard.general.string {
+                                        codeInput = paste.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    }
+                                } label: {
+                                    Label("Вставить из буфера", appIcon: "copy-default")
+                                        .font(.subheadline)
+                                        .foregroundStyle(AppColors.accent)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 8)
+                                if let msg = errorMessage, !msg.isEmpty {
+                                    Text(msg)
+                                        .font(.footnote)
+                                        .foregroundStyle(AppColors.destructive)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.top, 6)
+                                }
                             }
                         }
                     }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-            .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AppColors.systemGroupedBackground)
+                .appConfirmationDialog(
+                    title: "Привязать подопечного?",
+                    message: traineeToConfirm.map { "Добавить \($0.name) в список подопечных?" } ?? "",
+                    isPresented: Binding(
+                        get: { traineeToConfirm != nil },
+                        set: { if !$0 { traineeToConfirm = nil } }
+                    ),
+                    confirmTitle: "Привязать",
+                    onConfirm: {
+                        if let p = traineeToConfirm { Task { await confirmLink(trainee: p) } }
+                        traineeToConfirm = nil
+                    },
+                    onCancel: { traineeToConfirm = nil }
+                )
             }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Добавить по коду")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onDismiss)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Подтвердить") {
-                        Task { await submitCode(codeInput.trimmingCharacters(in: .whitespacesAndNewlines)) }
-                    }
-                    .disabled(isLoading || codeInput.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
-                }
-            }
-            .appConfirmationDialog(
-                title: "Привязать подопечного?",
-                message: traineeToConfirm.map { "Добавить \($0.name) в список подопечных?" } ?? "",
-                isPresented: Binding(
-                    get: { traineeToConfirm != nil },
-                    set: { if !$0 { traineeToConfirm = nil } }
-                ),
-                confirmTitle: "Привязать",
-                onConfirm: {
-                    if let p = traineeToConfirm { Task { await confirmLink(trainee: p) } }
-                    traineeToConfirm = nil
-                },
-                onCancel: { traineeToConfirm = nil }
-            )
-        }
+        )
     }
 
     private func submitCode(_ code: String) async {

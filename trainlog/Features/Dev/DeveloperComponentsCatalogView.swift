@@ -31,12 +31,38 @@ struct DeveloperComponentsCatalogView: View {
                         sizeRow("primaryButtonHeight", "\(AppDesign.primaryButtonHeight)")
                         sizeRow("avatarCornerRadiusSmall", "\(AppDesign.avatarCornerRadiusSmall)")
                         sizeRow("avatarCornerRadiusLarge", "\(AppDesign.avatarCornerRadiusLarge)")
+                        sizeRow("profileSwitchWideAvatarSide", "\(AppDesign.profileSwitchWideAvatarSide)")
+                        sizeRow("profileSwitchWideAvatarCornerRadius", "\(AppDesign.profileSwitchWideAvatarCornerRadius)")
                         sizeRow("rectangularBlockMinHeight", "\(AppDesign.rectangularBlockMinHeight)")
                         sizeRow("rectangularBlockSpacing", "\(AppDesign.rectangularBlockSpacing)")
+                        sizeRow("listDividerLeading", "\(AppDesign.listDividerLeading)")
+                        sizeRow("listDividerLeadingCompact", "\(AppDesign.listDividerLeadingCompact)")
                         sizeRow("emptyStateIconSize", "\(AppDesign.emptyStateIconSize)")
                         sizeRow("emptyStateSpacing", "\(AppDesign.emptyStateSpacing)")
                         sizeRow("emptyStateVerticalPadding", "\(AppDesign.emptyStateVerticalPadding)")
+                        sizeRow("loadingSpacing", "\(AppDesign.loadingSpacing)")
+                        sizeRow("loadingMessageFont", "subheadline")
                         sizeRow("loadingScale", "\(AppDesign.loadingScale)")
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                SettingsCard(title: "Размеры иконок (AppIconSize)") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(AppIconSize.allCases, id: \.rawValue) { size in
+                            HStack {
+                                Text("appIcon(.\(String(describing: size)))")
+                                    .font(.callout)
+                                Spacer()
+                                Text("\(Int(size.rawValue)) pt")
+                                    .font(.callout.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                AppTablerIcon("calendar-default")
+                                    .appIcon(size)
+                                    .foregroundStyle(AppColors.accent)
+                                    .frame(width: 28, alignment: .trailing)
+                            }
+                        }
                     }
                     .padding(.vertical, 4)
                 }
@@ -97,73 +123,47 @@ struct DeveloperComponentsCatalogView: View {
                     .padding(.vertical, 4)
                 }
 
-                SettingsCard(title: "Иконки (SF Symbols)") {
+                SettingsCard(title: "Компоненты (полный список UI Kit)") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        componentCatalogRow("Карточки/контейнеры", "SettingsCard, HeroCard, ContentCard, ActionBlockStyle, RectangularBlockContent")
+                        componentCatalogRow("Списки/ряды", "RawActionButton, ActionBlockRow, CardRow, ListActionRow, GridActionTile, AddActionRow, TiniActionButton")
+                        componentCatalogRow("Кнопки", "PrimaryButtonStyle, PressableButtonStyle, MainActionButton, CTAButton, WideActionButtonToOneColumn, BigActionButtonToTwoColumn")
+                        componentCatalogRow("Формы", "FormRow, FormSectionDivider, FormRowTextField, FormRowPhone, FormRowDateSelection, FormRowDateOfBirth, FormDatePickerSheet, FormNotesCard")
+                        componentCatalogRow("Overlays", "LoadingBlockView, LoadingOverlayView, ToastHost, AppConfirmationDialogOverlayHost, OfflineSticker")
+                        componentCatalogRow("Sheet system", "MainSheet, mainSheetPresentation(.half/.full/.calendar/.small/.detents)")
+                        componentCatalogRow("Nutrition", "MacroTripleInputRow, NutritionPreviewCard, NutritionSummaryCard, NutritionHeaderCard")
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                SettingsCard(title: "Иконки (все токены AppTablerIcon)") {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("В приложении по умолчанию используем outline-версии. Варианты `.fill` — только для выделенного/активного состояния (например, выбранный таб) или когда нужен сильный акцент.")
+                        Text("Полный список token-имен, которые понимает `AppTablerIcon` (source -> mapped -> asset).")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        Text("Всего: \(AppTablerIcon.iconCatalog.count)")
+                            .font(.caption2)
+                            .foregroundStyle(AppColors.secondaryLabel)
 
-                        iconGroup("Профиль / навигация (outline — используем)", icons: [
-                            ("person.crop.circle", "Таб профиль"),
-                            ("person.3", "Подопечные"),
-                            ("figure.strengthtraining.traditional", "Тренер"),
-                            ("note.text", "Дневник"),
-                            ("square.grid.2x2", "UI Kit"),
-                            ("chevron.right", "Переход"),
-                            ("chevron.left", "Назад"),
-                            ("chevron.up", "Свернуть"),
-                            ("chevron.down", "Развернуть"),
-                            ("pencil", "Редактировать"),
-                            ("arrow.left.arrow.right", "Сменить профиль"),
-                        ])
-                        iconGroup("Действия (outline — используем)", icons: [
-                            ("plus", "Добавить"),
-                            ("plus.circle", "Добавить (круг)"),
-                            ("minus.circle", "Убрать"),
-                            ("trash", "Удалить"),
-                            ("key", "Код"),
-                            ("lock.rotation", "Пароль"),
-                            ("rectangle.portrait.and.arrow.right", "Выйти"),
-                        ])
-                        iconGroup("Контент (outline — используем)", icons: [
-                            ("ticket", "Абонементы"),
-                            ("calendar", "Календарь / дата"),
-                            ("calendar.badge.plus", "Добавить посещение"),
-                            ("calendar.badge.exclamationmark", "Нет данных"),
-                            ("ruler", "Замеры (таб)"),
-                            ("chart.bar.xaxis", "График"),
-                            ("chart.xyaxis.line", "Графики замеров"),
-                            ("list.bullet", "Список"),
-                            ("doc.on.clipboard", "Копировать"),
-                            ("magnifyingglass", "Поиск"),
-                            ("checkmark", "Отмечено"),
-                            ("xmark.circle", "Закрыть"),
-                        ])
-                        iconGroup("Абонементы / события (outline — используем)", icons: [
-                            ("snowflake", "Заморозка"),
-                            ("snowflake.slash", "Разморозка"),
-                            ("arrow.up.right.square", "Внешняя ссылка"),
-                            ("figure.run", "Сплеш / онбординг"),
-                            ("checkmark.circle", "Готово"),
-                            ("exclamationmark.circle", "Ошибка"),
-                        ])
-
-                        iconGroup("Заливка (fill — только для активного/акцента)", icons: [
-                            ("person.crop.circle.fill", "Профиль (selected)"),
-                            ("person.3.fill", "Подопечные (selected)"),
-                            ("ticket.fill", "Абонементы (акцент)"),
-                            ("ruler.fill", "Замеры (акцент)"),
-                            ("chart.bar.fill", "Статистика (акцент)"),
-                            ("star.circle.fill", "Цели (акцент)"),
-                            ("gearshape.fill", "Управление (акцент)"),
-                            ("ellipsis.circle.fill", "Ещё (акцент)"),
-                            ("plus.circle.fill", "Добавить (акцент)"),
-                            ("minus.circle.fill", "Убрать (акцент)"),
-                            ("xmark.circle.fill", "Закрыть (акцент)"),
-                            ("checkmark.circle.fill", "Готово (акцент)"),
-                            ("exclamationmark.circle.fill", "Ошибка (акцент)"),
-                            ("key.fill", "Код (акцент)"),
-                        ])
+                        ForEach(AppTablerIcon.iconCatalog) { item in
+                            HStack(spacing: 10) {
+                                AppTablerIcon(item.sourceName)
+                                    .font(.title3)
+                                    .foregroundStyle(.primary)
+                                    .frame(width: 28, alignment: .center)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.sourceName)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(AppColors.label)
+                                    Text("\(item.mappedName) · \(item.assetName)")
+                                        .font(.caption2)
+                                        .foregroundStyle(AppColors.secondaryLabel)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 3)
+                        }
                     }
                     .padding(.vertical, 4)
                 }
@@ -256,7 +256,7 @@ struct DeveloperComponentsCatalogView: View {
                     .padding(.vertical, 4)
                 }
 
-                SettingsCard(title: "Цвета (AppColors / EventColor)") {
+                SettingsCard(title: "Цвета (все токены AppColors + EventColor)") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Отсортировано по оттенку (hue). Для системных/dynamic цветов показаны Light/Dark варианты.")
                             .font(.caption)
@@ -487,78 +487,72 @@ struct DeveloperComponentsCatalogView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showDatePickerSheetDemo) {
             FormDatePickerSheet(selection: $dateOptionalSample, isPresented: $showDatePickerSheetDemo, title: "Дата рождения")
-                .presentationDetents(AppSheetDetents.calendar)
-                .presentationDragIndicator(.visible)
+                .mainSheetPresentation(.calendar)
         }
         .sheet(isPresented: $showGraphicalHeightSheetDemo) {
-            NavigationStack {
-                DatePicker("", selection: $dateSample, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .environment(\.locale, .ru)
-                    .padding()
-                    .navigationTitle("Выбор даты")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Отмена") { showGraphicalHeightSheetDemo = false }
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button { showGraphicalHeightSheetDemo = false } label: {
-                                Text("Готово")
-                                    .font(.body)
-                                    .fontWeight(.regular)
-                            }
-                            .foregroundStyle(.primary)
-                        }
+            MainSheet(
+                title: "Выбор даты",
+                onBack: { showGraphicalHeightSheetDemo = false },
+                trailing: {
+                    Button { showGraphicalHeightSheetDemo = false } label: {
+                        Text("Готово")
+                            .font(.body)
+                            .fontWeight(.regular)
                     }
-            }
-            .presentationDetents([.height(420)])
-            .presentationDragIndicator(.visible)
+                    .foregroundStyle(.primary)
+                },
+                content: {
+                    DatePicker("", selection: $dateSample, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.detents([.height(420)]))
         }
         .sheet(isPresented: $showDetentsDemo) {
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppDesign.blockSpacing) {
-                        SettingsCard(title: "Что такое detents") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Detents — это допустимые высоты sheet.")
-                                    .font(.subheadline.weight(.semibold))
-                                Text("`.medium` — средняя высота. Для календарей используем `.height(...)`, чтобы не растягивалось и не уходило на весь экран.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+            MainSheet(
+                title: "Пример щита",
+                onBack: { showDetentsDemo = false },
+                trailing: {
+                    Button { showDetentsDemo = false } label: {
+                        Text("Закрыть")
+                            .font(.body)
+                            .fontWeight(.regular)
+                    }
+                    .foregroundStyle(.primary)
+                },
+                content: {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: AppDesign.blockSpacing) {
+                            SettingsCard(title: "Что такое detents") {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Detents — это допустимые высоты sheet.")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("`.medium` — средняя высота. Для календарей используем `.height(...)`, чтобы не растягивалось и не уходило на весь экран.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
-                        }
 
-                        SettingsCard(title: "Правила (кратко)") {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ruleRow(title: "По умолчанию", text: "`.presentationDetents([.medium, .large])` + `.presentationDragIndicator(.visible)`.")
-                                ruleRow(title: "Календарь", text: "`.presentationDetents([.height(420)])` — выглядит аккуратно и предсказуемо.")
-                                ruleRow(title: "Кнопки в toolbar", text: "Не делаем жирными: `.fontWeight(.regular)`.")
+                            SettingsCard(title: "Правила (кратко)") {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ruleRow(title: "По умолчанию", text: "Используем `.mainSheetPresentation(.half)`.")
+                                    ruleRow(title: "Календарь", text: "Используем `.mainSheetPresentation(.detents([.height(420)]))`.")
+                                    ruleRow(title: "Кнопки в заголовке", text: "Не делаем жирными: `.fontWeight(.regular)`.")
+                                }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
                         }
+                        .padding(.horizontal, AppDesign.cardPadding)
+                        .padding(.top, AppDesign.blockSpacing)
+                        .padding(.bottom, AppDesign.sectionSpacing)
                     }
-                    .padding(.horizontal, AppDesign.cardPadding)
-                    .padding(.top, AppDesign.blockSpacing)
-                    .padding(.bottom, AppDesign.sectionSpacing)
+                    .background(AdaptiveScreenBackground())
                 }
-                .background(AdaptiveScreenBackground())
-                .navigationTitle("Пример щита")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button { showDetentsDemo = false } label: {
-                            Text("Закрыть")
-                                .font(.body)
-                                .fontWeight(.regular)
-                        }
-                        .foregroundStyle(.primary)
-                    }
-                }
-            }
-            .presentationDetents(AppSheetDetents.mediumOnly)
-            .presentationDragIndicator(.visible)
+            )
+            .mainSheetPresentation(.half)
         }
     }
 
@@ -648,27 +642,14 @@ struct DeveloperComponentsCatalogView: View {
         }
     }
 
-    private func iconGroup(_ groupTitle: String, icons: [(String, String)]) -> some View {
+    private func componentCatalogRow(_ title: String, _ list: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(groupTitle)
-                .font(.caption.weight(.semibold))
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            Text(list)
+                .font(.caption)
                 .foregroundStyle(.secondary)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(Array(icons.enumerated()), id: \.offset) { _, item in
-                    VStack(spacing: 6) {
-                        AppTablerIcon(item.0)
-                            .font(.title2)
-                            .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                        Text(item.1)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -700,17 +681,33 @@ struct DeveloperComponentsCatalogView: View {
             ("AppColors.profileAccent", AppColors.profileAccent, nil),
             ("AppColors.genderMale", AppColors.genderMale, nil),
             ("AppColors.genderFemale", AppColors.genderFemale, nil),
+            ("AppColors.systemGroupedBackground", AppColors.systemGroupedBackground, nil),
+            ("AppColors.secondarySystemGroupedBackground", AppColors.secondarySystemGroupedBackground, nil),
+            ("AppColors.tertiarySystemFill", AppColors.tertiarySystemFill, nil),
+            ("AppColors.tertiarySystemGroupedBackground", AppColors.tertiarySystemGroupedBackground, nil),
+            ("AppColors.label", AppColors.label, nil),
+            ("AppColors.secondaryLabel", AppColors.secondaryLabel, nil),
+            ("AppColors.tertiaryLabel", AppColors.tertiaryLabel, nil),
+            ("AppColors.white", AppColors.white, "#FFFFFF"),
+            ("AppColors.black", AppColors.black, "#000000"),
+            ("AppColors.clear", AppColors.clear, "clear"),
+            ("AppColors.shadow", AppColors.shadow, nil),
+            ("AppColors.overlayDim", AppColors.overlayDim, nil),
+            ("AppColors.overlayDimLight", AppColors.overlayDimLight, nil),
+            ("AppColors.overlayScrim", AppColors.overlayScrim, nil),
+            ("AppColors.destructive", AppColors.destructive, nil),
+            ("AppColors.separator", AppColors.separator, nil),
+            ("AppColors.screenBackgroundLight", AppColors.screenBackgroundLight, nil),
+            ("AppColors.screenBackgroundDark", AppColors.screenBackgroundDark, nil),
+            ("AppColors.avatarBackground", AppColors.avatarBackground, nil),
+            ("AppColors.avatarIcon", AppColors.avatarIcon, nil),
+            ("AppColors.splashGradientTop", AppColors.splashGradientTop, nil),
+            ("AppColors.splashGradientBottom", AppColors.splashGradientBottom, nil),
             ("AppColors.visitsBySubscription", AppColors.visitsBySubscription, nil),
             ("AppColors.visitsOneTimePaid", AppColors.visitsOneTimePaid, nil),
             ("AppColors.visitsOneTimeDebt", AppColors.visitsOneTimeDebt, nil),
             ("AppColors.visitsCancelled", AppColors.visitsCancelled, nil),
-        ] + EventColor.palette.map { ("EventColor.palette #\($0.hex)", $0.color, "#\($0.hex)") } + [
-            ("AppColors.secondarySystemGroupedBackground", AppColors.secondarySystemGroupedBackground, nil),
-            ("AppColors.tertiarySystemFill", AppColors.tertiarySystemFill, nil),
-            ("AppColors.label", AppColors.label, nil),
-            ("AppColors.secondaryLabel", AppColors.secondaryLabel, nil),
-            ("AppColors.tertiaryLabel", AppColors.tertiaryLabel, nil),
-        ]
+        ] + EventColor.palette.map { ("EventColor.palette #\($0.hex)", $0.color, "#\($0.hex)") }
 
         // Убираем дубли по фактическому цвету (после объединения токенов/палитры).
         var seenCodes: Set<String> = []

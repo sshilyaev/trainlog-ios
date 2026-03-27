@@ -65,102 +65,94 @@ struct CreateProfileView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Выберите тип профиля") {
-                        VStack(spacing: 12) {
-                            HStack(spacing: AppDesign.rectangularBlockSpacing) {
-                                typeTile(
-                                    type: .trainee,
-                                    icon: "file-default",
-                                    title: "Дневник",
-                                    description: "Для личного прогресса: замеры, цели и графики"
-                                )
-                                typeTile(
-                                    type: .coach,
-                                    icon: "user-love-heart",
-                                    title: "Тренер",
-                                    description: "Для работы с подопечными, абонементами и посещениями"
-                                )
-                            }
-                            .padding(.top, 4)
-                            FormSectionDivider()
-                            FormRowTextField(
-                                icon: "writing-sign",
-                                title: "Имя в профиле",
-                                placeholder: "Как к вам обращаться",
-                                text: $name,
-                                textContentType: .name,
-                                autocapitalization: .words
-                            )
-                            if profileType == .trainee {
+        MainSheet(
+            title: "Новый профиль",
+            onBack: onCancel,
+            trailing: {
+                if isLoading {
+                    ProgressView().scaleEffect(0.9)
+                } else {
+                    Button {
+                        AppDesign.dismissKeyboardThen { createProfile() }
+                    } label: {
+                        Text("Создать")
+                            .font(.body)
+                            .fontWeight(.regular)
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Выберите тип профиля") {
+                            VStack(spacing: 12) {
+                                HStack(spacing: AppDesign.rectangularBlockSpacing) {
+                                    typeTile(
+                                        type: .trainee,
+                                        icon: "file-default",
+                                        title: "Дневник",
+                                        description: "Для личного прогресса: замеры, цели и графики"
+                                    )
+                                    typeTile(
+                                        type: .coach,
+                                        icon: "user-love-heart",
+                                        title: "Тренер",
+                                        description: "Для работы с подопечными, абонементами и посещениями"
+                                    )
+                                }
+                                .padding(.top, 4)
                                 FormSectionDivider()
                                 FormRowTextField(
-                                    icon: "pencil-scale",
-                                    title: "Вес",
-                                    placeholder: "кг",
-                                    text: $weight,
-                                    autocapitalization: .never,
-                                    keyboardType: .decimalPad
+                                    icon: "writing-sign",
+                                    title: "Имя в профиле",
+                                    placeholder: "Как к вам обращаться",
+                                    text: $name,
+                                    textContentType: .name,
+                                    autocapitalization: .words
                                 )
+                                if profileType == .trainee {
+                                    FormSectionDivider()
+                                    FormRowTextField(
+                                        icon: "pencil-scale",
+                                        title: "Вес",
+                                        placeholder: "кг",
+                                        text: $weight,
+                                        autocapitalization: .never,
+                                        keyboardType: .decimalPad
+                                    )
+                                }
                             }
                         }
                     }
+                    .padding(.top, 8)
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.top, 8)
-            .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Новый профиль")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .scrollDismissesKeyboard(.interactively)
-            .dismissKeyboardOnTap()
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        onCancel()
-                    } label: {
-                        BackToolbarButton(action: onCancel)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
+                .background(AppColors.systemGroupedBackground)
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
+                .navigationBarBackButtonHidden(true)
+                .overlay {
                     if isLoading {
-                        ProgressView()
-                            .scaleEffect(0.9)
-                    } else {
-                        Button {
-                            AppDesign.dismissKeyboardThen { createProfile() }
-                        } label: {
-                            Text("Создать")
-                                .font(.body)
-                                .fontWeight(.regular)
-                        }
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        LoadingOverlayView(message: "Загружаю")
                     }
                 }
+                .appConfirmationDialog(
+                    title: "Ошибка",
+                    message: createProfileError ?? "Произошла ошибка.",
+                    isPresented: Binding(
+                        get: { createProfileError != nil },
+                        set: { if !$0 { onClearError() } }
+                    ),
+                    confirmTitle: "OK",
+                    onConfirm: onClearError,
+                    onCancel: onClearError
+                )
             }
-            .overlay {
-                if isLoading {
-                    LoadingOverlayView(message: "Загружаю")
-                }
-            }
-            .appConfirmationDialog(
-                title: "Ошибка",
-                message: createProfileError ?? "Произошла ошибка.",
-                isPresented: Binding(
-                    get: { createProfileError != nil },
-                    set: { if !$0 { onClearError() } }
-                ),
-                confirmTitle: "OK",
-                onConfirm: onClearError,
-                onCancel: onClearError
-            )
-        }
+        )
         .trackAPIScreen("Новый профиль")
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
     }
 
     private func createProfile() {

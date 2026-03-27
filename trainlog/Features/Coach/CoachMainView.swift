@@ -41,6 +41,8 @@ struct CoachMainView: View {
     @State private var isDeleting = false
     @State private var isLoadingTrainees = false
     @State private var isReloadQueued = false
+    /// Если во время загрузки пришёл запрос с forceNetwork — догрузка должна сбросить кэш и подтянуть связи с API links.
+    @State private var pendingTraineeLoadWantsNetwork = false
     @State private var showArchiveConfirmation = false
     @State private var archiveTarget: (item: TraineeItem, archived: Bool)?
     @State private var isArchiving = false
@@ -142,7 +144,7 @@ struct CoachMainView: View {
             VStack(spacing: 18) {
                 Spacer().frame(height: 16)
                 AppTablerIcon("user-default")
-                    .appIcon(.s44)
+                    .appIcon(.s56)
                     .foregroundStyle(AppColors.accent.opacity(0.85))
                     .symbolRenderingMode(.hierarchical)
                     .emptyStateIconPulse()
@@ -192,7 +194,7 @@ struct CoachMainView: View {
             VStack(spacing: 18) {
                 Spacer().frame(height: 16)
                 AppTablerIcon("folder-default")
-                    .appIcon(.s44)
+                    .appIcon(.s56)
                     .foregroundStyle(.secondary.opacity(0.8))
                     .symbolRenderingMode(.hierarchical)
                     .emptyStateIconPulse()
@@ -365,75 +367,75 @@ struct CoachMainView: View {
                 .onAppear { expandedTraineeIds = [] }
                 .refreshable { await loadTrainees() }
                 .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            HStack(spacing: 12) {
-                                Menu {
-                                    Section {
-                                        Button {
-                                            traineeSortOrder = .byDisplayNameAsc
-                                        } label: {
-                                            HStack {
-                                                Text("По имени (А–Я)")
-                                                Spacer()
-                                                if traineeSortOrder == .byDisplayNameAsc {
-                                                    AppTablerIcon("check-tick-circle")
-                                                        .foregroundStyle(AppColors.accent)
-                                                }
-                                            }
-                                        }
-                                        Button {
-                                            traineeSortOrder = .byDisplayNameDesc
-                                        } label: {
-                                            HStack {
-                                                Text("По имени (Я–А)")
-                                                Spacer()
-                                                if traineeSortOrder == .byDisplayNameDesc {
-                                                    AppTablerIcon("check-tick-circle")
-                                                        .foregroundStyle(AppColors.accent)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Section {
-                                        Button {
-                                            traineeSortOrder = .byDateAddedNewest
-                                        } label: {
-                                            HStack {
-                                                Text("Сначала новые")
-                                                Spacer()
-                                                if traineeSortOrder == .byDateAddedNewest {
-                                                    AppTablerIcon("check-tick-circle")
-                                                        .foregroundStyle(AppColors.accent)
-                                                }
-                                            }
-                                        }
-                                        Button {
-                                            traineeSortOrder = .byDateAddedOldest
-                                        } label: {
-                                            HStack {
-                                                Text("Сначала старые")
-                                                Spacer()
-                                                if traineeSortOrder == .byDateAddedOldest {
-                                                    AppTablerIcon("check-tick-circle")
-                                                        .foregroundStyle(AppColors.accent)
-                                                }
-                                            }
-                                        }
-                                    }
-                                } label: {
-                                    AppTablerIcon("arrows-sort")
-                                        .font(.body)
-                                }
-                                .buttonStyle(PressableButtonStyle())
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Section {
                                 Button {
-                                    isSearchPresented = true
+                                    traineeSortOrder = .byDisplayNameAsc
                                 } label: {
-                                    AppTablerIcon("search-default")
-                                        .font(.body)
+                                    HStack {
+                                        Text("По имени (А–Я)")
+                                        Spacer()
+                                        if traineeSortOrder == .byDisplayNameAsc {
+                                            AppTablerIcon("check-tick-circle")
+                                                .foregroundStyle(AppColors.accent)
+                                        }
+                                    }
                                 }
-                                .buttonStyle(PressableButtonStyle())
+                                Button {
+                                    traineeSortOrder = .byDisplayNameDesc
+                                } label: {
+                                    HStack {
+                                        Text("По имени (Я–А)")
+                                        Spacer()
+                                        if traineeSortOrder == .byDisplayNameDesc {
+                                            AppTablerIcon("check-tick-circle")
+                                                .foregroundStyle(AppColors.accent)
+                                        }
+                                    }
+                                }
                             }
+                            Section {
+                                Button {
+                                    traineeSortOrder = .byDateAddedNewest
+                                } label: {
+                                    HStack {
+                                        Text("Сначала новые")
+                                        Spacer()
+                                        if traineeSortOrder == .byDateAddedNewest {
+                                            AppTablerIcon("check-tick-circle")
+                                                .foregroundStyle(AppColors.accent)
+                                        }
+                                    }
+                                }
+                                Button {
+                                    traineeSortOrder = .byDateAddedOldest
+                                } label: {
+                                    HStack {
+                                        Text("Сначала старые")
+                                        Spacer()
+                                        if traineeSortOrder == .byDateAddedOldest {
+                                            AppTablerIcon("check-tick-circle")
+                                                .foregroundStyle(AppColors.accent)
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            AppTablerIcon("arrows-sort")
+                                .font(.body)
                         }
+                        .buttonStyle(PressableButtonStyle())
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            isSearchPresented = true
+                        } label: {
+                            AppTablerIcon("search-default")
+                                .font(.body)
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                    }
                         ToolbarItem(placement: .topBarTrailing) {
                             if !traineesShowingArchived {
                                 Button {
@@ -509,32 +511,36 @@ struct CoachMainView: View {
             )
         }
         .fullScreenCover(isPresented: $showAddTraineeFromOnboarding) {
-            NavigationStack {
-                AddTraineeView(
-                coachProfile: profile,
-                myTraineeProfiles: myTraineeProfiles,
-                linkedTraineeIds: Set(traineeItems.map(\.profile.id)),
-                linkService: linkService,
-                profileService: profileService,
-                connectionTokenService: connectionTokenService,
-                onLinkAdded: {
-                    showAddTraineeFromOnboarding = false
-                    Task {
-                        await loadTrainees(forceNetwork: true)
-                        await MainActor.run {
-                            guard let before = linkedIdsBeforeAdd else { return }
-                            let after = Set(traineeItems.map(\.profile.id))
-                            let added = after.subtracting(before)
-                            linkedIdsBeforeAdd = nil
-                            if let id = added.first,
-                               let item = traineeItems.first(where: { $0.profile.id == id }) {
-                                traineeForMembershipOffer = item
+            MainSheet(
+                title: "Добавить подопечного",
+                onBack: { showAddTraineeFromOnboarding = false },
+                content: {
+                    AddTraineeView(
+                        coachProfile: profile,
+                        myTraineeProfiles: myTraineeProfiles,
+                        linkedTraineeIds: Set(traineeItems.map(\.profile.id)),
+                        linkService: linkService,
+                        profileService: profileService,
+                        connectionTokenService: connectionTokenService,
+                        onLinkAdded: {
+                            showAddTraineeFromOnboarding = false
+                            Task {
+                                await loadTrainees(forceNetwork: true)
+                                await MainActor.run {
+                                    guard let before = linkedIdsBeforeAdd else { return }
+                                    let after = Set(traineeItems.map(\.profile.id))
+                                    let added = after.subtracting(before)
+                                    linkedIdsBeforeAdd = nil
+                                    if let id = added.first,
+                                       let item = traineeItems.first(where: { $0.profile.id == id }) {
+                                        traineeForMembershipOffer = item
+                                    }
+                                }
                             }
                         }
-                    }
+                    )
                 }
             )
-            }
         }
         .sheet(item: $traineeForMembershipOffer) { item in
             MembershipOfferView(
@@ -576,7 +582,7 @@ struct CoachMainView: View {
                 },
                 onCancel: { traineeForAddMembershipSheet = nil }
             )
-            .presentationDetents([.medium])
+            .mainSheetPresentation(.half)
         }
         .archiveToggleConfirmationDialog(
             isPresented: $showArchiveConfirmation,
@@ -608,7 +614,7 @@ struct CoachMainView: View {
                 },
                 onCancel: { editTraineeItem = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(item: $quickVisitRequest) { req in
             QuickAddVisitSheet(
@@ -624,7 +630,7 @@ struct CoachMainView: View {
                 },
                 onCancel: { quickVisitRequest = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(item: $quickEventRequest) { req in
             AddEditEventSheet(
@@ -636,7 +642,7 @@ struct CoachMainView: View {
                 onError: { _ in },
                 onCancel: { quickEventRequest = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .overlay {
             if isDeleting {
@@ -693,7 +699,7 @@ struct CoachMainView: View {
                 onCancel: { showEditProfile = false },
                 onDismiss: { showEditProfile = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .appConfirmationDialog(
             title: "Удалить профиль?",
@@ -816,7 +822,10 @@ struct CoachMainView: View {
             coachOverviewService.invalidateCache(coachProfileId: profile.id)
         }
         if await MainActor.run(body: { isLoadingTrainees }) {
-            await MainActor.run { isReloadQueued = true }
+            await MainActor.run {
+                isReloadQueued = true
+                if forceNetwork { pendingTraineeLoadWantsNetwork = true }
+            }
             return
         }
         await MainActor.run { isLoadingTrainees = true }
@@ -848,13 +857,34 @@ struct CoachMainView: View {
 
         do {
             let overview = try await coachOverviewService.fetchOverview(coachProfileId: profile.id, includeArchived: true)
-            let items = overview.trainees.map {
+            var items = overview.trainees.map {
                 TraineeItem(
                     link: $0.link,
                     profile: $0.profile,
                     activeMembership: nil,
                     membershipSummaryOverride: $0.membershipSummary
                 )
+            }
+            // Сразу после добавления подопечного обзор на бэкенде может отставать от списка links — сверяем с /links.
+            if forceNetwork {
+                do {
+                    let legacy = try await loadTraineesLegacyFromAPI()
+                    let overviewIds = Set(items.map(\.profile.id))
+                    let legacyIds = Set(legacy.map(\.profile.id))
+                    if legacyIds != overviewIds {
+                        let summaryById = Dictionary(uniqueKeysWithValues: items.map { ($0.profile.id, $0.membershipSummaryOverride) })
+                        items = legacy.map { leg in
+                            TraineeItem(
+                                link: leg.link,
+                                profile: leg.profile,
+                                activeMembership: leg.activeMembership,
+                                membershipSummaryOverride: summaryById[leg.profile.id] ?? leg.membershipSummaryOverride
+                            )
+                        }
+                    }
+                } catch {
+                    // оставляем items из overview
+                }
             }
             if items.isEmpty {
                 // Backend overview can be temporarily unavailable/incomplete.
@@ -903,8 +933,13 @@ struct CoachMainView: View {
             }
         }
         if await MainActor.run(body: { isReloadQueued }) {
-            await MainActor.run { isReloadQueued = false }
-            await loadTrainees(forceNetwork: forceNetwork)
+            let wantsNet = await MainActor.run {
+                let w = pendingTraineeLoadWantsNetwork
+                pendingTraineeLoadWantsNetwork = false
+                isReloadQueued = false
+                return w
+            }
+            await loadTrainees(forceNetwork: forceNetwork || wantsNet)
         }
     }
 
@@ -1329,8 +1364,7 @@ private struct TraineeInlineCalendar: View {
                 },
                 onAddEvent: { date in onAddEvent(date) }
             )
-            .presentationDetents(AppSheetDetents.calendar, selection: $daySheetDetent)
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.calendar, selection: $daySheetDetent)
             .onAppear { daySheetDetent = .medium }
         }
         .sheet(item: $eventToEdit) { e in
@@ -1343,7 +1377,7 @@ private struct TraineeInlineCalendar: View {
                 onError: { _ in },
                 onCancel: { eventToEdit = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
     }
 

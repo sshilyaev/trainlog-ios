@@ -9,6 +9,7 @@ enum AppIconSize: CGFloat, CaseIterable {
     case s28 = 28
     case s32 = 32
     case s44 = 44
+    case s56 = 56
 }
 
 extension AppTablerIcon {
@@ -19,6 +20,13 @@ extension AppTablerIcon {
 
 struct AppTablerIcon: View {
     let name: String
+
+    struct IconCatalogItem: Identifiable, Hashable {
+        var id: String { sourceName }
+        let sourceName: String
+        let mappedName: String
+        let assetName: String
+    }
 
     init(_ name: String) {
         self.name = name
@@ -196,5 +204,17 @@ struct AppTablerIcon: View {
             Image(systemName: "questionmark.circle")
                 .renderingMode(.template)
         }
+    }
+
+    static var iconCatalog: [IconCatalogItem] {
+        tablerNameMap
+            .map { (source, mapped) in
+                IconCatalogItem(
+                    sourceName: source,
+                    mappedName: mapped,
+                    assetName: "tabler-outline-\(mapped)"
+                )
+            }
+            .sorted { $0.sourceName < $1.sourceName }
     }
 }

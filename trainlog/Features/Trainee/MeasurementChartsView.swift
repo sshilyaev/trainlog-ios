@@ -191,6 +191,8 @@ struct ChartDetailView: View {
     @State private var customDateFrom: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var customDateTo: Date = Date()
     @State private var showAllValues = false
+    @State private var showCustomFromPicker = false
+    @State private var showCustomToPicker = false
 
     private var chartColor: Color { Self.chartColorOptions[chartColorIndex] }
 
@@ -278,13 +280,47 @@ struct ChartDetailView: View {
             chartPeriod = .all
             displayMode = .line
         }
+        .sheet(isPresented: $showCustomFromPicker) {
+            MainSheet(
+                title: "Начало периода",
+                onBack: { showCustomFromPicker = false },
+                trailing: {
+                    Button("Готово") { showCustomFromPicker = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $customDateFrom, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
+        }
+        .sheet(isPresented: $showCustomToPicker) {
+            MainSheet(
+                title: "Конец периода",
+                onBack: { showCustomToPicker = false },
+                trailing: {
+                    Button("Готово") { showCustomToPicker = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $customDateTo, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
+        }
         .environment(\.locale, .ru)
     }
 
     private var emptyState: some View {
         VStack(spacing: 16) {
             AppTablerIcon("grid-dashboard-circle")
-                .appIcon(.s44)
+                .appIcon(.s56)
                 .foregroundStyle(.secondary)
             Text("Нет данных")
                 .font(.headline)
@@ -310,8 +346,24 @@ struct ChartDetailView: View {
             }
             .pickerStyle(.segmented)
             if chartPeriod == .custom {
-                DatePicker("От", selection: $customDateFrom, displayedComponents: .date)
-                DatePicker("До", selection: $customDateTo, displayedComponents: .date)
+                FormRowDateSelection(
+                    title: "От",
+                    selection: Binding<Date?>(
+                        get: { customDateFrom },
+                        set: { if let value = $0 { customDateFrom = value } }
+                    ),
+                    allowsClear: false,
+                    onTap: { showCustomFromPicker = true }
+                )
+                FormRowDateSelection(
+                    title: "До",
+                    selection: Binding<Date?>(
+                        get: { customDateTo },
+                        set: { if let value = $0 { customDateTo = value } }
+                    ),
+                    allowsClear: false,
+                    onTap: { showCustomToPicker = true }
+                )
             }
         }
         .padding(12)

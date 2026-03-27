@@ -17,6 +17,7 @@ struct AddMeasurementForTodaySheet: View {
     @State private var date = Calendar.current.startOfDay(for: Date())
     @State private var valueText: String = ""
     @State private var isLoading = false
+    @State private var showDatePickerSheet = false
 
     private var lastValue: Double? {
         lastMeasurement.flatMap { metric.value(from: $0) }
@@ -28,64 +29,78 @@ struct AddMeasurementForTodaySheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Дата") {
-                        FormRow(icon: "calendar-default", title: "Дата замера") {
-                            DatePicker("", selection: $date, displayedComponents: .date)
-                                .labelsHidden()
-                                .environment(\.locale, .ru)
+        MainSheet(
+            title: metric.displayName,
+            onBack: onCancel,
+            trailing: {
+                Button {
+                    AppDesign.dismissKeyboardThen(delay: 0.28) { Task { await save() } }
+                } label: {
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(0.9)
+                    } else {
+                        Text("Сохранить")
+                    }
+                }
+                .disabled(valueText.trimmingCharacters(in: .whitespaces).isEmpty || parse(valueText) == nil || isLoading)
+                .fontWeight(.regular)
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Дата") {
+                            FormRowDateSelection(
+                                title: "Дата замера",
+                                selection: Binding<Date?>(
+                                    get: { date },
+                                    set: { if let value = $0 { date = value } }
+                                ),
+                                allowsClear: false,
+                                onTap: { showDatePickerSheet = true }
+                            )
+                        }
+                        SettingsCard(title: metric.displayName) {
+                            MeasurementField(
+                                title: metric.displayName,
+                                value: $valueText,
+                                unit: metric.unit,
+                                lastValue: lastValue
+                            )
                         }
                     }
-                    SettingsCard(title: metric.displayName) {
-                        MeasurementField(
-                            title: metric.displayName,
-                            value: $valueText,
-                            unit: metric.unit,
-                            lastValue: lastValue
-                        )
+                    .padding(.bottom, AppDesign.sectionSpacing)
+                }
+                .background(AppColors.systemGroupedBackground)
+                .dismissKeyboardOnTap()
+                .overlay {
+                    if isLoading {
+                        LoadingOverlayView(message: "Сохранение…")
                     }
                 }
-            .padding(.bottom, AppDesign.sectionSpacing)
+                .allowsHitTesting(!isLoading)
             }
-            .background(AppColors.systemGroupedBackground)
-            .dismissKeyboardOnTap()
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(metric.displayName)
-                        .font(.headline)
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        AppDesign.dismissKeyboardThen(delay: 0.28) { Task { await save() } }
-                    } label: {
-                        if isLoading {
-                            ProgressView()
-                                .scaleEffect(0.9)
-                        } else {
-                            Text("Сохранить")
-                        }
-                    }
-                    .disabled(valueText.trimmingCharacters(in: .whitespaces).isEmpty || parse(valueText) == nil || isLoading)
-                    .fontWeight(.regular)
-                }
-            }
-            .overlay {
-                if isLoading {
-                    LoadingOverlayView(message: "Сохранение…")
-                }
-            }
-            .allowsHitTesting(!isLoading)
-        }
+        )
         .environment(\.locale, .ru)
         .sheetContentEntrance()
-        .sheetPresentationStyle()
+        .mainSheetPresentation(.half)
+        .sheet(isPresented: $showDatePickerSheet) {
+            MainSheet(
+                title: "Дата замера",
+                onBack: { showDatePickerSheet = false },
+                trailing: {
+                    Button("Готово") { showDatePickerSheet = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $date, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
+        }
     }
 
     private func save() async {

@@ -186,23 +186,55 @@ private struct ActionButtonChromeRight: ViewModifier {
     let borderLineWidth: CGFloat
 
     func body(content: Content) -> some View {
+        let stroke = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
+
         content
             .background(
                 ZStack {
                     ActionButtonChromeFill(cornerRadius: cornerRadius)
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
-                        .mask(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: AppColors.clear, location: 0.0),
-                                    .init(color: AppColors.clear, location: 0.50),
-                                    .init(color: AppColors.white, location: 1.0),
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+
+                    // Верхний левый угол: ярче у угла, затухание к центру.
+                    stroke.mask(
+                        VStack(spacing: 0) {
+                            Rectangle()
+                                .fill(
+                                    RadialGradient(
+                                        stops: [
+                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
+                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
+                                            .init(color: AppColors.clear, location: 1.0),
+                                        ],
+                                        center: .topLeading,
+                                        startRadius: 0,
+                                        endRadius: 170
+                                    )
+                                )
+                                .frame(height: 84)
+                            Spacer(minLength: 0)
+                        }
+                    )
+
+                    // Нижний правый угол: ярче у угла, затухание к центру.
+                    stroke.mask(
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            Rectangle()
+                                .fill(
+                                    RadialGradient(
+                                        stops: [
+                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
+                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
+                                            .init(color: AppColors.clear, location: 1.0),
+                                        ],
+                                        center: .bottomTrailing,
+                                        startRadius: 0,
+                                        endRadius: 170
+                                    )
+                                )
+                                .frame(height: 84)
+                        }
+                    )
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -216,23 +248,55 @@ private struct ActionButtonChromeBottom: ViewModifier {
     let borderLineWidth: CGFloat
 
     func body(content: Content) -> some View {
+        let stroke = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
+
         content
             .background(
                 ZStack {
                     ActionButtonChromeFill(cornerRadius: cornerRadius)
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
-                        .mask(
-                            LinearGradient(
-                                stops: [
-                                    .init(color: AppColors.clear, location: 0.0),
-                                    .init(color: AppColors.clear, location: 0.50),
-                                    .init(color: AppColors.white, location: 1.0),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+
+                    // Верхний левый угол: ярче у угла, затухание к центру.
+                    stroke.mask(
+                        VStack(spacing: 0) {
+                            Rectangle()
+                                .fill(
+                                    RadialGradient(
+                                        stops: [
+                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
+                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
+                                            .init(color: AppColors.clear, location: 1.0),
+                                        ],
+                                        center: .topLeading,
+                                        startRadius: 0,
+                                        endRadius: 170
+                                    )
+                                )
+                                .frame(height: 84)
+                            Spacer(minLength: 0)
+                        }
+                    )
+
+                    // Нижний правый угол: ярче у угла, затухание к центру.
+                    stroke.mask(
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            Rectangle()
+                                .fill(
+                                    RadialGradient(
+                                        stops: [
+                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
+                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
+                                            .init(color: AppColors.clear, location: 1.0),
+                                        ],
+                                        center: .bottomTrailing,
+                                        startRadius: 0,
+                                        endRadius: 170
+                                    )
+                                )
+                                .frame(height: 84)
+                        }
+                    )
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))

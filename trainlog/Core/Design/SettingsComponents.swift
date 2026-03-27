@@ -307,9 +307,12 @@ struct FormRowPhone: View {
     }
 }
 
-/// Строка формы: дата рождения — по тапу открывается пикер, крестик сбрасывает. Контент строки; sheet показывается снаружи.
-struct FormRowDateOfBirth: View {
+/// Универсальная строка формы для выбора даты через внешний sheet.
+struct FormRowDateSelection: View {
+    let title: String
     @Binding var selection: Date?
+    var placeholder: String = "Указать дату"
+    var allowsClear: Bool = true
     var onTap: () -> Void
 
     private static var dateFormatter: DateFormatter {
@@ -320,16 +323,16 @@ struct FormRowDateOfBirth: View {
     }
 
     var body: some View {
-        FormRow(icon: "calendar-default", title: "Дата рождения") {
+        FormRow(icon: "calendar-default", title: title) {
             HStack(spacing: 6) {
                 Button(action: onTap) {
-                    Text(selection.map { Self.dateFormatter.string(from: $0) } ?? "Указать дату")
+                    Text(selection.map { Self.dateFormatter.string(from: $0) } ?? placeholder)
                         .foregroundStyle(selection != nil ? .primary : .secondary)
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .buttonStyle(.plain)
-                if selection != nil {
+                if allowsClear, selection != nil {
                     Button {
                         selection = nil
                     } label: {
@@ -341,6 +344,16 @@ struct FormRowDateOfBirth: View {
                 }
             }
         }
+    }
+}
+
+/// Строка формы: дата рождения — по тапу открывается пикер, крестик сбрасывает. Контент строки; sheet показывается снаружи.
+struct FormRowDateOfBirth: View {
+    @Binding var selection: Date?
+    var onTap: () -> Void
+
+    var body: some View {
+        FormRowDateSelection(title: "Дата рождения", selection: $selection, onTap: onTap)
     }
 }
 
@@ -368,35 +381,36 @@ struct FormDatePickerSheet: View {
     var title: String = "Дата рождения"
 
     var body: some View {
-        NavigationStack {
-            DatePicker("", selection: Binding(
-                get: { selection ?? Date() },
-                set: { selection = $0 }
-            ), displayedComponents: .date)
-            .datePickerStyle(.graphical)
-            .environment(\.locale, .ru)
-            .padding()
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Очистить") {
-                        selection = nil
-                        isPresented = false
-                    }
-                    .foregroundStyle(.secondary)
+        MainSheet(
+            title: title,
+            onBack: { isPresented = false },
+            trailing: {
+                Button {
+                    isPresented = false
+                } label: {
+                    Text("Готово")
+                        .fontWeight(.regular)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        isPresented = false
-                    } label: {
-                        Text("Готово")
-                            .fontWeight(.regular)
+            },
+            content: {
+                DatePicker("", selection: Binding(
+                    get: { selection ?? Date() },
+                    set: { selection = $0 }
+                ), displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .environment(\.locale, .ru)
+                .padding()
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Очистить") {
+                            selection = nil
+                            isPresented = false
+                        }
+                        .foregroundStyle(.secondary)
                     }
-                        .foregroundStyle(.primary)
                 }
             }
-        }
+        )
     }
 }
 

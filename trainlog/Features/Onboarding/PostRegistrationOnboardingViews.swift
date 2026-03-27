@@ -16,47 +16,81 @@ struct CoachPostRegistrationOnboardingView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(
+                                LinearGradient(
+                                    colors: [AppColors.accent.opacity(0.22), AppColors.accent.opacity(0.06)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(height: 120)
+                        HStack(spacing: 20) {
+                            coachVisualPillar(icon: "user-default", caption: "Клиент")
+                            coachVisualPillar(icon: "calendar-filled", caption: "График")
+                            coachVisualPillar(icon: "tag", caption: "Абонемент")
+                        }
+                    }
+                    .padding(.horizontal, AppDesign.cardPadding)
+                    .padding(.top, 8)
+
                     AppTablerIcon("user-default")
-                        .appIcon(.s44)
+                        .appIcon(.s56)
                         .foregroundStyle(AppColors.accent)
                         .symbolRenderingMode(.hierarchical)
-                        .padding(.top, 24)
+                        .padding(.top, 4)
 
-                    Text("Добавьте первого подопечного")
-                        .font(.title3.weight(.medium))
+                    Text("Первый шаг — клиент в списке")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
 
-                    Text("В приложении вы сможете вести календарь посещений, создавать абонементы по занятиям или безлимит, смотреть замеры и цели клиента и отмечать тренировки.")
-                        .font(.subheadline)
+                    Text("Добавьте подопечного за минуту: по коду из приложения или вручную. Дальше — абонемент, посещения и прогресс в одном месте.")
+                        .font(.footnote)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 20)
+                        .lineSpacing(3)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        featureRow(icon: "token", title: "Подключение по коду", subtitle: "Клиент открывает свой дневник в приложении и даёт вам код — вы добавляете его одним нажатием.")
-                        featureRow(icon: "plus-square", title: "Создать профиль вручную", subtitle: "Если клиент пока не в приложении — создайте профиль подопечного и ведите учёт сами.")
-                        featureRow(icon: "tag", title: "Абонементы и посещения", subtitle: "После добавления можно сразу создать абонемент и отмечать занятия в календаре.")
+                        featureRow(icon: "token", title: "По коду", subtitle: "Клиент открывает дневник → «Подключить по коду» → вы вводите код — готово.")
+                        featureRow(icon: "plus-square", title: "Вручную", subtitle: "Клиент без приложения — создайте профиль и ведите учёт сами, потом можно объединить.")
+                        featureRow(icon: "chart-area-line", title: "Дальше", subtitle: "Сразу после добавления настроим абонемент — так удобнее отмечать занятия.")
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
 
-                    Spacer(minLength: 20)
+                    Spacer(minLength: 16)
 
                     CTAButton(title: "Добавить подопечного", action: onAddTrainee)
 
                     Button(action: onSkip) {
-                        Text("Позже")
+                        Text("Сначала осмотрю приложение")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
+                    .padding(.top, 6)
+                    .padding(.bottom, 28)
                 }
             }
             .background(AdaptiveScreenBackground())
             .navigationTitle("Добро пожаловать, \(userName)")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func coachVisualPillar(icon: String, caption: String) -> some View {
+        VStack(spacing: 8) {
+            AppTablerIcon(icon)
+                .appIcon(.s28)
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 52, height: 52)
+                .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
+            Text(caption)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
         }
     }
 
@@ -83,81 +117,136 @@ struct CoachPostRegistrationOnboardingView: View {
 
 // MARK: - Онбординг подопечного (дневник) после регистрации
 
-/// Показывается сразу после регистрации подопечного: предложить ввести цели и сообщить про замеры.
+/// Показывается сразу после регистрации подопечного: замеры/цели/достижения.
 struct TraineePostRegistrationOnboardingView: View {
     let userName: String
-    let onAddGoals: () -> Void
-    let onAddMeasurement: () -> Void
+    let onAddMeasurementsGoals: () -> Void
+    let onAddAchievement: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    AppTablerIcon("user-default")
-                        .appIcon(.s44)
+                VStack(spacing: 20) {
+                    traineeProgressVisualStrip
+                        .padding(.horizontal, AppDesign.cardPadding)
+                        .padding(.top, 8)
+
+                    AppTablerIcon("note.text")
+                        .appIcon(.s56)
                         .foregroundStyle(AppColors.accent)
                         .symbolRenderingMode(.hierarchical)
-                        .padding(.top, 24)
+                        .frame(width: 88, height: 88)
+                        .background(AppColors.secondarySystemGroupedBackground, in: Circle())
 
-                    Text("Настройте дневник под себя")
-                        .font(.title3.weight(.medium))
+                    Text("Заполните дневник за 2 минуты")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
 
-                    Text("Добавьте цели по весу или объёмам — так удобнее следить за прогрессом на графиках. Замеры можно вносить в разделе «Мои замеры» в любое время.")
-                        .font(.subheadline)
+                    Text("Замеры и цели открываются в одном окне — удобно внести вес, объёмы и целевые даты. Достижения фиксируют лучшие веса, разы и времена по упражнениям.")
+                        .font(.footnote)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 20)
+                        .lineSpacing(3)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(alignment: .top, spacing: 12) {
-                            AppTablerIcon("map-pin")
-                                .font(.title3)
-                                .foregroundStyle(AppColors.accent)
-                                .frame(width: 28, alignment: .center)
-                            Text("Цели помогут видеть прогресс на графиках и не забывать о целевых датах.")
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                        }
-                        .padding(14)
-                        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                        HStack(alignment: .top, spacing: 12) {
-                            AppTablerIcon("pencil-scale")
-                                .font(.title3)
-                                .foregroundStyle(AppColors.accent)
-                                .frame(width: 28, alignment: .center)
-                            Text("Замеры (вес, объёмы) добавляйте в разделе «Мои замеры» — там же графики и история.")
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                        }
-                        .padding(14)
-                        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+                    VStack(alignment: .leading, spacing: 10) {
+                        featureRow(icon: "pencil-scale", title: "Замеры и цели", subtitle: "Один шаг — графики и прогресс сразу осмысленные.")
+                        featureRow(icon: "award-medal", title: "Достижения", subtitle: "Личные рекорды по упражнениям — видно, куда вы растёте.")
+                        featureRow(icon: "chart-area-line", title: "Всё на вкладке «Прогресс»", subtitle: "Потом можно дополнять в любой момент.")
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
 
-                    Spacer(minLength: 20)
+                    Spacer(minLength: 16)
 
-                    VStack(spacing: 12) {
-                        CTAButton(title: "Добавить цели", action: onAddGoals)
-                        CTAButton(title: "Добавить замер", action: onAddMeasurement)
+                    VStack(spacing: 10) {
+                        CTAButton(title: "Замеры и цели", action: onAddMeasurementsGoals)
+                        CTAButton(title: "Добавить достижение", action: onAddAchievement)
                     }
 
                     Button(action: onSkip) {
-                        Text("Понятно, позже")
+                        Text("Сделаю позже")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
+                    .padding(.top, 4)
+                    .padding(.bottom, 28)
                 }
             }
             .background(AdaptiveScreenBackground())
             .navigationTitle("Добро пожаловать, \(userName)")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var traineeProgressVisualStrip: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                AppTablerIcon("chart-area-line")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.accent)
+                Text("Как будет считаться прогресс")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.secondaryLabel)
+            }
+
+            HStack(spacing: 0) {
+                stripSegment(
+                    color: AppColors.accent.opacity(0.85),
+                    height: 44,
+                    title: "Старт"
+                )
+                stripSegment(
+                    color: AppColors.visitsOneTimePaid.opacity(0.9),
+                    height: 30,
+                    title: "Цель"
+                )
+                stripSegment(
+                    color: AppColors.visitsBySubscription.opacity(0.85),
+                    height: 36,
+                    title: "Результат"
+                )
+            }
+            .frame(height: 48)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func stripSegment(color: Color, height: CGFloat, title: String) -> some View {
+        VStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(color)
+                .frame(maxWidth: .infinity)
+                .frame(height: height)
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+        }
+        .padding(.horizontal, 3)
+    }
+
+    private func featureRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            AppTablerIcon(icon)
+                .font(.title3)
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 28, alignment: .center)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.secondaryLabel)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
     }
 }
 
@@ -171,41 +260,61 @@ struct GoalCreatedMeasurementOfferView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
+                    HStack(spacing: 0) {
+                        stripBar(AppColors.accent.opacity(0.75), 32)
+                        stripBar(AppColors.accent.opacity(0.45), 20)
+                        stripBar(AppColors.accent.opacity(0.3), 26)
+                    }
+                    .frame(height: 40)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 12)
+                    .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, AppDesign.cardPadding)
+                    .padding(.top, 12)
+
                     AppTablerIcon("pencil-scale")
-                        .appIcon(.s44)
+                        .appIcon(.s56)
                         .foregroundStyle(AppColors.accent)
                         .symbolRenderingMode(.hierarchical)
-                        .padding(.top, 20)
 
-                    Text("Добавить первый замер?")
-                        .font(.title2.weight(.semibold))
+                    Text("Закрепим старт с замерами")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 8)
 
-                    Text("Цели уже сохранены. Теперь внесите текущие значения, чтобы прогресс на графиках считался сразу и корректно.")
-                        .font(.subheadline)
+                    Text("Цели уже есть — добавьте текущий вес и объёмы в том же окне с переключателем «Замеры / Цели», и графики сразу покажут динамику.")
+                        .font(.footnote)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 20)
+                        .lineSpacing(3)
 
-                    Spacer(minLength: 16)
+                    Spacer(minLength: 12)
 
-                    CTAButton(title: "Добавить замер", action: onAddMeasurement)
+                    CTAButton(title: "Открыть замеры и цели", action: onAddMeasurement)
 
                     Button(action: onSkip) {
                         Text("Позже")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 4)
                     .padding(.bottom, 28)
                 }
             }
             .background(AdaptiveScreenBackground())
-            .navigationTitle("Замеры")
+            .navigationTitle("Дальше")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private func stripBar(_ color: Color, _ h: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(color)
+            .frame(maxWidth: .infinity)
+            .frame(height: h)
+            .padding(.horizontal, 3)
     }
 }

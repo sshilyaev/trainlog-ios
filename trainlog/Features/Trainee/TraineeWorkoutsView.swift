@@ -119,7 +119,7 @@ struct TraineeWorkoutsView: View {
                         onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
                         onCancel: { pendingEventDate = nil }
                     )
-                    .presentationDetents(AppSheetDetents.mediumOnly)
+                    .mainSheetPresentation(.half)
                 }
             }
             .sheet(item: $eventToEdit) { event in
@@ -132,7 +132,7 @@ struct TraineeWorkoutsView: View {
                     onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
                     onCancel: { eventToEdit = nil }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
             .sheet(item: $dayDetailItem) { item in
                 let dayVisits = visits.filter { calendar.isDate($0.date, inSameDayAs: item.date) }
@@ -167,7 +167,7 @@ struct TraineeWorkoutsView: View {
                         pendingEventDate = date
                     } : nil
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
     }

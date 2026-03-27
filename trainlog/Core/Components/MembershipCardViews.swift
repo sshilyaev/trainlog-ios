@@ -510,7 +510,7 @@ struct MembershipCardNewView: View {
                 },
                 onCancel: { showFreezeSheet = false }
             )
-            .presentationDetents([.height(340)])
+            .mainSheetPresentation(.detents([.height(340)]))
         }
         .appConfirmationDialog(
             title: "Закрыть абонемент?",

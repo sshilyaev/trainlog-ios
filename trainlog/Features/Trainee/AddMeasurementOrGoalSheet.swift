@@ -34,73 +34,69 @@ struct AddMeasurementOrGoalSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Picker("", selection: $selectedKind) {
-                    ForEach(ProgressAddSheetKind.allCases, id: \.self) { kind in
-                        Text(kind.rawValue).tag(kind)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-
-                Group {
+        MainSheet(
+            title: sheetNavigationTitle,
+            onBack: onCancel,
+            trailing: {
+                Button {
                     switch selectedKind {
                     case .measurement:
-                        AddMeasurementView(
-                            profile: profile,
-                            lastMeasurement: lastMeasurement,
-                            embedsNavigationStack: false,
-                            useHostNavigationChrome: true,
-                            hostSavePulse: $measurementSavePulse,
-                            onSave: onSaveMeasurement,
-                            onCancel: onCancel
-                        )
+                        measurementSavePulse += 1
                     case .goal:
-                        AddGoalView(
-                            profile: profile,
-                            embedsNavigationStack: false,
-                            useHostNavigationChrome: true,
-                            hostSavePulse: $goalSavePulse,
-                            onSave: onSaveGoals,
-                            onCancel: onCancel
-                        )
+                        goalSavePulse += 1
+                    }
+                } label: {
+                    if toolbarState.isLoading {
+                        ProgressView().scaleEffect(0.9)
+                    } else {
+                        Text("Сохранить")
+                            .font(.body)
+                            .fontWeight(.regular)
                     }
                 }
-                .id(selectedKind)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle(sheetNavigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .onPreferenceChange(ProgressAddFormToolbarPreferenceKey.self) { toolbarState = $0 }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                .disabled(!toolbarState.canSave || toolbarState.isLoading)
+            },
+            content: {
+                VStack(spacing: 0) {
+                    Picker("", selection: $selectedKind) {
+                        ForEach(ProgressAddSheetKind.allCases, id: \.self) { kind in
+                            Text(kind.rawValue).tag(kind)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+
+                    Group {
                         switch selectedKind {
                         case .measurement:
-                            measurementSavePulse += 1
+                            AddMeasurementView(
+                                profile: profile,
+                                lastMeasurement: lastMeasurement,
+                                embedsNavigationStack: false,
+                                useHostNavigationChrome: true,
+                                hostSavePulse: $measurementSavePulse,
+                                onSave: onSaveMeasurement,
+                                onCancel: onCancel
+                            )
                         case .goal:
-                            goalSavePulse += 1
-                        }
-                    } label: {
-                        if toolbarState.isLoading {
-                            ProgressView()
-                                .scaleEffect(0.9)
-                        } else {
-                            Text("Сохранить")
-                                .font(.body)
-                                .fontWeight(.regular)
+                            AddGoalView(
+                                profile: profile,
+                                embedsNavigationStack: false,
+                                useHostNavigationChrome: true,
+                                hostSavePulse: $goalSavePulse,
+                                onSave: onSaveGoals,
+                                onCancel: onCancel
+                            )
                         }
                     }
-                    .disabled(!toolbarState.canSave || toolbarState.isLoading)
+                    .id(selectedKind)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .background(AppColors.systemGroupedBackground)
+                .navigationBarBackButtonHidden(true)
+                .onPreferenceChange(ProgressAddFormToolbarPreferenceKey.self) { toolbarState = $0 }
             }
-        }
+        )
     }
 }

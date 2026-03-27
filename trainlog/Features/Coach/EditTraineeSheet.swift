@@ -59,138 +59,130 @@ struct EditTraineeSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Основное") {
-                        VStack(spacing: 0) {
-                            if isManaged {
-                                FormRowTextField(icon: "writing-sign", title: "Имя", placeholder: "Имя подопечного", text: $name, textContentType: .name, autocapitalization: .words)
-                                FormSectionDivider()
-                                FormRow(icon: "user-default", title: "Пол") {
-                                    Picker("", selection: Binding(
-                                        get: { gender ?? .male },
-                                        set: { gender = $0 }
-                                    )) {
-                                        Text("Муж").tag(ProfileGender.male)
-                                        Text("Жен").tag(ProfileGender.female)
+        MainSheet(
+            title: "Редактировать",
+            onBack: onCancel,
+            trailing: {
+                Button(isSaving ? "Сохраняю…" : "Сохранить") { save() }
+                    .disabled(isSaving || (isManaged && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+                    .foregroundStyle(.primary)
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Основное") {
+                            VStack(spacing: 0) {
+                                if isManaged {
+                                    FormRowTextField(icon: "writing-sign", title: "Имя", placeholder: "Имя подопечного", text: $name, textContentType: .name, autocapitalization: .words)
+                                    FormSectionDivider()
+                                    FormRow(icon: "user-default", title: "Пол") {
+                                        Picker("", selection: Binding(
+                                            get: { gender ?? .male },
+                                            set: { gender = $0 }
+                                        )) {
+                                            Text("Муж").tag(ProfileGender.male)
+                                            Text("Жен").tag(ProfileGender.female)
+                                        }
+                                        .pickerStyle(.segmented)
                                     }
-                                    .pickerStyle(.segmented)
-                                }
-                                FormSectionDivider()
-                            } else {
-                                FormRow(icon: "writing-sign", title: "Имя") {
-                                    Text(profile.name)
-                                        .foregroundStyle(.secondary)
-                                        .frame(maxWidth: .infinity, alignment: .trailing)
-                                }
-                                FormSectionDivider()
-                            }
-                            FormRowTextField(icon: "writing-sign", title: "Имя в списке", placeholder: "Как показывать в списке подопечных", text: $displayName, textContentType: .name, autocapitalization: .words)
-                            FormSectionDivider()
-                            FormRowTextField(
-                                icon: "pencil-scale",
-                                title: "Вес",
-                                placeholder: "кг",
-                                text: $weight,
-                                autocapitalization: .never,
-                                keyboardType: .decimalPad
-                            )
-                        }
-                    }
-
-                    if isManaged {
-                        SettingsCard(title: "Контакты") {
-                            VStack(spacing: 0) {
-                                FormRowPhone(icon: "phone", title: "Телефон", text: $phoneNumber)
-                                FormSectionDivider()
-                                FormRowTextField(icon: "send-plane-horizontal", title: "Telegram", placeholder: "Логин без @", text: $telegramUsername, textContentType: .username, autocapitalization: .never)
-                            }
-                        }
-                    } else if profile.phoneNumber != nil || profile.telegramUsername != nil {
-                        SettingsCard(title: "Контакты") {
-                            VStack(spacing: 0) {
-                                if let phone = profile.phoneNumber, !phone.isEmpty {
-                                    FormRow(icon: "phone", title: "Телефон") {
-                                        Text(PhoneFormatter.displayString(phone))
+                                    FormSectionDivider()
+                                } else {
+                                    FormRow(icon: "writing-sign", title: "Имя") {
+                                        Text(profile.name)
                                             .foregroundStyle(.secondary)
                                             .frame(maxWidth: .infinity, alignment: .trailing)
                                     }
-                                    if profile.telegramUsername != nil { FormSectionDivider() }
+                                    FormSectionDivider()
                                 }
-                                if let tg = profile.telegramUsername, !tg.isEmpty {
-                                    FormRow(icon: "send-plane-horizontal", title: "Telegram") {
-                                        Text("@" + tg)
-                                            .foregroundStyle(.secondary)
-                                            .frame(maxWidth: .infinity, alignment: .trailing)
+                                FormRowTextField(icon: "writing-sign", title: "Имя в списке", placeholder: "Как показывать в списке подопечных", text: $displayName, textContentType: .name, autocapitalization: .words)
+                                FormSectionDivider()
+                                FormRowTextField(
+                                    icon: "pencil-scale",
+                                    title: "Вес",
+                                    placeholder: "кг",
+                                    text: $weight,
+                                    autocapitalization: .never,
+                                    keyboardType: .decimalPad
+                                )
+                            }
+                        }
+
+                        if isManaged {
+                            SettingsCard(title: "Контакты") {
+                                VStack(spacing: 0) {
+                                    FormRowPhone(icon: "phone", title: "Телефон", text: $phoneNumber)
+                                    FormSectionDivider()
+                                    FormRowTextField(icon: "send-plane-horizontal", title: "Telegram", placeholder: "Логин без @", text: $telegramUsername, textContentType: .username, autocapitalization: .never)
+                                }
+                            }
+                        } else if profile.phoneNumber != nil || profile.telegramUsername != nil {
+                            SettingsCard(title: "Контакты") {
+                                VStack(spacing: 0) {
+                                    if let phone = profile.phoneNumber, !phone.isEmpty {
+                                        FormRow(icon: "phone", title: "Телефон") {
+                                            Text(PhoneFormatter.displayString(phone))
+                                                .foregroundStyle(.secondary)
+                                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                        }
+                                        if profile.telegramUsername != nil { FormSectionDivider() }
+                                    }
+                                    if let tg = profile.telegramUsername, !tg.isEmpty {
+                                        FormRow(icon: "send-plane-horizontal", title: "Telegram") {
+                                            Text("@" + tg)
+                                                .foregroundStyle(.secondary)
+                                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    SettingsCard(title: "Дата рождения") {
-                        FormRowDateOfBirth(selection: $dateOfBirth, onTap: { showDatePickerSheet = true })
-                    }
-                    .sheet(isPresented: $showDatePickerSheet) {
-                        FormDatePickerSheet(selection: $dateOfBirth, isPresented: $showDatePickerSheet, title: "Дата рождения")
-                    }
-
-                    FormNotesCard(notes: $notes)
-                }
-                .padding(.top, 8)
-            .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .scrollDismissesKeyboard(.interactively)
-            .dismissKeyboardOnTap()
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Редактировать")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                        .disabled(isSaving)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSaving ? "Сохраняю…" : "Сохранить") { save() }
-                        .disabled(isSaving || (isManaged && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
-                        .foregroundStyle(.primary)
-                }
-            }
-            .overlay {
-                if isSaving {
-                    AppColors.overlayDim
-                        .ignoresSafeArea()
-                        .overlay {
-                            VStack(spacing: AppDesign.loadingSpacing) {
-                                ProgressView()
-                                    .scaleEffect(AppDesign.loadingScale)
-                                    .tint(AppColors.white)
-                                Text("Сохранение…")
-                                    .font(AppDesign.loadingMessageFont)
-                                    .foregroundStyle(AppColors.white)
-                            }
+                        SettingsCard(title: "Дата рождения") {
+                            FormRowDateOfBirth(selection: $dateOfBirth, onTap: { showDatePickerSheet = true })
                         }
+                        .sheet(isPresented: $showDatePickerSheet) {
+                            FormDatePickerSheet(selection: $dateOfBirth, isPresented: $showDatePickerSheet, title: "Дата рождения")
+                                .mainSheetPresentation(.calendar)
+                        }
+
+                        FormNotesCard(notes: $notes)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
+                .background(AppColors.systemGroupedBackground)
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
+                .overlay {
+                    if isSaving {
+                        AppColors.overlayDim
+                            .ignoresSafeArea()
+                            .overlay {
+                                VStack(spacing: AppDesign.loadingSpacing) {
+                                    ProgressView()
+                                        .scaleEffect(AppDesign.loadingScale)
+                                        .tint(AppColors.white)
+                                    Text("Сохранение…")
+                                        .font(AppDesign.loadingMessageFont)
+                                        .foregroundStyle(AppColors.white)
+                                }
+                            }
+                    }
+                }
+                .allowsHitTesting(!isSaving)
+                .appConfirmationDialog(
+                    title: "Ошибка",
+                    message: errorMessage ?? "Произошла ошибка.",
+                    isPresented: Binding(
+                        get: { errorMessage != nil },
+                        set: { if !$0 { errorMessage = nil } }
+                    ),
+                    confirmTitle: "OK",
+                    onConfirm: { errorMessage = nil },
+                    onCancel: { errorMessage = nil }
+                )
             }
-            .allowsHitTesting(!isSaving)
-            .appConfirmationDialog(
-                title: "Ошибка",
-                message: errorMessage ?? "Произошла ошибка.",
-                isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                ),
-                confirmTitle: "OK",
-                onConfirm: { errorMessage = nil },
-                onCancel: { errorMessage = nil }
-            )
-        }
+        )
     }
 
     private func save() {

@@ -818,7 +818,7 @@ struct CoachMembershipRow: View {
                 },
                 onCancel: { showFreezeSheet = false }
             )
-            .presentationDetents([.height(340)])
+            .mainSheetPresentation(.detents([.height(340)]))
         }
     }
 }
@@ -1113,7 +1113,7 @@ struct ClientVisitsManageView: View {
                     pendingEventDate = date
                 }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: Binding(
             get: { pendingOneOffDate != nil },
@@ -1131,7 +1131,7 @@ struct ClientVisitsManageView: View {
                     onAdded: { Task { await load(); await MainActor.run { pendingOneOffDate = nil } } },
                     onCancel: { pendingOneOffDate = nil }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
         .appConfirmationDialog(
@@ -1179,7 +1179,7 @@ struct ClientVisitsManageView: View {
                     onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
                     onCancel: { pendingEventDate = nil }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
         .sheet(item: $eventToEdit) { event in
@@ -1192,7 +1192,7 @@ struct ClientVisitsManageView: View {
                 onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
                 onCancel: { eventToEdit = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .task {
             await load()
@@ -1341,7 +1341,7 @@ struct ClientMembershipsNewView: View {
                 },
                 onCancel: { showAddMembership = false }
             )
-            .presentationDetents([.medium])
+            .mainSheetPresentation(.half)
         }
         .sheet(item: $showVisitsForMembership) { membership in
             let visits = allVisits.filter { $0.membershipId == membership.id }.sorted { $0.date > $1.date }
@@ -1360,8 +1360,7 @@ struct ClientMembershipsNewView: View {
                 },
                 onCancel: { addVisitDateSheetMembership = nil }
             )
-            .presentationDetents([.height(420)])
-            .presentationDragIndicator(.visible)
+            .mainSheetPresentation(.detents([.height(420)]))
         }
         .appConfirmationDialog(
             title: "Ошибка",
@@ -1581,32 +1580,54 @@ private struct AddVisitDateSheet: View {
     let onSelect: (Date) -> Void
     let onCancel: () -> Void
     @State private var selectedDate = Date()
+    @State private var showDatePicker = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                DatePicker("Дата посещения", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding()
-                Spacer(minLength: 0)
-            }
-            .navigationTitle("Добавить посещение")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    BackToolbarButton(action: onCancel)
+        MainSheet(
+            title: "Добавить посещение",
+            onBack: onCancel,
+            trailing: {
+                Button("Добавить") {
+                    onSelect(selectedDate)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        onSelect(selectedDate)
-                    } label: {
-                        Text("Добавить")
-                            .font(.body)
-                            .fontWeight(.regular)
+                .font(.body)
+                .fontWeight(.regular)
+                .foregroundStyle(.primary)
+            },
+            content: {
+                VStack(spacing: 0) {
+                    SettingsCard(title: "Дата") {
+                        FormRowDateSelection(
+                            title: "Дата посещения",
+                            selection: Binding<Date?>(
+                                get: { selectedDate },
+                                set: { if let value = $0 { selectedDate = value } }
+                            ),
+                            allowsClear: false,
+                            onTap: { showDatePicker = true }
+                        )
                     }
-                    .foregroundStyle(.primary)
+                    Spacer(minLength: 0)
                 }
+                .background(AppColors.systemGroupedBackground)
             }
+        )
+        .sheet(isPresented: $showDatePicker) {
+            MainSheet(
+                title: "Дата посещения",
+                onBack: { showDatePicker = false },
+                trailing: {
+                    Button("Готово") { showDatePicker = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
         }
     }
 }
@@ -1918,116 +1939,104 @@ struct AddEditEventSheet: View {
         }
     }
 
-    private var dateFormatted: String { date.formattedRuMedium }
-
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Основное") {
-                        VStack(spacing: 0) {
-                            FormRowTextField(icon: "pencil-edit", title: "Название", placeholder: "Сдать анализы, взвешивание", text: $title, textContentType: .none, autocapitalization: .sentences)
-                            FormSectionDivider()
-                            FormRow(icon: "calendar-default", title: "Дата события") {
-                                Button {
-                                    showDatePicker = true
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Text(dateFormatted)
-                                            .foregroundStyle(.secondary)
-                                            .font(.subheadline)
-                                            .frame(maxWidth: .infinity, alignment: .trailing)
-                                        AppTablerIcon("chevron-right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                }
-                                .buttonStyle(.plain)
+        MainSheet(
+            title: navigationTitle,
+            onBack: onCancel,
+            trailing: {
+                Button(isSaving ? "Сохранение…" : (isEdit ? "Сохранить" : "Добавить")) { save() }
+                    .disabled(isSaving || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .foregroundStyle(.primary)
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Основное") {
+                            VStack(spacing: 0) {
+                                FormRowTextField(icon: "pencil-edit", title: "Название", placeholder: "Сдать анализы, взвешивание", text: $title, textContentType: .none, autocapitalization: .sentences)
+                                FormSectionDivider()
+                                FormRowDateSelection(
+                                    title: "Дата события",
+                                    selection: Binding<Date?>(
+                                        get: { date },
+                                        set: { if let value = $0 { date = value } }
+                                    ),
+                                    allowsClear: false,
+                                    onTap: { showDatePicker = true }
+                                )
                             }
                         }
-                    }
 
-                    SettingsCard(title: "Описание") {
-                        FormRow(icon: "file-default", title: "Описание") {
-                            TextField("Необязательно", text: $eventDescription, axis: .vertical)
-                                .textFieldStyle(.plain)
-                                .lineLimit(2...5)
-                                .textInputAutocapitalization(.sentences)
-                                .multilineTextAlignment(.trailing)
-                                .formInputStyle()
+                        SettingsCard(title: "Описание") {
+                            FormRow(icon: "file-default", title: "Описание") {
+                                TextField("Необязательно", text: $eventDescription, axis: .vertical)
+                                    .textFieldStyle(.plain)
+                                    .lineLimit(2...5)
+                                    .textInputAutocapitalization(.sentences)
+                                    .multilineTextAlignment(.trailing)
+                                    .formInputStyle()
+                            }
                         }
-                    }
 
-                    SettingsCard(title: "Цвет в календаре") {
-                        HStack(spacing: 8) {
-                            ForEach(EventColor.palette, id: \.hex) { pair in
-                                let isSelected = selectedColorHex == pair.hex
-                                Button {
-                                    selectedColorHex = isSelected ? nil : pair.hex
-                                } label: {
-                                    Circle()
-                                        .fill(pair.color)
-                                        .frame(width: 22, height: 22)
-                                        .overlay {
-                                            if isSelected {
-                                                Circle()
-                                                    .strokeBorder(Color.primary, lineWidth: 2)
+                        SettingsCard(title: "Цвет в календаре") {
+                            HStack(spacing: 8) {
+                                ForEach(EventColor.palette, id: \.hex) { pair in
+                                    let isSelected = selectedColorHex == pair.hex
+                                    Button {
+                                        selectedColorHex = isSelected ? nil : pair.hex
+                                    } label: {
+                                        Circle()
+                                            .fill(pair.color)
+                                            .frame(width: 22, height: 22)
+                                            .overlay {
+                                                if isSelected {
+                                                    Circle()
+                                                        .strokeBorder(Color.primary, lineWidth: 2)
+                                                }
                                             }
-                                        }
+                                    }
+                                    .buttonStyle(PressableButtonStyle())
                                 }
-                                .buttonStyle(PressableButtonStyle())
                             }
+                            Text("По умолчанию — синий.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
                         }
-                        Text("По умолчанию — синий.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
+                        SettingsCard(title: "Напомнить") {
+                            Toggle("Напомнить о событии", isOn: $remind)
+                                .disabled(true)
+                            Text("Напоминания будут доступны в следующей версии.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        }
                     }
-                    SettingsCard(title: "Напомнить") {
-                        Toggle("Напомнить о событии", isOn: $remind)
-                            .disabled(true)
-                        Text("Напоминания будут доступны в следующей версии.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSaving ? "Сохранение…" : (isEdit ? "Сохранить" : "Добавить")) { save() }
-                        .disabled(isSaving || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .foregroundStyle(.primary)
-                }
-            }
-            .sheet(isPresented: $showDatePicker) {
-                NavigationStack {
-                    DatePicker("Дата", selection: $date, displayedComponents: .date)
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .padding()
-                    .navigationTitle("Дата события")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
+                .scrollDismissesKeyboard(.interactively)
+                .background(AppColors.systemGroupedBackground)
+                .sheet(isPresented: $showDatePicker) {
+                    MainSheet(
+                        title: "Дата события",
+                        onBack: { showDatePicker = false },
+                        trailing: {
                             Button("Готово") { showDatePicker = false }
                                 .foregroundStyle(.primary)
+                        },
+                        content: {
+                            DatePicker("Дата", selection: $date, displayedComponents: .date)
+                                .datePickerStyle(.wheel)
+                                .labelsHidden()
+                                .padding()
+                                .environment(\.locale, .ru)
                         }
-                    }
-                    .presentationDetents([.height(320)])
-                    .environment(\.locale, .ru)
+                    )
+                    .mainSheetPresentation(.detents([.height(320)]))
                 }
             }
-        }
+        )
     }
 
     private func save() {
@@ -2084,47 +2093,45 @@ struct FreezeMembershipSheet: View {
     private let maxDays = 90
 
     var body: some View {
-        NavigationStack {
-            SettingsCard(title: "Заморозить абонемент") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Окончание абонемента сдвинется на выбранное количество дней.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 16) {
-                        Button {
-                            if days > minDays { days -= 1 }
-                        } label: {
-                            AppTablerIcon("minus-circle")
-                                .font(.title2)
-                                .foregroundStyle(days <= minDays ? AppColors.secondaryLabel : AppColors.accent)
+        MainSheet(
+            title: "Заморозка",
+            onBack: onCancel,
+            trailing: {
+                Button("Применить") { onApply() }
+                    .fontWeight(.regular)
+            },
+            content: {
+                SettingsCard(title: "Заморозить абонемент") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Окончание абонемента сдвинется на выбранное количество дней.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 16) {
+                            Button {
+                                if days > minDays { days -= 1 }
+                            } label: {
+                                AppTablerIcon("minus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(days <= minDays ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(days <= minDays)
+                            Text("\(days) \(days == 1 ? "день" : days < 5 ? "дня" : "дней")")
+                                .font(.title2.monospacedDigit())
+                                .frame(minWidth: 80, alignment: .center)
+                            Button {
+                                if days < maxDays { days += 1 }
+                            } label: {
+                                AppTablerIcon("plus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(days >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(days >= maxDays)
                         }
-                        .disabled(days <= minDays)
-                        Text("\(days) \(days == 1 ? "день" : days < 5 ? "дня" : "дней")")
-                            .font(.title2.monospacedDigit())
-                            .frame(minWidth: 80, alignment: .center)
-                        Button {
-                            if days < maxDays { days += 1 }
-                        } label: {
-                            AppTablerIcon("plus-circle")
-                                .font(.title2)
-                                .foregroundStyle(days >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
-                        }
-                        .disabled(days >= maxDays)
                     }
                 }
+                .padding(.horizontal, AppDesign.cardPadding)
             }
-            .padding(.horizontal, AppDesign.cardPadding)
-            .navigationTitle("Заморозка")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Применить") { onApply() }
-                }
-            }
-        }
+        )
     }
 }
 
@@ -2138,6 +2145,7 @@ struct AddMembershipSheet: View {
     @State private var startDate: Date = Date()
     @State private var durationDays: Int = 30
     @State private var priceText: String = ""
+    @State private var showStartDatePicker = false
 
     private var priceRub: Int? {
         let t = priceText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2154,138 +2162,155 @@ struct AddMembershipSheet: View {
     private let maxDays = 365
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isCreating {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                        Text("Создаю абонемент…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        MainSheet(
+            title: "Абонемент",
+            onBack: onCancel,
+            trailing: {
+                Button("Создать") {
+                    if selectedKind == .byVisits {
+                        onCreate(.byVisits, totalSessionsCount, nil, nil, priceRub)
+                    } else {
+                        let start = Calendar.current.startOfDay(for: startDate)
+                        onCreate(.unlimited, nil, start, endDate, priceRub)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.bottom, AppDesign.sectionSpacing)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            SettingsCard(title: "Основное") {
-                                VStack(spacing: 0) {
-                                    FormRow(icon: "tag", title: "Тип") {
-                                        Picker("", selection: $selectedKind) {
-                                            Text("По посещениям").tag(MembershipKind.byVisits)
-                                            Text("Безлимитный").tag(MembershipKind.unlimited)
-                                        }
-                                        .pickerStyle(.segmented)
-                                    }
-                                }
-                            }
-
-                            if selectedKind == .byVisits {
-                                SettingsCard(title: "Занятий в абонементе") {
-                                    FormRow(icon: "tag", title: "Количество") {
-                                        HStack(spacing: 20) {
-                                            Button {
-                                                if totalSessionsCount > minSessions { totalSessionsCount -= 1 }
-                                            } label: {
-                                                AppTablerIcon("minus-circle")
-                                                    .font(.title2)
-                                                    .foregroundStyle(totalSessionsCount <= minSessions ? AppColors.secondaryLabel : AppColors.accent)
-                                            }
-                                            .disabled(totalSessionsCount <= minSessions)
-                                            Text("\(totalSessionsCount)")
-                                                .font(.title.weight(.semibold))
-                                                .monospacedDigit()
-                                                .frame(minWidth: 56, alignment: .center)
-                                            Button {
-                                                if totalSessionsCount < maxSessions { totalSessionsCount += 1 }
-                                            } label: {
-                                                AppTablerIcon("plus-circle")
-                                                    .font(.title2)
-                                                    .foregroundStyle(totalSessionsCount >= maxSessions ? AppColors.secondaryLabel : AppColors.accent)
-                                            }
-                                            .disabled(totalSessionsCount >= maxSessions)
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                    }
-                                }
-                            } else {
-                                SettingsCard(title: "Период действия") {
+                }
+                .disabled(isCreating)
+            },
+            content: {
+                Group {
+                    if isCreating {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                            Text("Создаю абонемент…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.bottom, AppDesign.sectionSpacing)
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                SettingsCard(title: "Основное") {
                                     VStack(spacing: 0) {
-                                        FormRow(icon: "calendar-default", title: "Дата начала") {
-                                            DatePicker("", selection: $startDate, displayedComponents: .date)
-                                                .labelsHidden()
-                                                .environment(\.locale, .ru)
+                                        FormRow(icon: "tag", title: "Тип") {
+                                            Picker("", selection: $selectedKind) {
+                                                Text("По посещениям").tag(MembershipKind.byVisits)
+                                                Text("Безлимитный").tag(MembershipKind.unlimited)
+                                            }
+                                            .pickerStyle(.segmented)
                                         }
-                                        FormSectionDivider()
-                                        FormRow(icon: "tag", title: "Срок (дней)") {
+                                    }
+                                }
+
+                                if selectedKind == .byVisits {
+                                    SettingsCard(title: "Занятий в абонементе") {
+                                        FormRow(icon: "tag", title: "Количество") {
                                             HStack(spacing: 20) {
                                                 Button {
-                                                    if durationDays > minDays { durationDays -= 1 }
+                                                    if totalSessionsCount > minSessions { totalSessionsCount -= 1 }
                                                 } label: {
                                                     AppTablerIcon("minus-circle")
                                                         .font(.title2)
-                                                        .foregroundStyle(durationDays <= minDays ? AppColors.secondaryLabel : AppColors.accent)
+                                                        .foregroundStyle(totalSessionsCount <= minSessions ? AppColors.secondaryLabel : AppColors.accent)
                                                 }
-                                                .disabled(durationDays <= minDays)
-                                                Text("\(durationDays)")
+                                                .disabled(totalSessionsCount <= minSessions)
+                                                Text("\(totalSessionsCount)")
                                                     .font(.title.weight(.semibold))
                                                     .monospacedDigit()
                                                     .frame(minWidth: 56, alignment: .center)
                                                 Button {
-                                                    if durationDays < maxDays { durationDays += 1 }
+                                                    if totalSessionsCount < maxSessions { totalSessionsCount += 1 }
                                                 } label: {
                                                     AppTablerIcon("plus-circle")
                                                         .font(.title2)
-                                                        .foregroundStyle(durationDays >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
+                                                        .foregroundStyle(totalSessionsCount >= maxSessions ? AppColors.secondaryLabel : AppColors.accent)
                                                 }
-                                                .disabled(durationDays >= maxDays)
+                                                .disabled(totalSessionsCount >= maxSessions)
                                             }
                                             .frame(maxWidth: .infinity)
                                         }
-                                        Text("Абонемент действует до \(endDate.formattedRuMedium)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding(.top, 6)
+                                    }
+                                } else {
+                                    SettingsCard(title: "Период действия") {
+                                        VStack(spacing: 0) {
+                                            FormRowDateSelection(
+                                                title: "Дата начала",
+                                                selection: Binding<Date?>(
+                                                    get: { startDate },
+                                                    set: { if let value = $0 { startDate = value } }
+                                                ),
+                                                allowsClear: false,
+                                                onTap: { showStartDatePicker = true }
+                                            )
+                                            FormSectionDivider()
+                                            FormRow(icon: "tag", title: "Срок (дней)") {
+                                                HStack(spacing: 20) {
+                                                    Button {
+                                                        if durationDays > minDays { durationDays -= 1 }
+                                                    } label: {
+                                                        AppTablerIcon("minus-circle")
+                                                            .font(.title2)
+                                                            .foregroundStyle(durationDays <= minDays ? AppColors.secondaryLabel : AppColors.accent)
+                                                    }
+                                                    .disabled(durationDays <= minDays)
+                                                    Text("\(durationDays)")
+                                                        .font(.title.weight(.semibold))
+                                                        .monospacedDigit()
+                                                        .frame(minWidth: 56, alignment: .center)
+                                                    Button {
+                                                        if durationDays < maxDays { durationDays += 1 }
+                                                    } label: {
+                                                        AppTablerIcon("plus-circle")
+                                                            .font(.title2)
+                                                            .foregroundStyle(durationDays >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
+                                                    }
+                                                    .disabled(durationDays >= maxDays)
+                                                }
+                                                .frame(maxWidth: .infinity)
+                                            }
+                                            Text("Абонемент действует до \(endDate.formattedRuMedium)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.top, 6)
+                                        }
+                                    }
+                                }
+
+                                SettingsCard(title: "Стоимость (₽, необязательно)") {
+                                    FormRow(icon: "wallet-default", title: "Сумма") {
+                                        TextField("5000", text: $priceText)
+                                            .keyboardType(.numberPad)
+                                            .textFieldStyle(.plain)
+                                            .multilineTextAlignment(.trailing)
+                                            .formInputStyle()
                                     }
                                 }
                             }
-
-                            SettingsCard(title: "Стоимость (₽, необязательно)") {
-                                FormRow(icon: "wallet-default", title: "Сумма") {
-                                    TextField("5000", text: $priceText)
-                                        .keyboardType(.numberPad)
-                                        .textFieldStyle(.plain)
-                                        .multilineTextAlignment(.trailing)
-                                        .formInputStyle()
-                                }
-                            }
-                        }
-                        .padding(.top, 8)
-                        .padding(.bottom, AppDesign.sectionSpacing)
-                    }
-                }
-            }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Абонемент")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                        .disabled(isCreating)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Создать") {
-                        if selectedKind == .byVisits {
-                            onCreate(.byVisits, totalSessionsCount, nil, nil, priceRub)
-                        } else {
-                            let start = Calendar.current.startOfDay(for: startDate)
-                            onCreate(.unlimited, nil, start, endDate, priceRub)
+                            .padding(.top, 8)
+                            .padding(.bottom, AppDesign.sectionSpacing)
                         }
                     }
-                    .disabled(isCreating)
                 }
+                .background(AppColors.systemGroupedBackground)
             }
+        )
+        .sheet(isPresented: $showStartDatePicker) {
+            MainSheet(
+                title: "Дата начала",
+                onBack: { showStartDatePicker = false },
+                trailing: {
+                    Button("Готово") { showStartDatePicker = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $startDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
         }
     }
 }

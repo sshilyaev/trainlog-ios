@@ -59,7 +59,7 @@ struct CoachStatisticsView: View {
                 VStack(spacing: 18) {
                     Spacer().frame(height: 24)
                     AppTablerIcon("grid-dashboard-circle")
-                        .appIcon(.s44)
+                        .appIcon(.s56)
                         .foregroundStyle(AppColors.accent.opacity(0.85))
                         .symbolRenderingMode(.hierarchical)
                     Text("Статистика пока недоступна")
@@ -102,42 +102,41 @@ struct CoachStatisticsView: View {
             onCancel: { errorMessage = nil }
         )
         .sheet(isPresented: $showVisitsFilterSheet) {
-            NavigationStack {
-                List {
-                    Section("Типы посещений на графике") {
-                        visitsFilterRow(
-                            title: "По абонементу",
-                            color: AppColors.visitsBySubscription,
-                            isOn: $showVisitsBySubscription
-                        )
-                        visitsFilterRow(
-                            title: "Разовые (оплаченные)",
-                            color: AppColors.visitsOneTimePaid,
-                            isOn: $showVisitsOneTimePaid
-                        )
-                        visitsFilterRow(
-                            title: "Разовые (в долг)",
-                            color: AppColors.visitsOneTimeDebt,
-                            isOn: $showVisitsOneTimeDebt
-                        )
-                        visitsFilterRow(
-                            title: "Отменённые",
-                            color: AppColors.visitsCancelled,
-                            isOn: $showVisitsCancelled
-                        )
-                    }
-                }
-                .navigationTitle("Типы посещений")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Готово") {
-                            showVisitsFilterSheet = false
+            MainSheet(
+                title: "Типы посещений",
+                onBack: { showVisitsFilterSheet = false },
+                trailing: {
+                    Button("Готово") { showVisitsFilterSheet = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    List {
+                        Section("Типы посещений на графике") {
+                            visitsFilterRow(
+                                title: "По абонементу",
+                                color: AppColors.visitsBySubscription,
+                                isOn: $showVisitsBySubscription
+                            )
+                            visitsFilterRow(
+                                title: "Разовые (оплаченные)",
+                                color: AppColors.visitsOneTimePaid,
+                                isOn: $showVisitsOneTimePaid
+                            )
+                            visitsFilterRow(
+                                title: "Разовые (в долг)",
+                                color: AppColors.visitsOneTimeDebt,
+                                isOn: $showVisitsOneTimeDebt
+                            )
+                            visitsFilterRow(
+                                title: "Отменённые",
+                                color: AppColors.visitsCancelled,
+                                isOn: $showVisitsCancelled
+                            )
                         }
                     }
                 }
-            }
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            )
+            .mainSheetPresentation(.half)
         }
     }
 
@@ -219,24 +218,26 @@ struct CoachStatisticsView: View {
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            HStack(spacing: 8) {
-                Button {
-                    showVisitsFilterSheet = true
-                } label: {
-                    Label("Фильтр", appIcon: "filter-horizontal")
-                        .font(.caption.weight(.medium))
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            if !isEmptyVisits {
+                HStack(spacing: 8) {
+                    Button {
+                        showVisitsFilterSheet = true
+                    } label: {
+                        Label("Фильтр", appIcon: "filter-horizontal")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
 
-                Button {
-                    showVisitsChartValues.toggle()
-                } label: {
-                    Text(showVisitsChartValues ? "Скрыть значения" : "Показать значения")
-                        .font(.caption.weight(.medium))
+                    Button {
+                        showVisitsChartValues.toggle()
+                    } label: {
+                        Text(showVisitsChartValues ? "Скрыть значения" : "Показать значения")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
             }
             if isEmptyVisits {
                 VStack(spacing: 10) {

@@ -48,25 +48,19 @@ struct QuickAddVisitSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            mainContent
-                .background(AppColors.systemGroupedBackground)
-                .navigationTitle(navigationTitleText)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        BackToolbarButton(action: onCancel)
-                            .disabled(isSaving)
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Добавить") {
-                            submit()
-                        }
-                        .fontWeight(.semibold)
-                        .disabled(isSaving || !canSubmit)
-                    }
-                }
-        }
+        MainSheet(
+            title: navigationTitleText,
+            onBack: onCancel,
+            trailing: {
+                Button("Добавить") { submit() }
+                    .fontWeight(.semibold)
+                    .disabled(isSaving || !canSubmit)
+            },
+            content: {
+                mainContent
+                    .background(AppColors.systemGroupedBackground)
+            }
+        )
         .task { await load() }
         .overlay { savingOverlay }
         .allowsHitTesting(!isSaving)
@@ -106,29 +100,29 @@ struct QuickAddVisitSheet: View {
     }
 
     private var datePickerSheet: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                DatePicker("Дата", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-                    .padding()
-                Spacer()
-            }
-            .navigationTitle("Дата посещения")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showDatePicker = false
-                    } label: {
-                        Text("Готово")
-                            .fontWeight(.regular)
-                    }
+        MainSheet(
+            title: "Дата посещения",
+            onBack: { showDatePicker = false },
+            trailing: {
+                Button {
+                    showDatePicker = false
+                } label: {
+                    Text("Готово")
+                        .fontWeight(.regular)
+                }
+            },
+            content: {
+                VStack(spacing: 0) {
+                    DatePicker("Дата", selection: $selectedDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                        .padding()
+                    Spacer()
                 }
             }
-            .presentationDetents(AppSheetDetents.calendar)
-        }
+        )
         .environment(\.locale, .ru)
+        .mainSheetPresentation(.calendar)
     }
 
     @ViewBuilder

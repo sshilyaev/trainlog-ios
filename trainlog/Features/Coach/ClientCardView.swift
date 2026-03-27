@@ -417,7 +417,7 @@ struct ClientCardView: View {
                 },
                 onCancel: { showMergeSheet = false }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showEditTrainee) {
             if let link = link, let coachId = coachProfileId, let linkService = linkService {
@@ -435,7 +435,7 @@ struct ClientCardView: View {
                     },
                     onCancel: { showEditTrainee = false }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
         .onChange(of: trainee.id) { _, _ in
@@ -796,79 +796,75 @@ private struct MergeManagedTraineeSheet: View {
     @State private var pendingToken: String?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    SettingsCard(title: "Ввести код") {
-                        TextField("Код из приложения клиента", text: $codeInput)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
-                            .textFieldStyle(.plain)
-                            .formInputStyle()
+        MainSheet(
+            title: "Объединить",
+            onBack: onCancel,
+            trailing: {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.9)
+                } else {
+                    Button("Подтвердить") {
+                        Task { await submitCode(codeInput.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                    }
+                    .fontWeight(.regular)
+                    .disabled(codeInput.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        SettingsCard(title: "Ввести код") {
+                            TextField("Код из приложения клиента", text: $codeInput)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled()
+                                .textFieldStyle(.plain)
+                                .formInputStyle()
 
-                        Button {
-                            if let s = UIPasteboard.general.string {
-                                codeInput = s.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                AppTablerIcon("copy-default")
-                                Text("Вставить из буфера")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.plain)
-
-                        if let msg = errorMessage, !msg.isEmpty {
-                            Text(msg)
-                                .font(.footnote)
-                                .foregroundStyle(AppColors.destructive)
+                            Button {
+                                if let s = UIPasteboard.general.string {
+                                    codeInput = s.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    AppTablerIcon("copy-default")
+                                    Text("Вставить из буфера")
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+
+                            if let msg = errorMessage, !msg.isEmpty {
+                                Text(msg)
+                                    .font(.footnote)
+                                    .foregroundStyle(AppColors.destructive)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.bottom, AppDesign.sectionSpacing)
-            }
-            .background(AdaptiveScreenBackground())
-            .navigationTitle("Объединить")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BackToolbarButton(action: onCancel)
-                        .disabled(isLoading)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if isLoading {
-                        ProgressView()
-                            .scaleEffect(0.9)
-                    } else {
-                        Button("Подтвердить") {
-                            Task { await submitCode(codeInput.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                .background(AdaptiveScreenBackground())
+                .appConfirmationDialog(
+                    title: "Объединить профили?",
+                    message: "Перенести все данные из «\(managedTrainee.name)» в реальный профиль клиента?",
+                    isPresented: Binding(
+                        get: { realTraineeProfileIdToConfirm != nil },
+                        set: { if !$0 { realTraineeProfileIdToConfirm = nil } }
+                    ),
+                    confirmTitle: "Объединить",
+                    onConfirm: {
+                        if let realId = realTraineeProfileIdToConfirm, let token = pendingToken {
+                            Task { await confirmMerge(realTraineeProfileId: realId, token: token) }
                         }
-                        .fontWeight(.regular)
-                        .disabled(codeInput.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
-                    }
-                }
+                        realTraineeProfileIdToConfirm = nil
+                    },
+                    onCancel: { realTraineeProfileIdToConfirm = nil; pendingToken = nil }
+                )
             }
-            .appConfirmationDialog(
-                title: "Объединить профили?",
-                message: "Перенести все данные из «\(managedTrainee.name)» в реальный профиль клиента?",
-                isPresented: Binding(
-                    get: { realTraineeProfileIdToConfirm != nil },
-                    set: { if !$0 { realTraineeProfileIdToConfirm = nil } }
-                ),
-                confirmTitle: "Объединить",
-                onConfirm: {
-                    if let realId = realTraineeProfileIdToConfirm, let token = pendingToken {
-                        Task { await confirmMerge(realTraineeProfileId: realId, token: token) }
-                    }
-                    realTraineeProfileIdToConfirm = nil
-                },
-                onCancel: { realTraineeProfileIdToConfirm = nil; pendingToken = nil }
-            )
-        }
+        )
     }
 
     private func submitCode(_ code: String) async {
@@ -1167,7 +1163,7 @@ private struct ClientCardVisitsBlock: View {
                     pendingEventDate = date
                 }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: Binding(
             get: { pendingOneOffDate != nil },
@@ -1185,7 +1181,7 @@ private struct ClientCardVisitsBlock: View {
                     onAdded: { Task { await onVisitsChanged(); await MainActor.run { pendingOneOffDate = nil } } },
                     onCancel: { pendingOneOffDate = nil }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
         .sheet(isPresented: Binding(
@@ -1202,7 +1198,7 @@ private struct ClientCardVisitsBlock: View {
                     onError: { msg in Task { await MainActor.run { visitsErrorMessage = msg } } },
                     onCancel: { pendingEventDate = nil }
                 )
-                .presentationDetents(AppSheetDetents.mediumOnly)
+                .mainSheetPresentation(.half)
             }
         }
         .sheet(item: $eventToEdit) { ev in
@@ -1215,7 +1211,7 @@ private struct ClientCardVisitsBlock: View {
                 onError: { msg in Task { await MainActor.run { visitsErrorMessage = msg } } },
                 onCancel: { eventToEdit = nil }
             )
-            .presentationDetents(AppSheetDetents.mediumOnly)
+            .mainSheetPresentation(.half)
         }
         .appConfirmationDialog(
             title: "Ошибка",

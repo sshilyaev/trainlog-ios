@@ -122,7 +122,7 @@ struct ProfileSelectionView: View {
                     },
                     onCancel: { showChangePasswordSheet = false }
                 )
-                .presentationDetents([.medium])
+                .mainSheetPresentation(.half)
             }
         }
         .trackAPIScreen("Выбор профиля")
@@ -386,72 +386,67 @@ private struct ChangePasswordSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Обновите пароль для входа в аккаунт. Минимум 6 символов.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        MainSheet(
+            title: "Сменить пароль",
+            onBack: onCancel,
+            trailing: {
+                if isChanging {
+                    ProgressView().scaleEffect(0.9)
+                } else {
+                    Button {
+                        submit()
+                    } label: {
+                        Text("Изменить")
+                            .fontWeight(.regular)
+                    }
+                    .disabled(!canSubmit)
+                    .foregroundStyle(.primary)
+                }
+            },
+            content: {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Обновите пароль для входа в аккаунт. Минимум 6 символов.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, AppDesign.cardPadding)
+
+                        VStack(spacing: 12) {
+                            SecureField("Текущий пароль", text: $currentPassword)
+                                .textContentType(.password)
+                                .padding(12)
+                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+
+                            SecureField("Новый пароль (не менее 6 символов)", text: $newPassword)
+                                .textContentType(.newPassword)
+                                .padding(12)
+                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+
+                            SecureField("Повторите новый пароль", text: $confirmPassword)
+                                .textContentType(.newPassword)
+                                .padding(12)
+                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+
+                            if !newPassword.isEmpty && newPassword != confirmPassword {
+                                Text("Пароли не совпадают")
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.destructive)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            } else if !newPassword.isEmpty && newPassword.count < 6 {
+                                Text("Пароль должен быть не короче 6 символов")
+                                    .font(.caption)
+                                    .foregroundStyle(AppColors.destructive)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
                         .padding(.horizontal, AppDesign.cardPadding)
-
-                    VStack(spacing: 12) {
-                        SecureField("Текущий пароль", text: $currentPassword)
-                            .textContentType(.password)
-                            .padding(12)
-                            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                        SecureField("Новый пароль (не менее 6 символов)", text: $newPassword)
-                            .textContentType(.newPassword)
-                            .padding(12)
-                            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                        SecureField("Повторите новый пароль", text: $confirmPassword)
-                            .textContentType(.newPassword)
-                            .padding(12)
-                            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                        if !newPassword.isEmpty && newPassword != confirmPassword {
-                            Text("Пароли не совпадают")
-                                .font(.caption)
-                                .foregroundStyle(AppColors.destructive)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if !newPassword.isEmpty && newPassword.count < 6 {
-                            Text("Пароль должен быть не короче 6 символов")
-                                .font(.caption)
-                                .foregroundStyle(AppColors.destructive)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
                     }
-                    .padding(.horizontal, AppDesign.cardPadding)
+                    .padding(.top, 16)
+                    .padding(.bottom, AppDesign.sectionSpacing)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, AppDesign.sectionSpacing)
+                .background(AppColors.systemGroupedBackground)
             }
-            .background(AppColors.systemGroupedBackground)
-            .navigationTitle("Сменить пароль")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    BackToolbarButton(action: onCancel)
-                        .disabled(isChanging)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isChanging {
-                        ProgressView()
-                            .scaleEffect(0.9)
-                    } else {
-                        Button {
-                            submit()
-                        } label: {
-                            Text("Изменить")
-                                .fontWeight(.regular)
-                        }
-                            .disabled(!canSubmit)
-                            .foregroundStyle(.primary)
-                    }
-                }
-            }
-        }
+        )
     }
 
     private func submit() {
