@@ -10,6 +10,7 @@ import AudioToolbox
 struct RootView: View {
     @Bindable var appState: AppState
     @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
+    @AppStorage(AppFontSizeStepStorage.appStorageKey) private var appFontSizeStep = 0
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var offlineMode = OfflineMode.shared
     @State private var showOfflineInfo = false
@@ -32,10 +33,14 @@ struct RootView: View {
     let nutritionService: NutritionServiceProtocol
     let calculatorsService: CalculatorsServiceProtocol
     let coachOverviewService: CoachOverviewServiceProtocol
+    private let startupTimeoutSeconds: Double = 15
 
     var body: some View {
         screenContent
             .id(appState.rootViewContentId)
+            .appFontSizeStepFromUserSettings()
+            .environment(\.appFontExtraPoints, AppFontFixedSizeExtra.points(forStep: appFontSizeStep))
+            .animation(.easeInOut(duration: 0.35), value: appFontSizeStep)
             .preferredColorScheme(AppTheme(rawValue: appThemeRaw)?.preferredColorScheme)
             .environmentObject(offlineMode)
             .overlay(alignment: .topTrailing) { offlineOverlayContent }
@@ -283,9 +288,32 @@ struct RootView: View {
         let startedAt = Date()
         authService.addAuthStateListener { _ in }
         if let uid = authService.currentUserId {
-            appState.authStatus = .authenticated(userId: uid)
-            await loadProfiles(userId: uid)
-            // Экран после загрузки выставляет didLoadProfiles: либо .main(profile) при восстановлении, либо .profileSelection
+            await MainActor.run {
+                appState.authStatus = .authenticated(userId: uid)
+            }
+            switch await fetchProfilesForStartup(userId: uid, timeoutSeconds: startupTimeoutSeconds) {
+            case .loaded(let list):
+                let elapsed = Date().timeIntervalSince(startedAt)
+                if elapsed < minSplashSeconds {
+                    try? await Task.sleep(nanoseconds: UInt64((minSplashSeconds - elapsed) * 1_000_000_000))
+                }
+                await MainActor.run {
+                    offlineMode.isOffline = false
+                    appState.didLoadProfiles(list)
+                }
+            case .failed(let error):
+                let elapsed = Date().timeIntervalSince(startedAt)
+                if elapsed < minSplashSeconds {
+                    try? await Task.sleep(nanoseconds: UInt64((minSplashSeconds - elapsed) * 1_000_000_000))
+                }
+                await applyStartupProfilesFailure(userId: uid, error: error)
+            case .timeout:
+                let elapsed = Date().timeIntervalSince(startedAt)
+                if elapsed < minSplashSeconds {
+                    try? await Task.sleep(nanoseconds: UInt64((minSplashSeconds - elapsed) * 1_000_000_000))
+                }
+                await applyStartupTimeoutFallback(userId: uid)
+            }
         } else {
             let elapsed = Date().timeIntervalSince(startedAt)
             if elapsed < minSplashSeconds {
@@ -294,6 +322,85 @@ struct RootView: View {
             await MainActor.run {
                 appState.authStatus = .unauthenticated
                 appState.currentScreen = .auth
+            }
+        }
+    }
+
+    private enum StartupProfilesFetchResult {
+        case loaded([Profile])
+        case failed(Error)
+        case timeout
+    }
+
+    private func fetchProfilesForStartup(userId: String, timeoutSeconds: Double) async -> StartupProfilesFetchResult {
+        await withTaskGroup(of: StartupProfilesFetchResult.self) { group in
+            group.addTask {
+                do {
+                    let list = try await profileService.fetchProfiles(userId: userId)
+                    return .loaded(list)
+                } catch {
+                    return .failed(error)
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                return .timeout
+            }
+
+            let first = await group.next() ?? .timeout
+            group.cancelAll()
+            return first
+        }
+    }
+
+    private func applyStartupProfilesFailure(userId: String, error: Error) async {
+        await MainActor.run {
+            if AppConfig.enableOfflineMode,
+               let cached = appState.loadProfilesCache(userId: userId),
+               !cached.isEmpty {
+                appState.globalError = nil
+                offlineMode.isOffline = true
+                appState.profiles = cached
+                appState.isLoadingProfiles = false
+                appState.profilesLoadError = nil
+                if let lastId = UserDefaults.standard.string(forKey: "lastSelectedProfileId_\(userId)"),
+                   let profile = cached.first(where: { $0.id == lastId }) {
+                    appState.currentProfile = profile
+                    appState.currentScreen = .main(profile)
+                } else {
+                    appState.currentScreen = .profileSelection
+                }
+            } else if let msg = AppErrors.userMessageIfNeeded(for: error) {
+                appState.didFailLoadingProfiles(msg)
+                appState.currentScreen = .profileSelection
+            } else {
+                appState.didFailLoadingProfiles("Не удалось загрузить профиль. Попробуйте ещё раз.")
+                appState.currentScreen = .profileSelection
+            }
+        }
+    }
+
+    private func applyStartupTimeoutFallback(userId: String) async {
+        await MainActor.run {
+            if AppConfig.enableOfflineMode,
+               let cached = appState.loadProfilesCache(userId: userId),
+               !cached.isEmpty {
+                appState.globalError = nil
+                offlineMode.isOffline = true
+                appState.profiles = cached
+                appState.isLoadingProfiles = false
+                appState.profilesLoadError = nil
+                if let lastId = UserDefaults.standard.string(forKey: "lastSelectedProfileId_\(userId)"),
+                   let profile = cached.first(where: { $0.id == lastId }) {
+                    appState.currentProfile = profile
+                    appState.currentScreen = .main(profile)
+                } else {
+                    appState.currentScreen = .profileSelection
+                }
+            } else {
+                offlineMode.isOffline = true
+                appState.didFailLoadingProfiles("Долгая загрузка. Запущен офлайн-режим.")
+                appState.currentScreen = .profileSelection
             }
         }
     }

@@ -8,18 +8,31 @@ import SwiftUI
 import UIKit
 #endif
 
-/// Сплеш при запуске. Лого, анимация, случайная мотивирующая фраза внизу.
+#if canImport(UIKit)
+/// Ресурсы сплеша: выбор делается один раз за процесс, без «переключения» картинок в UI.
+private enum SplashScreenAssets {
+    /// Кандидаты: `VerticalSplashBackground1_2x` … `VerticalSplashBackground11_2x` (имя imageset),
+    /// либо `VerticalSplashBackground1` … `11`, если в каталоге базовое имя, как у @2x-слота.
+    static let verticalBackgroundImageName: String? = {
+        let order = (1...11).shuffled()
+        for i in order {
+            let withSuffix = "VerticalSplashBackground\(i)_2x"
+            if UIImage(named: withSuffix) != nil { return withSuffix }
+            let base = "VerticalSplashBackground\(i)"
+            if UIImage(named: base) != nil { return base }
+        }
+        return nil
+    }()
+}
+#endif
+
+/// Сплеш при запуске. Случайный вертикальный фон (если есть в ассетах) или градиент; текст на тёмной подложке, без логотипа.
 struct SplashView: View {
-    @State private var logoOpacity: Double = 0
-    @State private var logoScale: CGFloat = 0.70
     @State private var titleOpacity: Double = 0
     @State private var titleOffset: CGFloat = 10
     @State private var taglineOpacity: Double = 0
     @State private var phraseOpacity: Double = 0
     @State private var topGlowIntensity: Double = 0
-    @State private var usePlaceholder = false
-    @State private var splashImageName = "SplashLogo"
-    @State private var motivationalPhrase: String = ""
 
     private static let motivationalPhrases: [String] = [
         "Каждый день — шаг к цели",
@@ -44,135 +57,161 @@ struct SplashView: View {
         "Начни с малого и не останавливайся",
     ]
 
+    private static let phraseForThisLaunch: String = motivationalPhrases.randomElement() ?? motivationalPhrases[0]
+
+    private var hasVerticalBackground: Bool {
+        #if canImport(UIKit)
+        SplashScreenAssets.verticalBackgroundImageName != nil
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         ZStack {
-            AppColors.clear
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    ZStack(alignment: .top) {
-                        LinearGradient(
-                            colors: [AppColors.splashGradientTop, AppColors.splashGradientBottom],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                        .overlay {
-                            Circle()
-                                .fill(.white.opacity(0.06))
-                                .frame(width: 320, height: 320)
-                                .blur(radius: 80)
-                                .offset(x: -100, y: -220)
-                            Circle()
-                                .fill(.black.opacity(0.1))
-                                .frame(width: 280, height: 280)
-                                .blur(radius: 70)
-                                .offset(x: 120, y: 260)
-                        }
-                    }
-                    .ignoresSafeArea()
-                )
+            backgroundLayer
 
-            // Явное верхнее свечение поверх фона (но под контентом)
-            VStack {
-                LinearGradient(
-                    colors: [
-                        .white.opacity(0.80),
-                        .white.opacity(0.26),
-                        .clear
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 360)
-                .blur(radius: 36)
-                .blendMode(.screen)
-                .opacity(topGlowIntensity)
-                Spacer()
+            if !hasVerticalBackground {
+                legacyTopGlow
             }
-            .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-
-                Group {
-                    if usePlaceholder {
-                        AppTablerIcon("user-default")
-                            .appIcon(.s44, weight: .medium)
-                            .foregroundStyle(.white.opacity(0.95))
-                    } else {
-                        Image(splashImageName)
-                            .resizable()
-                            .scaledToFit()
-                    }
-                }
-                .frame(maxWidth: 240, maxHeight: 200)
-                .scaleEffect(logoScale)
-                .opacity(logoOpacity)
-
-                Text("TrainLog")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(.white)
-                    .opacity(titleOpacity)
-                    .offset(y: titleOffset)
-                    .padding(.top, 28)
-
-                Text("Дневник тренировок")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.88))
-                    .opacity(taglineOpacity)
-                    .padding(.top, 6)
-
-                Spacer(minLength: 0)
-
-                Text(motivationalPhrase)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .opacity(phraseOpacity)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                    .padding(.bottom, 44)
-            }
-            .padding(.horizontal, 48)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            textChrome
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            motivationalPhrase = Self.motivationalPhrases.randomElement() ?? Self.motivationalPhrases[0]
-            #if canImport(UIKit)
-            let names = ["SplashLogo", "Logo", "splash_logo"]
-            usePlaceholder = names.allSatisfy { UIImage(named: $0) == nil }
-            if let found = names.first(where: { UIImage(named: $0) != nil }) {
-                splashImageName = found
+            runEntranceAnimations()
+        }
+        .trackAPIScreen("Запуск")
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        #if canImport(UIKit)
+        if let bgName = SplashScreenAssets.verticalBackgroundImageName {
+            GeometryReader { proxy in
+                ZStack {
+                    legacyGradientBackground
+                    Image(bgName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: proxy.size.width,
+                            height: proxy.size.height,
+                            alignment: .center
+                        )
+                        .clipped()
+                        .accessibilityHidden(true)
+                }
             }
-            #endif
-            // Свечение сверху: в течение всего сплеша становится ярче (до 80%).
+            .ignoresSafeArea()
+        } else {
+            legacyGradientBackground
+        }
+        #else
+        legacyGradientBackground
+        #endif
+    }
+
+    private var legacyGradientBackground: some View {
+        AppColors.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                ZStack(alignment: .top) {
+                    LinearGradient(
+                        colors: [AppColors.splashGradientTop, AppColors.splashGradientBottom],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .overlay {
+                        Circle()
+                            .fill(.white.opacity(0.06))
+                            .frame(width: 320, height: 320)
+                            .blur(radius: 80)
+                            .offset(x: -100, y: -220)
+                        Circle()
+                            .fill(.black.opacity(0.1))
+                            .frame(width: 280, height: 280)
+                            .blur(radius: 70)
+                            .offset(x: 120, y: 260)
+                    }
+                }
+                .ignoresSafeArea()
+            )
+    }
+
+    private var legacyTopGlow: some View {
+        VStack {
+            LinearGradient(
+                colors: [
+                    .white.opacity(0.80),
+                    .white.opacity(0.26),
+                    .clear,
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 360)
+            .blur(radius: 36)
+            .blendMode(.screen)
+            .opacity(topGlowIntensity)
+            Spacer()
+        }
+        .ignoresSafeArea()
+    }
+
+    /// Нижняя панель: тёмная подложка + светлый текст (и на фото-сплеше, и на градиенте).
+    private var textChrome: some View {
+        VStack {
+            Spacer(minLength: 0)
+            VStack(spacing: 10) {
+                Text("TrainLog")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(Color.white)
+                    .opacity(titleOpacity)
+                    .offset(y: titleOffset)
+
+                Text("Дневник тренировок")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.9))
+                    .opacity(taglineOpacity)
+
+                Text(Self.phraseForThisLaunch)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.78))
+                    .opacity(phraseOpacity)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 26)
+            .frame(maxWidth: .infinity)
+            .background {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.black.opacity(0.62))
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 34)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaPadding(.bottom, 6)
+    }
+
+    private func runEntranceAnimations() {
+        if !hasVerticalBackground {
             withAnimation(.easeInOut(duration: 4.0)) {
                 topGlowIntensity = 0.8
             }
-            // Логотип: появляется и увеличивается 0.70 → 1.10 за 2s, потом 1.10 → 1.00 за 1s.
-            withAnimation(.easeOut(duration: 0.35)) { logoOpacity = 1 }
-            withAnimation(.easeInOut(duration: 2.0)) { logoScale = 1.10 }
-            Task {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                await MainActor.run {
-                    withAnimation(.easeOut(duration: 1.0)) {
-                        logoScale = 1.00
-                    }
-                }
-            }
-            // TrainLog и цитата: старт через 0.5s и не быстро.
-            withAnimation(.easeOut(duration: 1.2).delay(0.5)) {
-                titleOpacity = 1
-                titleOffset = 0
-            }
-            withAnimation(.easeOut(duration: 1.4).delay(0.5)) {
-                phraseOpacity = 1
-            }
-            // Подзаголовок: показ через 1 секунду и медленнее.
-            withAnimation(.easeOut(duration: 1.6).delay(1.0)) {
-                taglineOpacity = 1
-            }
         }
-        .trackAPIScreen("Запуск")
+        withAnimation(.easeOut(duration: 1.2).delay(0.35)) {
+            titleOpacity = 1
+            titleOffset = 0
+        }
+        withAnimation(.easeOut(duration: 1.4).delay(0.35)) {
+            phraseOpacity = 1
+        }
+        withAnimation(.easeOut(duration: 1.5).delay(0.55)) {
+            taglineOpacity = 1
+        }
     }
 }
 

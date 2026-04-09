@@ -222,26 +222,6 @@ struct ContentCard<Content: View>: View {
                     Spacer(minLength: 0)
                 }
             )
-
-            stroke.mask(
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(
-                            RadialGradient(
-                                stops: [
-                                    .init(color: AppColors.white.opacity(0.70), location: 0.0),
-                                    .init(color: AppColors.white.opacity(0.35), location: 0.40),
-                                    .init(color: AppColors.clear, location: 1.0),
-                                ],
-                                center: .bottomTrailing,
-                                startRadius: 0,
-                                endRadius: 140
-                            )
-                        )
-                        .frame(height: 76)
-                }
-            )
         }
     }
 
@@ -340,26 +320,6 @@ struct SimpleContentCard<Content: View>: View {
                         )
                         .frame(height: 76)
                     Spacer(minLength: 0)
-                }
-            )
-
-            stroke.mask(
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(
-                            RadialGradient(
-                                stops: [
-                                    .init(color: .white.opacity(0.70), location: 0.0),
-                                    .init(color: .white.opacity(0.35), location: 0.40),
-                                    .init(color: .clear, location: 1.0),
-                                ],
-                                center: .bottomTrailing,
-                                startRadius: 0,
-                                endRadius: 140
-                            )
-                        )
-                        .frame(height: 76)
                 }
             )
         }

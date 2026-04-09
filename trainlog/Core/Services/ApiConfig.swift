@@ -10,7 +10,7 @@ enum ApiConfig {
     static var baseURL: URL {
         guard let urlString = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String,
               let url = URL(string: urlString) else {
-            return URL(string: "http://localhost:8080")!
+            return URL(string: "https://train.tallybase.ru")!
         }
         return url
     }

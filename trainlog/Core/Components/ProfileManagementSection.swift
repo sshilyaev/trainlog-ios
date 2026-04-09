@@ -8,6 +8,19 @@ struct ProfileManagementSection<DeveloperDestination: View>: View {
 
     var body: some View {
         SimpleContentCard(title: "Управление профилем") {
+            NavigationLink {
+                AppSettingsView()
+            } label: {
+                WideActionButtonToOneColumn(
+                    icon: "settings",
+                    title: "Настройки",
+                    subtitle: "Тема, размер текста, документы",
+                    iconColor: AppColors.secondaryLabel,
+                    chevronColor: AppColors.tertiaryLabel
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
             if showsDeveloperSettings {
                 NavigationLink {
                     developerDestination()
