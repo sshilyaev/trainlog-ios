@@ -191,6 +191,8 @@ final class APINutritionService: NutritionServiceProtocol {
         traineeProfileId: String,
         supplementId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?
@@ -201,6 +203,8 @@ final class APINutritionService: NutritionServiceProtocol {
             "supplementId": supplementId
         ]
         if let dosage, !dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["dosage"] = dosage }
+        if let dosageValue, !dosageValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["dosageValue"] = dosageValue }
+        if let dosageUnit { body["dosageUnit"] = dosageUnit.rawValue }
         if let timing, !timing.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["timing"] = timing }
         if let frequency, !frequency.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["frequency"] = frequency }
         if let note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["note"] = note }
@@ -216,12 +220,16 @@ final class APINutritionService: NutritionServiceProtocol {
     func updateSupplementAssignment(
         assignmentId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?
     ) async throws -> TraineeSportsSupplementAssignment {
         struct UpdateBody: Encodable {
             let dosage: String
+            let dosageValue: String
+            let dosageUnit: String?
             let timing: String
             let frequency: String
             let note: String
@@ -231,6 +239,8 @@ final class APINutritionService: NutritionServiceProtocol {
         // Empty strings are accepted by backend and normalized to null there.
         let body = UpdateBody(
             dosage: dosage ?? "",
+            dosageValue: dosageValue ?? "",
+            dosageUnit: dosageUnit?.rawValue,
             timing: timing ?? "",
             frequency: frequency ?? "",
             note: note ?? ""

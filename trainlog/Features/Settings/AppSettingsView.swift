@@ -1,8 +1,19 @@
 import SwiftUI
 
 struct AppSettingsView: View {
+    let showsDeveloperSettings: Bool
+    let developerSettingsDestination: (() -> AnyView)?
+
     @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
     @AppStorage("appFontSizeStep") private var fontSizeStep = 0
+
+    init(
+        showsDeveloperSettings: Bool = false,
+        developerSettingsDestination: (() -> AnyView)? = nil
+    ) {
+        self.showsDeveloperSettings = showsDeveloperSettings
+        self.developerSettingsDestination = developerSettingsDestination
+    }
 
     var body: some View {
         ScrollView {
@@ -20,15 +31,7 @@ struct AppSettingsView: View {
                 }
 
                 SettingsCard(title: "Размер текста в приложении") {
-                    SegmentedPicker(
-                        title: "",
-                        selection: $fontSizeStep,
-                        options: [
-                            (0, "Стандарт"),
-                            (1, "Средний"),
-                            (2, "Большой"),
-                        ]
-                    )
+                    TextSizeSliderRow(step: $fontSizeStep)
                 }
 
                 SettingsCard(title: "Правовая информация") {
@@ -39,12 +42,72 @@ struct AppSettingsView: View {
                     }
                     .buttonStyle(PressableButtonStyle())
                 }
+
+                if showsDeveloperSettings, let developerSettingsDestination {
+                    SettingsCard(title: "Для разработчика") {
+                        NavigationLink {
+                            developerSettingsDestination()
+                        } label: {
+                            WideActionButtonToOneColumn(
+                                icon: "troubleshoot",
+                                title: "Настройки разработчика",
+                                subtitle: "Apple Health демо, UI Kit и другие опции",
+                                iconColor: AppColors.secondaryLabel,
+                                chevronColor: AppColors.tertiaryLabel,
+                                accent: AppColors.profileAccent,
+                                showsLeadingAccentBar: true,
+                                statusTitle: "Dev",
+                                statusColor: AppColors.profileAccent
+                            )
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                    }
+                }
             }
             .padding(.bottom, AppDesign.sectionSpacing)
         }
         .background(AdaptiveScreenBackground())
         .navigationTitle("Настройки")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct TextSizeSliderRow: View {
+    @Binding var step: Int
+
+    private var sliderBinding: Binding<Double> {
+        Binding<Double>(
+            get: { Double(AppFontSizeStepStorage.clamp(step)) },
+            set: { step = Int($0.rounded()) }
+        )
+    }
+
+    private var currentTitle: String {
+        switch AppFontSizeStepStorage.clamp(step) {
+        case 1: return "Средний"
+        case 2: return "Большой"
+        default: return "Стандарт"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("A")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                Slider(value: sliderBinding, in: 0...2, step: 1)
+                    .tint(AppColors.accent)
+                Text("A")
+                    .font(.title2)
+                    .foregroundStyle(.primary)
+            }
+
+            Text(currentTitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
     }
 }
 

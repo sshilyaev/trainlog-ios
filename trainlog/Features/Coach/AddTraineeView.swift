@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Полноэкранный экран «Добавить подопечного»: сверху кнопка «Добавить по коду», ниже список своих профилей подопечного.
+/// Полноэкранный экран «Добавить подопечного»: выбор способа (по коду / из своих профилей) + ручное добавление на том же экране.
 struct AddTraineeView: View {
     let coachProfile: Profile
     let myTraineeProfiles: [Profile]
@@ -24,69 +24,148 @@ struct AddTraineeView: View {
     }
 
     @State private var errorMessage: String?
-    @State private var showCreateManagedTrainee = false
     @State private var showAddByCodeSheet = false
     @State private var showMyProfilesSheet = false
+    @State private var manualName = ""
+    @State private var manualGender: ProfileGender? = .male
+    @State private var manualDateOfBirth: Date? = nil
+    @State private var manualPhoneNumber = ""
+    @State private var manualTelegramUsername = ""
+    @State private var manualNotes = ""
+    @State private var manualHeight = ""
+    @State private var manualWeight = ""
+    @State private var isManualSaving = false
+    @State private var showManualDatePickerSheet = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 SingleContentCard(
-                    title: "По коду",
-                    description: "Подопечный создаёт временный код в разделе «Подключить по коду» в своём профиле."
+                    title: "Способы добавления",
+                    description: "Вы можете подключить подопечного по коду или выбрать его из своих профилей."
                 ) {
-                    Button {
-                        showAddByCodeSheet = true
-                    } label: {
-                        WideActionButtonToOneColumn(
-                            icon: "key-left",
-                            title: "Добавить по коду",
-                            subtitle: "",
-                            showChevron: true,
-                            iconColor: AppColors.accent
-                        )
+                    VStack(spacing: 8) {
+                        Button {
+                            showAddByCodeSheet = true
+                        } label: {
+                            WideActionButtonToOneColumn(
+                                icon: "key-left",
+                                title: "По коду",
+                                subtitle: "Подопечный передаёт временный код",
+                                showChevron: true,
+                                iconColor: AppColors.accent
+                            )
+                        }
+                        .buttonStyle(PressableButtonStyle())
+
+                        Button {
+                            showMyProfilesSheet = true
+                        } label: {
+                            WideActionButtonToOneColumn(
+                                icon: "user-default",
+                                title: "Выбрать из моих профилей",
+                                subtitle: availableProfilesSubtitle,
+                                showChevron: true,
+                                iconColor: AppColors.accent
+                            )
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                        .disabled(availableProfiles.isEmpty)
                     }
-                    .buttonStyle(PressableButtonStyle())
                 }
 
-                SingleContentCard(
-                    title: "Без приложения",
-                    description: "Если клиент не хочет устанавливать приложение, вы можете создать его профиль и вести учёт. Позже этот профиль можно будет объединить с реальным."
-                ) {
-                    Button {
-                        showCreateManagedTrainee = true
-                    } label: {
-                        WideActionButtonToOneColumn(
-                            icon: "plus-square",
-                            title: "Создать подопечного вручную",
-                            subtitle: "",
-                            showChevron: true,
-                            iconColor: AppColors.accent
+                SettingsCard(title: "Добавить вручную") {
+                    VStack(spacing: 0) {
+                        Text("Если клиент без приложения, создайте подопечного прямо здесь. Позже профиль можно объединить.")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.secondaryLabel)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 10)
+
+                        FormRowTextField(
+                            icon: "writing-sign",
+                            title: "Имя *",
+                            placeholder: "Имя подопечного",
+                            text: $manualName,
+                            textContentType: .name,
+                            autocapitalization: .words
+                        )
+                        FormSectionDivider()
+                        FormRow(icon: "user-default", title: "Пол *") {
+                            Picker("", selection: Binding(
+                                get: { manualGender ?? .male },
+                                set: { manualGender = $0 }
+                            )) {
+                                Text("Муж").tag(ProfileGender.male)
+                                Text("Жен").tag(ProfileGender.female)
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        FormSectionDivider()
+                        FormRowTextField(
+                            icon: "ruler-2",
+                            title: "Рост",
+                            placeholder: "см",
+                            text: $manualHeight,
+                            autocapitalization: .never,
+                            keyboardType: .decimalPad
+                        )
+                        FormSectionDivider()
+                        FormRowTextField(
+                            icon: "ruler",
+                            title: "Вес *",
+                            placeholder: "кг",
+                            text: $manualWeight,
+                            autocapitalization: .never,
+                            keyboardType: .decimalPad
                         )
                     }
-                    .buttonStyle(PressableButtonStyle())
                 }
 
-                SingleContentCard(
-                    title: "Мои профили подопечного",
-                    description: availableProfiles.isEmpty
-                    ? "Все ваши профили подопечного уже добавлены или у вас нет такого профиля."
-                    : ""
-                ) {
-                    Button {
-                        showMyProfilesSheet = true
-                    } label: {
-                        WideActionButtonToOneColumn(
-                            icon: "user-default",
-                            title: "Выбрать из моих профилей",
-                            subtitle: availableProfilesSubtitle,
-                            showChevron: true,
-                            iconColor: AppColors.accent
+                SettingsCard(title: "Контакты") {
+                    VStack(spacing: 0) {
+                        FormRowPhone(icon: "phone", title: "Телефон", text: $manualPhoneNumber)
+                        FormSectionDivider()
+                        FormRowTextField(
+                            icon: "send-plane-horizontal",
+                            title: "Telegram",
+                            placeholder: "Логин без @",
+                            text: $manualTelegramUsername,
+                            textContentType: .username,
+                            autocapitalization: .never
                         )
                     }
-                    .buttonStyle(PressableButtonStyle())
-                    .disabled(availableProfiles.isEmpty)
                 }
+
+                SettingsCard(title: "Дата рождения") {
+                    FormRowDateOfBirth(selection: $manualDateOfBirth, onTap: { showManualDatePickerSheet = true })
+                }
+                .sheet(isPresented: $showManualDatePickerSheet) {
+                    FormDatePickerSheet(
+                        selection: $manualDateOfBirth,
+                        isPresented: $showManualDatePickerSheet,
+                        title: "Дата рождения"
+                    )
+                    .mainSheetPresentation(.calendar)
+                }
+
+                FormNotesCard(notes: $manualNotes)
+
+                Text("* Обязательные поля: имя, пол и вес")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, AppDesign.cardPadding)
+                    .padding(.top, 6)
+
+                MainActionButton(
+                    title: "Создать подопечного",
+                    isLoading: isManualSaving,
+                    isDisabled: !canCreateManualTrainee,
+                    action: { createManagedTraineeInline() }
+                )
+                .padding(.horizontal, AppDesign.cardPadding)
+                .padding(.top, AppDesign.blockSpacing)
 
                 if let msg = errorMessage, !msg.isEmpty {
                     Text(msg)
@@ -100,6 +179,8 @@ struct AddTraineeView: View {
             .padding(.bottom, AppDesign.sectionSpacing)
         }
         .background(AppColors.systemGroupedBackground)
+        .scrollDismissesKeyboard(.interactively)
+        .dismissKeyboardOnTap()
         .navigationTitle("Добавить подопечного")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -107,21 +188,6 @@ struct AddTraineeView: View {
             ToolbarItem(placement: .topBarLeading) {
                 BackToolbarButton(action: { dismiss() })
             }
-        }
-        .sheet(isPresented: $showCreateManagedTrainee) {
-            CreateManagedTraineeSheet(
-                coachProfile: coachProfile,
-                profileService: profileService,
-                linkService: linkService,
-                onCreated: {
-                    showCreateManagedTrainee = false
-                    dismiss()
-                    onLinkAdded()
-                },
-                onCancel: { showCreateManagedTrainee = false },
-                onError: { errorMessage = $0 }
-            )
-            .mainSheetPresentation(.half)
         }
         .sheet(isPresented: $showAddByCodeSheet) {
             AddByTokenSheet(
@@ -157,8 +223,81 @@ struct AddTraineeView: View {
     /// Бывшее значение `CardRow.value`: число доступных профилей для привязки.
     private var availableProfilesSubtitle: String {
         let n = availableProfiles.count
-        guard n > 0 else { return "" }
+        guard n > 0 else { return "Недоступно" }
         return "Доступно: \(n)"
+    }
+
+    private func createManagedTraineeInline() {
+        let trimmedName = manualName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canCreateManualTrainee, !trimmedName.isEmpty else { return }
+        isManualSaving = true
+        errorMessage = nil
+
+        Task {
+            do {
+                let phone = manualPhoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+                let telegram = manualTelegramUsername
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased()
+                    .replacingOccurrences(of: "@", with: "")
+                let notesTrimmed = manualNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+                let heightValue = parsedPositiveDouble(manualHeight)
+                let weightValue = parsedPositiveDouble(manualWeight)
+
+                let managed = Profile(
+                    id: "",
+                    userId: coachProfile.userId,
+                    type: .trainee,
+                    name: trimmedName,
+                    createdAt: Date(),
+                    gender: manualGender,
+                    dateOfBirth: manualDateOfBirth,
+                    iconEmoji: nil,
+                    phoneNumber: phone.isEmpty ? nil : (PhoneFormatter.isValid(phone) ? phone : nil),
+                    telegramUsername: telegram.isEmpty ? nil : telegram,
+                    notes: notesTrimmed.isEmpty ? nil : notesTrimmed,
+                    ownerCoachProfileId: coachProfile.id,
+                    mergedIntoProfileId: nil,
+                    height: heightValue,
+                    weight: weightValue
+                )
+                let created = try await profileService.createProfile(managed, name: trimmedName)
+                try await linkService.addLink(
+                    coachProfileId: coachProfile.id,
+                    traineeProfileId: created.id,
+                    displayName: nil
+                )
+
+                await MainActor.run {
+                    isManualSaving = false
+                    AppDesign.triggerSuccessHaptic()
+                    ToastCenter.shared.success("Подопечный создан")
+                    dismiss()
+                    onLinkAdded()
+                }
+            } catch {
+                await MainActor.run {
+                    isManualSaving = false
+                    ToastCenter.shared.error(from: error, fallback: "Не удалось создать подопечного")
+                    if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
+                }
+            }
+        }
+    }
+
+    private func parsedPositiveDouble(_ text: String) -> Double? {
+        let normalized = text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: ".")
+        guard let value = Double(normalized), value > 0 else { return nil }
+        return value
+    }
+
+    private var canCreateManualTrainee: Bool {
+        let hasName = !manualName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasGender = manualGender != nil
+        let hasWeight = parsedPositiveDouble(manualWeight) != nil
+        return hasName && hasGender && hasWeight
     }
 }
 
@@ -295,7 +434,7 @@ private struct CreateManagedTraineeSheet: View {
     private func parsedPositiveDouble(_ text: String) -> Double? {
         let normalized = text
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: ").")
+            .replacingOccurrences(of: ",", with: ".")
         guard let value = Double(normalized), value > 0 else { return nil }
         return value
     }

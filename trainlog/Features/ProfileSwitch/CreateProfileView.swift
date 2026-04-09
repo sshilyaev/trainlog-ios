@@ -90,13 +90,13 @@ struct CreateProfileView: View {
                                 HStack(spacing: AppDesign.rectangularBlockSpacing) {
                                     typeTile(
                                         type: .trainee,
-                                        icon: "file-default",
+                                        icon: "note.text",
                                         title: "Дневник",
                                         description: "Для личного прогресса: замеры, цели и графики"
                                     )
                                     typeTile(
                                         type: .coach,
-                                        icon: "user-love-heart",
+                                        icon: "figure.strengthtraining.traditional",
                                         title: "Тренер",
                                         description: "Для работы с подопечными, абонементами и посещениями"
                                     )
@@ -212,20 +212,21 @@ struct CreateProfileView: View {
     private func parsedPositiveDouble(_ text: String) -> Double? {
         let normalized = text
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: ").")
+            .replacingOccurrences(of: ",", with: ".")
         guard let value = Double(normalized), value > 0 else { return nil }
         return value
     }
 
     private func typeTile(type: ProfileType, icon: String, title: String, description: String) -> some View {
         let isSelected = profileType == type
+        let tileTint = type == .trainee ? AppColors.logoTeal : AppColors.logoViolet
         return Button {
             profileType = type
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
                     .font(.title2)
-                    .foregroundStyle(isSelected ? .white : AppColors.accent)
+                    .foregroundStyle(isSelected ? .white : tileTint)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isSelected ? .white : .primary)
@@ -240,7 +241,7 @@ struct CreateProfileView: View {
                 isSelected
                 ? AnyView(
                     LinearGradient(
-                        colors: [AppColors.accent, AppColors.accent.opacity(0.8)],
+                        colors: [tileTint, tileTint.opacity(0.8)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -249,7 +250,7 @@ struct CreateProfileView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
-                    .stroke(isSelected ? AppColors.accent.opacity(0.9) : AppColors.clear, lineWidth: 1)
+                    .stroke(isSelected ? tileTint.opacity(0.9) : AppColors.clear, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
         }
@@ -258,13 +259,14 @@ struct CreateProfileView: View {
 
     private func profileTypeCard(type: ProfileType, icon: String, title: String, description: String) -> some View {
         let isSelected = profileType == type
+        let tileTint = type == .trainee ? AppColors.logoTeal : AppColors.logoViolet
         return Button {
             profileType = type
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
                     .font(.title2)
-                    .foregroundStyle(isSelected ? .white : AppColors.accent)
+                    .foregroundStyle(isSelected ? .white : tileTint)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isSelected ? .white : .primary)
@@ -278,7 +280,7 @@ struct CreateProfileView: View {
             .background(
                 isSelected
                 ? AnyView(LinearGradient(
-                    colors: [AppColors.accent, AppColors.accent.opacity(0.8)],
+                    colors: [tileTint, tileTint.opacity(0.8)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ))
@@ -286,7 +288,7 @@ struct CreateProfileView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
-                    .stroke(isSelected ? AppColors.accent.opacity(0.9) : AppColors.clear, lineWidth: 1)
+                    .stroke(isSelected ? tileTint.opacity(0.9) : AppColors.clear, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
         }

@@ -129,7 +129,7 @@ struct ClientCardView: View {
                                 )
                             } label: {
                                 BigActionButtonToTwoColumn(
-                                    icon: "coffee-cup-01",
+                                    icon: "tools-kitchen-2",
                                     title: "Питание и добавки",
                                     subtitle: nutritionPlan == nil ? "Не задано" : "Есть план"
                                 )
@@ -157,12 +157,21 @@ struct ClientCardView: View {
                                     value: traineeForDisplay.gender?.displayName ?? "Не указан",
                                     showsDisclosure: false
                                 )
-                                if traineeForDisplay.dateOfBirth != nil || traineeForDisplay.ageFormatted != nil {
+                                if traineeForDisplay.dateOfBirth != nil {
                                     Divider()
                                     CardRow(
                                         icon: "calendar-default",
                                         title: "Дата рождения",
-                                        value: [traineeForDisplay.dateOfBirth?.formattedRuShort, traineeForDisplay.ageFormatted].compactMap { $0 }.joined(separator: " · "),
+                                        value: traineeForDisplay.dateOfBirth?.formattedRuShort,
+                                        showsDisclosure: false
+                                    )
+                                }
+                                if let age = traineeForDisplay.ageFormatted, !age.isEmpty {
+                                    Divider()
+                                    CardRow(
+                                        icon: "clock-01",
+                                        title: "Возраст",
+                                        value: age,
                                         showsDisclosure: false
                                     )
                                 }
@@ -183,21 +192,6 @@ struct ClientCardView: View {
                                         value: "\(w.measurementFormatted) кг",
                                         showsDisclosure: false
                                     )
-                                }
-                                if let notes = traineeForDisplay.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
-                                    Divider()
-                                    HStack(spacing: 12) {
-                                        AppTablerIcon("file-default")
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: 28, alignment: .center)
-                                        Text(notes)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .multilineTextAlignment(.leading)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .padding(.horizontal, AppDesign.cardPadding)
-                                    .padding(.vertical, 12)
                                 }
                             }
 
@@ -251,6 +245,26 @@ struct ClientCardView: View {
                                 }
                                 .buttonStyle(PressableButtonStyle())
                             }
+
+                            if let notes = traineeForDisplay.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
+                                VStack(spacing: 0) {
+                                    HStack(spacing: 12) {
+                                        AppTablerIcon("file-default")
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 28, alignment: .center)
+                                        Text(notes)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .multilineTextAlignment(.leading)
+                                            .lineLimit(nil)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .padding(.horizontal, AppDesign.cardPadding)
+                                    .padding(.vertical, 12)
+                                }
+                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+                            }
                         }
                     }
 
@@ -267,7 +281,7 @@ struct ClientCardView: View {
                             )
                         } label: {
                             WideActionButtonToOneColumn(
-                                icon: "chart.bar.fill",
+                                icon: "world",
                                 title: "Замеры и графики",
                                 subtitle: "Сводка, история замеров и динамика метрик",
                                 showChevron: true,
@@ -314,13 +328,23 @@ struct ClientCardView: View {
                     value: traineeForDisplay.gender?.displayName ?? "Не указан",
                     showsDisclosure: false
                 )
-                if traineeForDisplay.dateOfBirth != nil || traineeForDisplay.ageFormatted != nil {
+                if traineeForDisplay.dateOfBirth != nil {
                     Divider()
                         .padding(.leading, 40)
                     CardRow(
                         icon: "calendar-default",
                         title: "Дата рождения",
-                        value: [traineeForDisplay.dateOfBirth?.formattedRuShort, traineeForDisplay.ageFormatted].compactMap { $0 }.joined(separator: " · "),
+                        value: traineeForDisplay.dateOfBirth?.formattedRuShort,
+                        showsDisclosure: false
+                    )
+                }
+                if let age = traineeForDisplay.ageFormatted, !age.isEmpty {
+                    Divider()
+                        .padding(.leading, 40)
+                    CardRow(
+                        icon: "clock-01",
+                        title: "Возраст",
+                        value: age,
                         showsDisclosure: false
                     )
                 }
@@ -335,7 +359,7 @@ struct ClientCardView: View {
                 )
             } label: {
                 WideActionButtonToOneColumn(
-                    icon: "chart.bar.fill",
+                    icon: "world",
                     title: "Замеры и графики",
                     subtitle: "Сводка, история замеров и динамика метрик",
                     iconColor: AppColors.profileAccent,

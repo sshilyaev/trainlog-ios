@@ -52,8 +52,8 @@ struct ProgressHubView: View {
     private var heroOverviewCard: some View {
         HeroCard(
             icon: "sparkles",
-            title: "Прогресс",
-            headline: "Ваш прогресс",
+            title: "Ваш прогресс",
+            headline: "",
             description: "",
             accent: AppColors.accent,
             decoration: .glow
@@ -134,14 +134,14 @@ struct ProgressHubView: View {
 
     private var moreSectionsBlock: some View {
         ContentCard(
-            title: "Ещё",
+            title: "Подробнее",
             description: "Замеры, графики, достижения и интеграции."
         ) {
             VStack(spacing: 8) {
                 Button(action: onOpenMeasurementsAndCharts) {
                     summaryCardRow(
-                        icon: "chart.bar.fill",
-                        title: "Замеры и графики",
+                        icon: "world",
+                        title: "Мои замеры",
                         subtitle: "Сводка, история замеров и динамика метрик",
                         accent: AppColors.profileAccent
                     )

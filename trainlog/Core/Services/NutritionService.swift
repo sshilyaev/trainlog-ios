@@ -38,6 +38,8 @@ protocol NutritionServiceProtocol {
         traineeProfileId: String,
         supplementId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?
@@ -45,6 +47,8 @@ protocol NutritionServiceProtocol {
     func updateSupplementAssignment(
         assignmentId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?

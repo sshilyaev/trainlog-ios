@@ -72,9 +72,8 @@ struct CoachMainView: View {
     @State private var linkedIdsBeforeAdd: Set<String>?
     /// Показываем продающую страницу «Создать абонемент» после добавления подопечного (всегда: и из онбординга, и с экрана списка).
     @State private var traineeForMembershipOffer: TraineeItem?
-    @State private var traineeForAddMembershipSheet: TraineeItem?
+    @State private var traineeForMembershipsScreen: TraineeItem?
     @State private var showAddTraineeByNavigation = false
-    @State private var isCreatingMembershipFromOnboarding = false
     @State private var weekSummaryClients: Int = 0
     @State private var weekSummaryOneOffVisits: Int = 0
     @State private var weekSummarySubscriptionVisits: Int = 0
@@ -479,7 +478,7 @@ struct CoachMainView: View {
             }
             .trackAPIScreen("Подопечные")
             .tabItem {
-                AppTablerIcon("user-default")
+                AppTablerIcon("users-group")
                 Text("Подопечные")
             }
             .tag(1)
@@ -549,40 +548,22 @@ struct CoachMainView: View {
                     let trainee = item
                     traineeForMembershipOffer = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        traineeForAddMembershipSheet = trainee
+                        traineeForMembershipsScreen = trainee
                     }
                 },
                 onSkip: { traineeForMembershipOffer = nil }
             )
         }
-        .sheet(item: $traineeForAddMembershipSheet) { item in
-            AddMembershipSheet(
-                isCreating: $isCreatingMembershipFromOnboarding,
-                onCreate: { kind, totalSessions, startDate, endDate, price in
-                    Task {
-                        await MainActor.run { isCreatingMembershipFromOnboarding = true }
-                        do {
-                            _ = try await membershipService.createMembership(
-                                coachProfileId: profile.id,
-                                traineeProfileId: item.profile.id,
-                                kind: kind,
-                                totalSessions: totalSessions,
-                                startDate: startDate,
-                                endDate: endDate,
-                                priceRub: price
-                            )
-                            await loadTrainees(forceNetwork: true)
-                            await MainActor.run { traineeForAddMembershipSheet = nil }
-                            AppDesign.triggerSuccessHaptic()
-                        } catch {
-                            if let msg = AppErrors.userMessageIfNeeded(for: error) { }
-                        }
-                        await MainActor.run { isCreatingMembershipFromOnboarding = false }
-                    }
-                },
-                onCancel: { traineeForAddMembershipSheet = nil }
-            )
-            .mainSheetPresentation(.half)
+        .sheet(item: $traineeForMembershipsScreen) { item in
+            NavigationStack {
+                ClientMembershipsNewView(
+                    trainee: item.profile,
+                    coachProfileId: profile.id,
+                    membershipService: membershipService,
+                    visitService: visitService,
+                    eventService: eventService
+                )
+            }
         }
         .archiveToggleConfirmationDialog(
             isPresented: $showArchiveConfirmation,
@@ -659,9 +640,7 @@ struct CoachMainView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     profileHeader
-                    blockDateOfBirth
-                    blockHeight
-                    blockGenderGym
+                    ProfileIdentityDetailsSection(profile: profile)
                     blockContact
                     blockDelete
                 }
@@ -728,22 +707,15 @@ struct CoachMainView: View {
 
     private var profileHeader: some View {
         let genderAccent = AppColors.avatarColor(gender: profile.gender, defaultColor: AppColors.accent)
-        return VStack(spacing: 16) {
+        return VStack(spacing: 10) {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        genderAccent.opacity(0.25),
-                        genderAccent.opacity(0.05)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: AppDesign.avatarCornerRadiusLarge))
+                RoundedRectangle(cornerRadius: AppDesign.profileSwitchWideAvatarCornerRadius, style: .continuous)
+                    .fill(AppColors.avatarBackground)
+                    .frame(width: 64, height: 64)
 
-                AppTablerIcon("user-love-heart")
-                    .appIcon(.s32)
-                    .foregroundStyle(.white)
+                AppTablerIcon("figure.strengthtraining.traditional")
+                    .appIcon(.s28)
+                    .foregroundStyle(genderAccent)
             }
             VStack(spacing: 4) {
                 Button {
@@ -755,48 +727,15 @@ struct CoachMainView: View {
                 }
                 .buttonStyle(PressableButtonStyle())
 
-                if let gym = profile.gymName?.trimmingCharacters(in: .whitespacesAndNewlines), !gym.isEmpty {
-                    Text(gym)
+                if let age = profile.ageFormatted, !age.isEmpty {
+                    Text(age)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-    }
-
-    @ViewBuilder
-    private var blockDateOfBirth: some View {
-        if profile.dateOfBirth != nil {
-            ActionBlockRow(
-                icon: "calendar-default",
-                title: "Дата рождения",
-                value: [profile.dateOfBirth?.formattedRuShort, profile.ageFormatted].compactMap { $0 }.joined(separator: " · ")
-            )
-            .actionBlockStyle()
-        }
-    }
-
-    @ViewBuilder
-    private var blockHeight: some View {
-        if let h = profile.height {
-            ActionBlockRow(icon: "pencil-scale", title: "Рост", value: "\(h.measurementFormatted) см")
-                .actionBlockStyle()
-        }
-    }
-
-    private var blockGenderGym: some View {
-        VStack(spacing: 0) {
-            ActionBlockRow(icon: "user-default", title: "Пол", value: profile.gender?.displayName ?? "Не указан")
-            if profile.isCoach, let gym = profile.gymName, !gym.isEmpty {
-                Divider()
-                    .padding(.leading, 52)
-                ActionBlockRow(icon: "building-apartment-two", title: "Зал", value: gym)
-            }
-        }
-        .actionBlockStyle()
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder

@@ -117,7 +117,7 @@ struct MeasurementsAndChartsScreen: View {
                     )
                 } label: {
                     WideActionButtonToOneColumn(
-                        icon: "clock",
+                        icon: "world",
                         title: "История замеров",
                         subtitle: "Все записи, только просмотр",
                         showChevron: true,
@@ -165,7 +165,7 @@ struct MeasurementsAndChartsScreen: View {
 
     private var heroCard: some View {
         HeroCard(
-            icon: "chart.bar.fill",
+            icon: "world",
             title: "Замеры и графики",
             headline: "Сводка и динамика",
             description: "Здесь сводка по целям и весу, полная история и динамика по каждому показателю.",

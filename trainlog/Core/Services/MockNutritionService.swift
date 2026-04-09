@@ -15,10 +15,10 @@ final class MockNutritionService: NutritionServiceProtocol {
         self.storage = plans
         self.coachProfilesById = Dictionary(uniqueKeysWithValues: coachProfiles.map { ($0.id, $0) })
         self.supplementCatalog = [
-            SportsSupplementCatalogItem(id: "supp_vit_d3", name: "Vitamin D3", type: .vitamin, description: "Поддержка уровня витамина D", isActive: true, sortOrder: 1),
-            SportsSupplementCatalogItem(id: "supp_omega_3", name: "Omega-3", type: .other, description: "Поддержка рациона по жирным кислотам", isActive: true, sortOrder: 2),
-            SportsSupplementCatalogItem(id: "supp_magnesium", name: "Magnesium", type: .mineral, description: "Минерал для повседневного баланса", isActive: true, sortOrder: 3),
-            SportsSupplementCatalogItem(id: "supp_creatine", name: "Creatine Monohydrate", type: .sportsNutrition, description: "Популярная спортивная добавка", isActive: true, sortOrder: 4)
+            SportsSupplementCatalogItem(id: "supp_vit_d3", name: "Vitamin D3", type: .vitamin, description: "Поддержка уровня витамина D", isActive: true, sortOrder: 1, defaultDosageUnit: .capsule),
+            SportsSupplementCatalogItem(id: "supp_omega_3", name: "Omega-3", type: .other, description: "Поддержка рациона по жирным кислотам", isActive: true, sortOrder: 2, defaultDosageUnit: .capsule),
+            SportsSupplementCatalogItem(id: "supp_magnesium", name: "Magnesium", type: .mineral, description: "Минерал для повседневного баланса", isActive: true, sortOrder: 3, defaultDosageUnit: .milligram),
+            SportsSupplementCatalogItem(id: "supp_creatine", name: "Creatine Monohydrate", type: .sportsNutrition, description: "Популярная спортивная добавка", isActive: true, sortOrder: 4, defaultDosageUnit: .gram)
         ]
         self.supplementAssignments = []
     }
@@ -177,6 +177,8 @@ final class MockNutritionService: NutritionServiceProtocol {
         traineeProfileId: String,
         supplementId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?
@@ -210,6 +212,8 @@ final class MockNutritionService: NutritionServiceProtocol {
             supplementType: item.type,
             supplementDescription: item.description,
             dosage: dosage,
+            dosageValue: dosageValue,
+            dosageUnit: dosageUnit,
             timing: timing,
             frequency: frequency,
             note: note,
@@ -223,6 +227,8 @@ final class MockNutritionService: NutritionServiceProtocol {
     func updateSupplementAssignment(
         assignmentId: String,
         dosage: String?,
+        dosageValue: String?,
+        dosageUnit: SupplementDosageUnit?,
         timing: String?,
         frequency: String?,
         note: String?
@@ -247,6 +253,8 @@ final class MockNutritionService: NutritionServiceProtocol {
             supplementType: old.supplementType,
             supplementDescription: old.supplementDescription,
             dosage: dosage,
+            dosageValue: dosageValue,
+            dosageUnit: dosageUnit ?? old.dosageUnit,
             timing: timing,
             frequency: frequency,
             note: note,

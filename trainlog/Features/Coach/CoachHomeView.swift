@@ -27,6 +27,9 @@ struct CoachHomeView: View {
     let onSelectQuickPickTrainee: (String) -> Void
 
     @State private var quickPickMenuSelection: String?
+    private var isWeekSummaryEmpty: Bool {
+        weekSummaryClients == 0 && weekSummaryOneOffVisits == 0 && weekSummarySubscriptionVisits == 0
+    }
 
     var body: some View {
         ScrollView {
@@ -46,15 +49,18 @@ struct CoachHomeView: View {
 
     private var summarySection: some View {
         ContentCard(
-            title: "Сводка",
+            title: "Сводка за неделю",
             description: weekSummaryRangeCaption.isEmpty ? "—" : weekSummaryRangeCaption
         ) {
             InfoValueTripleRow(
                 items: [
                     InfoValueItem(
-                        title: "Клиентов",
+                        title: "Клиенты",
                         value: "\(weekSummaryClients)",
-                        accentColor: AppColors.genderMale
+                        accentColor: AppColors.genderMale,
+                        infoFootnote: "Уникальные клиенты, у которых за текущую неделю есть хотя бы одно проведённое посещение.",
+                        infoHintTitle: "Клиенты",
+                        infoFootnoteCompactIcon: true
                     ),
                     InfoValueItem(
                         title: "Разовые визиты",
@@ -71,6 +77,29 @@ struct CoachHomeView: View {
                 chipSize: .coachSummary
             )
             .padding(.vertical, 4)
+
+            if isWeekSummaryEmpty {
+                Text("Данные появятся после внесения посещений и событий за эту неделю.")
+                    .font(.caption)
+                    .foregroundStyle(AppColors.secondaryLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 6)
+            }
+
+            NavigationLink {
+                CoachStatisticsView(
+                    coachProfileId: coachProfileId,
+                    statisticsService: coachStatisticsService
+                )
+            } label: {
+                HomeActionRow(
+                    icon: "grid-dashboard-circle",
+                    title: "Полная статистика",
+                    subtitle: "Сводка за период"
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+            .padding(.top, 8)
         }
     }
 
@@ -98,7 +127,7 @@ struct CoachHomeView: View {
 
                 Button(action: onOpenAllTrainees) {
                     BigActionButtonToTwoColumn(
-                        icon: "user-default",
+                        icon: "users-group",
                         title: "Посмотреть",
                         subtitle: "Весь список"
                     )
@@ -169,20 +198,6 @@ struct CoachHomeView: View {
                         icon: "grid-dashboard-02",
                         title: "Калькуляторы",
                         subtitle: "Справочные расчёты"
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink {
-                    CoachStatisticsView(
-                        coachProfileId: coachProfileId,
-                        statisticsService: coachStatisticsService
-                    )
-                } label: {
-                    HomeActionRow(
-                        icon: "grid-dashboard-circle",
-                        title: "Статистика",
-                        subtitle: "Сводка за период"
                     )
                 }
                 .buttonStyle(PressableButtonStyle())

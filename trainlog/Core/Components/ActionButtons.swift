@@ -123,10 +123,26 @@ struct ActionButtonLayout: Hashable {
 
     static let bigDefault = ActionButtonLayout(
         contentPaddingHorizontal: 12,
-        contentPaddingVertical: 7,
+        contentPaddingVertical: 5,
         outerPaddingVertical: 3,
-        minHeight: 86
+        minHeight: 78
     )
+}
+
+/// Компактный статус справа у action-кнопок (например: "Активно", "Скоро", "3").
+struct ActionStatusChip: View {
+    let title: String
+    var color: Color = AppColors.accent
+
+    var body: some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.14), in: Capsule())
+    }
 }
 
 // MARK: - Shared chrome (3D + border)
@@ -134,29 +150,27 @@ struct ActionButtonLayout: Hashable {
 /// Заливка + лёгкий вертикальный блик (общая для всех вариантов хрома).
 private struct ActionButtonChromeFill: View {
     let cornerRadius: CGFloat
-
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let topGloss = colorScheme == .light ? 0.040 : 0.020
-        let bottomShade = colorScheme == .light ? 0.020 : 0.030
-
-        ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(AppColors.secondarySystemGroupedBackground)
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            AppColors.white.opacity(topGloss),
-                            AppColors.clear,
-                            AppColors.black.opacity(bottomShade),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+        let topTint = colorScheme == .light ? 0.05 : 0.02
+        let bottomTint = colorScheme == .light ? 0.03 : 0.05
+        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(AppColors.secondarySystemGroupedBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                AppColors.white.opacity(topTint),
+                                AppColors.clear,
+                                AppColors.black.opacity(bottomTint),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-        }
+            )
     }
 }
 
@@ -186,55 +200,12 @@ private struct ActionButtonChromeRight: ViewModifier {
     let borderLineWidth: CGFloat
 
     func body(content: Content) -> some View {
-        let stroke = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
-
         content
             .background(
                 ZStack {
                     ActionButtonChromeFill(cornerRadius: cornerRadius)
-
-                    // Верхний левый угол: ярче у угла, затухание к центру.
-                    stroke.mask(
-                        VStack(spacing: 0) {
-                            Rectangle()
-                                .fill(
-                                    RadialGradient(
-                                        stops: [
-                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
-                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
-                                            .init(color: AppColors.clear, location: 1.0),
-                                        ],
-                                        center: .topLeading,
-                                        startRadius: 0,
-                                        endRadius: 170
-                                    )
-                                )
-                                .frame(height: 84)
-                            Spacer(minLength: 0)
-                        }
-                    )
-
-                    // Нижний правый угол: ярче у угла, затухание к центру.
-                    stroke.mask(
-                        VStack(spacing: 0) {
-                            Spacer(minLength: 0)
-                            Rectangle()
-                                .fill(
-                                    RadialGradient(
-                                        stops: [
-                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
-                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
-                                            .init(color: AppColors.clear, location: 1.0),
-                                        ],
-                                        center: .bottomTrailing,
-                                        startRadius: 0,
-                                        endRadius: 170
-                                    )
-                                )
-                                .frame(height: 84)
-                        }
-                    )
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -248,55 +219,12 @@ private struct ActionButtonChromeBottom: ViewModifier {
     let borderLineWidth: CGFloat
 
     func body(content: Content) -> some View {
-        let stroke = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
-
         content
             .background(
                 ZStack {
                     ActionButtonChromeFill(cornerRadius: cornerRadius)
-
-                    // Верхний левый угол: ярче у угла, затухание к центру.
-                    stroke.mask(
-                        VStack(spacing: 0) {
-                            Rectangle()
-                                .fill(
-                                    RadialGradient(
-                                        stops: [
-                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
-                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
-                                            .init(color: AppColors.clear, location: 1.0),
-                                        ],
-                                        center: .topLeading,
-                                        startRadius: 0,
-                                        endRadius: 170
-                                    )
-                                )
-                                .frame(height: 84)
-                            Spacer(minLength: 0)
-                        }
-                    )
-
-                    // Нижний правый угол: ярче у угла, затухание к центру.
-                    stroke.mask(
-                        VStack(spacing: 0) {
-                            Spacer(minLength: 0)
-                            Rectangle()
-                                .fill(
-                                    RadialGradient(
-                                        stops: [
-                                            .init(color: AppColors.white.opacity(0.95), location: 0.0),
-                                            .init(color: AppColors.white.opacity(0.60), location: 0.35),
-                                            .init(color: AppColors.clear, location: 1.0),
-                                        ],
-                                        center: .bottomTrailing,
-                                        startRadius: 0,
-                                        endRadius: 170
-                                    )
-                                )
-                                .frame(height: 84)
-                        }
-                    )
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(AppColors.tertiaryLabel.opacity(borderOpacity), lineWidth: borderLineWidth)
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -311,16 +239,26 @@ struct BigActionButtonToTwoColumn: View {
     var iconColor: Color = AppColors.accent
     var titleColor: Color = AppColors.label
     var subtitleColor: Color = AppColors.secondaryLabel
+    var statusTitle: String? = nil
+    var statusColor: Color = AppColors.accent
     var layout: ActionButtonLayout = .bigDefault
 
     @Environment(\.colorScheme) private var colorScheme
 
     private let cornerRadius: CGFloat = 12
-    private let borderOpacity: CGFloat = 0.28
+    private let borderOpacity: CGFloat = 0.34
     private let borderWidth: CGFloat = 0.55
 
     var body: some View {
-        VStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .center, spacing: 5) {
+            if let statusTitle, !statusTitle.isEmpty {
+                HStack {
+                    Spacer()
+                    ActionStatusChip(title: statusTitle, color: statusColor)
+                }
+                .padding(.bottom, 2)
+            }
+
             AppTablerIcon(icon)
                 .appIcon(.s20)
                 .foregroundStyle(iconColor)
@@ -339,7 +277,7 @@ struct BigActionButtonToTwoColumn: View {
                 .foregroundStyle(subtitleColor)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 32, alignment: .top)
+                .frame(maxWidth: .infinity, minHeight: 26, alignment: .top)
 
             AppTablerIcon("chevron-right")
                 .font(.caption2.weight(.semibold))
@@ -373,12 +311,16 @@ struct WideActionButtonToOneColumn: View {
     var titleColor: Color
     var subtitleColor: Color
     var chevronColor: Color
+    var accent: Color? = nil
+    var showsLeadingAccentBar: Bool = true
+    var statusTitle: String? = nil
+    var statusColor: Color = AppColors.accent
     var layout: ActionButtonLayout = .wideDefault
 
     @Environment(\.colorScheme) private var colorScheme
 
     private let cornerRadius: CGFloat = 12
-    private let borderOpacity: CGFloat = 0.22
+    private let borderOpacity: CGFloat = 0.30
     private let borderWidth: CGFloat = 0.55
 
     init(
@@ -391,6 +333,10 @@ struct WideActionButtonToOneColumn: View {
         titleColor: Color = AppColors.label,
         subtitleColor: Color = AppColors.secondaryLabel,
         chevronColor: Color = AppColors.tertiaryLabel,
+        accent: Color? = nil,
+        showsLeadingAccentBar: Bool = true,
+        statusTitle: String? = nil,
+        statusColor: Color = AppColors.accent,
         layout: ActionButtonLayout = .wideDefault
     ) {
         leading = .tablerIcon(name: icon, color: iconColor)
@@ -402,6 +348,10 @@ struct WideActionButtonToOneColumn: View {
         self.titleColor = titleColor
         self.subtitleColor = subtitleColor
         self.chevronColor = chevronColor
+        self.accent = accent
+        self.showsLeadingAccentBar = showsLeadingAccentBar
+        self.statusTitle = statusTitle
+        self.statusColor = statusColor
         self.layout = layout
     }
 
@@ -414,6 +364,10 @@ struct WideActionButtonToOneColumn: View {
         titleColor: Color = AppColors.label,
         subtitleColor: Color = AppColors.secondaryLabel,
         chevronColor: Color = AppColors.tertiaryLabel,
+        accent: Color? = nil,
+        showsLeadingAccentBar: Bool = true,
+        statusTitle: String? = nil,
+        statusColor: Color = AppColors.accent,
         layout: ActionButtonLayout = .wideDefault
     ) {
         self.leading = leading
@@ -425,6 +379,10 @@ struct WideActionButtonToOneColumn: View {
         self.titleColor = titleColor
         self.subtitleColor = subtitleColor
         self.chevronColor = chevronColor
+        self.accent = accent
+        self.showsLeadingAccentBar = showsLeadingAccentBar
+        self.statusTitle = statusTitle
+        self.statusColor = statusColor
         self.layout = layout
     }
 
@@ -437,6 +395,10 @@ struct WideActionButtonToOneColumn: View {
         titleColor: Color = AppColors.label,
         subtitleColor: Color = AppColors.secondaryLabel,
         chevronColor: Color = AppColors.tertiaryLabel,
+        accent: Color? = nil,
+        showsLeadingAccentBar: Bool = true,
+        statusTitle: String? = nil,
+        statusColor: Color = AppColors.accent,
         layout: ActionButtonLayout = .wideDefault,
         @ViewBuilder detail: () -> some View
     ) {
@@ -449,6 +411,10 @@ struct WideActionButtonToOneColumn: View {
         self.titleColor = titleColor
         self.subtitleColor = subtitleColor
         self.chevronColor = chevronColor
+        self.accent = accent
+        self.showsLeadingAccentBar = showsLeadingAccentBar
+        self.statusTitle = statusTitle
+        self.statusColor = statusColor
         self.layout = layout
     }
 
@@ -473,6 +439,10 @@ struct WideActionButtonToOneColumn: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            if let statusTitle, !statusTitle.isEmpty {
+                ActionStatusChip(title: statusTitle, color: statusColor)
+            }
+
             if showChevron {
                 AppTablerIcon("chevron-right")
                     .font(.caption.weight(.semibold))
@@ -484,6 +454,15 @@ struct WideActionButtonToOneColumn: View {
         .padding(.horizontal, layout.contentPaddingHorizontal)
         .padding(.vertical, layout.contentPaddingVertical)
         .modifier(ActionButtonChromeRight(cornerRadius: cornerRadius, borderOpacity: borderOpacity, borderLineWidth: borderWidth))
+        .overlay(alignment: .leading) {
+            if showsLeadingAccentBar {
+                Capsule(style: .continuous)
+                    .fill((accent ?? AppColors.accent).opacity(0.92))
+                    .frame(width: 3)
+                    .padding(.vertical, 7)
+                    .padding(.leading, 1)
+            }
+        }
         .padding(.vertical, layout.outerPaddingVertical)
         .contentShape(Rectangle())
     }
@@ -523,6 +502,10 @@ struct RawActionButton<Trailing: View>: View {
 
     var value: String? = nil
     var valueColor: Color = .secondary
+    var accent: Color? = nil
+    var showsLeadingAccentBar: Bool = true
+    var statusTitle: String? = nil
+    var statusColor: Color = AppColors.accent
 
     var verticalPadding: CGFloat = 12
     var horizontalPadding: CGFloat = AppDesign.cardPadding
@@ -534,7 +517,7 @@ struct RawActionButton<Trailing: View>: View {
     @ViewBuilder var trailing: () -> Trailing
 
     private let cornerRadius: CGFloat = 12
-    private let borderOpacity: CGFloat = 0.22
+    private let borderOpacity: CGFloat = 0.30
     private let borderWidth: CGFloat = 0.55
 
     init(
@@ -546,6 +529,10 @@ struct RawActionButton<Trailing: View>: View {
         subtitleColor: Color = AppColors.secondaryLabel,
         value: String? = nil,
         valueColor: Color = .secondary,
+        accent: Color? = nil,
+        showsLeadingAccentBar: Bool = true,
+        statusTitle: String? = nil,
+        statusColor: Color = AppColors.accent,
         verticalPadding: CGFloat = 12,
         horizontalPadding: CGFloat = AppDesign.cardPadding,
         minHeight: CGFloat? = nil,
@@ -560,6 +547,10 @@ struct RawActionButton<Trailing: View>: View {
         self.subtitleColor = subtitleColor
         self.value = value
         self.valueColor = valueColor
+        self.accent = accent
+        self.showsLeadingAccentBar = showsLeadingAccentBar
+        self.statusTitle = statusTitle
+        self.statusColor = statusColor
         self.verticalPadding = verticalPadding
         self.horizontalPadding = horizontalPadding
         self.minHeight = minHeight
@@ -589,6 +580,10 @@ struct RawActionButton<Trailing: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            if let statusTitle, !statusTitle.isEmpty {
+                ActionStatusChip(title: statusTitle, color: statusColor)
+            }
+
             if let value, !value.isEmpty {
                 Text(value)
                     .foregroundStyle(valueColor)
@@ -602,7 +597,17 @@ struct RawActionButton<Trailing: View>: View {
         .contentShape(Rectangle())
 
         if isInteractive {
-            row.modifier(ActionButtonChrome(cornerRadius: cornerRadius, borderOpacity: borderOpacity, borderLineWidth: borderWidth))
+            row
+                .modifier(ActionButtonChrome(cornerRadius: cornerRadius, borderOpacity: borderOpacity, borderLineWidth: borderWidth))
+                .overlay(alignment: .leading) {
+                    if showsLeadingAccentBar {
+                        Capsule(style: .continuous)
+                            .fill((accent ?? iconColor).opacity(0.92))
+                            .frame(width: 3)
+                            .padding(.vertical, 7)
+                            .padding(.leading, 1)
+                    }
+                }
         } else {
             row
         }
@@ -620,7 +625,7 @@ struct ListActionRow<Content: View, Trailing: View>: View {
     @ViewBuilder var content: () -> Content
     @ViewBuilder var trailing: () -> Trailing
 
-    private let borderOpacity: CGFloat = 0.22
+    private let borderOpacity: CGFloat = 0.30
     private let borderWidth: CGFloat = 0.55
 
     init(
@@ -681,7 +686,7 @@ struct GridActionTile<Content: View, Trailing: View>: View {
     @ViewBuilder var content: () -> Content
     @ViewBuilder var trailing: () -> Trailing
 
-    private let borderOpacity: CGFloat = 0.20
+    private let borderOpacity: CGFloat = 0.28
     private let borderWidth: CGFloat = 0.55
 
     init(
@@ -816,6 +821,10 @@ struct HomeActionRow: View {
     var iconColor: Color = AppColors.accent
     var titleColor: Color = AppColors.label
     var subtitleColor: Color = AppColors.secondaryLabel
+    var accent: Color? = nil
+    var showsLeadingAccentBar: Bool = true
+    var statusTitle: String? = nil
+    var statusColor: Color = AppColors.accent
 
     var body: some View {
         WideActionButtonToOneColumn(
@@ -825,7 +834,11 @@ struct HomeActionRow: View {
             showChevron: showChevron,
             iconColor: iconColor,
             titleColor: titleColor,
-            subtitleColor: subtitleColor
+            subtitleColor: subtitleColor,
+            accent: accent,
+            showsLeadingAccentBar: showsLeadingAccentBar,
+            statusTitle: statusTitle,
+            statusColor: statusColor
         )
     }
 }

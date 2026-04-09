@@ -259,7 +259,7 @@ struct EditTraineeSheet: View {
     private func parsedPositiveDouble(_ text: String) -> Double? {
         let normalized = text
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: ").")
+            .replacingOccurrences(of: ",", with: ".")
         guard let value = Double(normalized), value > 0 else { return nil }
         return value
     }

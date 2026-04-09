@@ -75,10 +75,8 @@ struct TraineeMainView: View {
                 .tag(0)
             progressTab
                 .tag(1)
-            workoutsTab
-                .tag(2)
             profileTab
-                .tag(3)
+                .tag(2)
         }
         .tabViewStyle(.automatic)
         .onAppear {
@@ -299,23 +297,6 @@ struct TraineeMainView: View {
         )
     }
 
-    private var workoutsTab: some View {
-        TraineeWorkoutsView(
-            profile: profile,
-            linkService: linkService,
-            visitService: visitService,
-            eventService: eventService,
-            calendarSummaryService: calendarSummaryService,
-            membershipService: membershipService,
-            profileService: profileService
-        )
-        .trackAPIScreen("Мой календарь")
-        .tabItem {
-            AppTablerIcon("calendar-default")
-            Text("Мой календарь")
-        }
-    }
-
     private var homeTab: some View {
         NavigationStack {
             TraineeHomeView(
@@ -328,7 +309,6 @@ struct TraineeMainView: View {
                 activeMembershipsCount: activeMembershipsCount,
                 isLoading: isProfileBlockDataLoading,
                 onOpenProgress: { selectedTab = 1 },
-                onOpenCalendar: { selectedTab = 2 },
                 onShareWithCoach: { showConnectionTokenSheet = true },
                 nutritionDestination: {
                     TraineeNutritionPlansView(
@@ -351,6 +331,17 @@ struct TraineeMainView: View {
                         calculatorsService: calculatorsService,
                         profileId: profile.id
                     )
+                },
+                calendarDestination: {
+                    TraineeWorkoutsView(
+                        profile: profile,
+                        linkService: linkService,
+                        visitService: visitService,
+                        eventService: eventService,
+                        calendarSummaryService: calendarSummaryService,
+                        membershipService: membershipService,
+                        profileService: profileService
+                    )
                 }
             )
             .navigationTitle("Главная")
@@ -368,10 +359,7 @@ struct TraineeMainView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     profileHeader
-                    blockGender
-                    blockDateOfBirth
-                    blockHeight
-                    blockWeight
+                    ProfileIdentityDetailsSection(profile: profile)
                     blockContact
                     blockNotes
                     blockDelete
@@ -421,22 +409,15 @@ struct TraineeMainView: View {
 
     private var profileHeader: some View {
         let genderAccent = AppColors.avatarColor(gender: profile.gender, defaultColor: AppColors.accent)
-        return VStack(spacing: 16) {
+        return VStack(spacing: 10) {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        genderAccent.opacity(0.25),
-                        genderAccent.opacity(0.05)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: AppDesign.avatarCornerRadiusLarge))
+                RoundedRectangle(cornerRadius: AppDesign.profileSwitchWideAvatarCornerRadius, style: .continuous)
+                    .fill(AppColors.avatarBackground)
+                    .frame(width: 64, height: 64)
 
-                AppTablerIcon("file-default")
-                    .appIcon(.s32)
-                    .foregroundStyle(.white)
+                AppTablerIcon("note.text")
+                    .appIcon(.s28)
+                    .foregroundStyle(genderAccent)
             }
             VStack(spacing: 4) {
                 Button {
@@ -456,7 +437,7 @@ struct TraineeMainView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -613,7 +594,7 @@ struct TraineeMainView: View {
                 )
             } label: {
                 WideActionButtonToOneColumn(
-                    icon: "coffee-cup-01",
+                    icon: "tools-kitchen-2",
                     title: "Питание",
                     subtitle: coachLinks.count == 1 ? "План от тренера" : "Планы от \(coachLinks.count) тренеров",
                     prominentTitle: true,
@@ -727,42 +708,9 @@ struct TraineeMainView: View {
         }
     }
 
-    private var blockGender: some View {
-        ActionBlockRow(icon: "user-default", title: "Пол", value: profile.gender?.displayName ?? "Не указан")
-            .actionBlockStyle()
-    }
-
-    @ViewBuilder
-    private var blockDateOfBirth: some View {
-        if profile.dateOfBirth != nil {
-            ActionBlockRow(
-                icon: "calendar-default",
-                title: "Дата рождения",
-                value: [profile.dateOfBirth?.formattedRuShort, profile.ageFormatted].compactMap { $0 }.joined(separator: " · ")
-            )
-            .actionBlockStyle()
-        }
-    }
-
-    @ViewBuilder
-    private var blockHeight: some View {
-        if let h = profile.height {
-            ActionBlockRow(icon: "pencil-scale", title: "Рост", value: "\(h.measurementFormatted) см")
-                .actionBlockStyle()
-        }
-    }
-
-    @ViewBuilder
-    private var blockWeight: some View {
-        if let w = profile.weight {
-            ActionBlockRow(icon: "pencil-scale", title: "Вес", value: "\(w.measurementFormatted) кг")
-                .actionBlockStyle()
-        }
-    }
-
     @ViewBuilder
     private var blockNotes: some View {
-        if let notes = profile.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
+        if profile.isTrainee, let notes = profile.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
             NotesBlockView(notes: notes)
         }
     }

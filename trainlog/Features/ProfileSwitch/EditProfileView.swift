@@ -100,8 +100,12 @@ struct EditProfileView: View {
                         FormSectionDivider()
                         if profileType == .coach {
                             FormRowTextField(icon: "building-apartment-two", title: "Зал", placeholder: "Название зала", text: $gymName, textContentType: .organizationName, autocapitalization: .words)
-                            FormSectionDivider()
                         }
+                    }
+                }
+
+                SettingsCard(title: "Личные данные") {
+                    VStack(spacing: 0) {
                         FormRow(icon: "user-default", title: "Пол") {
                             Picker("", selection: Binding(
                                 get: { gender ?? .male },
@@ -114,28 +118,10 @@ struct EditProfileView: View {
                         }
                         FormSectionDivider()
                         FormRowDateOfBirth(selection: $dateOfBirth, onTap: { showDatePickerSheet = true })
-                        FormSectionDivider()
-                        FormRowTextField(
-                            icon: "pencil-scale",
-                            title: "Рост",
-                            placeholder: "см",
-                            text: $height,
-                            autocapitalization: .never,
-                            keyboardType: .decimalPad
-                        )
-                        if profileType == .trainee {
-                            FormSectionDivider()
-                            FormRowTextField(
-                                icon: "pencil-scale",
-                                title: "Вес",
-                                placeholder: "кг",
-                                text: $weight,
-                                autocapitalization: .never,
-                                keyboardType: .decimalPad
-                            )
-                        }
                     }
                 }
+
+                bodyMetricsCard
 
                 SettingsCard(title: "Контакты") {
                     VStack(spacing: 0) {
@@ -145,7 +131,9 @@ struct EditProfileView: View {
                     }
                 }
 
-                FormNotesCard(notes: $notes)
+                if profileType == .trainee {
+                    FormNotesCard(notes: $notes)
+                }
             }
             .padding(.top, 8)
             .padding(.bottom, AppDesign.sectionSpacing)
@@ -153,6 +141,53 @@ struct EditProfileView: View {
         .sheet(isPresented: $showDatePickerSheet) {
             FormDatePickerSheet(selection: $dateOfBirth, isPresented: $showDatePickerSheet, title: "Дата рождения")
         }
+    }
+
+    private var bodyMetricsCard: some View {
+        SettingsCard(title: "") {
+            HStack(spacing: AppDesign.rectangularBlockSpacing) {
+                metricInputCard(
+                    icon: "ruler-2",
+                    title: "Рост",
+                    unit: "см",
+                    value: $height
+                )
+                metricInputCard(
+                    icon: "weight",
+                    title: "Вес",
+                    unit: "кг",
+                    value: $weight
+                )
+            }
+        }
+    }
+
+    private func metricInputCard(
+        icon: String,
+        title: String,
+        unit: String,
+        value: Binding<String>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, appIcon: icon)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 6) {
+                TextField(unit, text: value)
+                    .font(.body)
+                    .keyboardType(.decimalPad)
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.never)
+                Text(unit)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .background(AppColors.tertiarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func loadProfile() async {
@@ -198,17 +233,17 @@ struct EditProfileView: View {
         let notesTrimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let phoneVal = phone.isEmpty ? nil : (PhoneFormatter.isValid(phone) ? String(phone) : nil)
         let telegramVal = telegram.isEmpty ? nil : String(telegram)
-        let notesVal = notesTrimmed.isEmpty ? nil : String(notesTrimmed)
+        let notesVal = profileType == .trainee ? (notesTrimmed.isEmpty ? nil : String(notesTrimmed)) : nil
         let heightTrimmed = height.trimmingCharacters(in: .whitespacesAndNewlines)
         let heightValue: Double? = {
             guard !heightTrimmed.isEmpty else { return nil }
-            let normalized = heightTrimmed.replacingOccurrences(of: ",", with: ").")
+            let normalized = heightTrimmed.replacingOccurrences(of: ",", with: ".")
             return Double(normalized)
         }()
         let weightTrimmed = weight.trimmingCharacters(in: .whitespacesAndNewlines)
         let weightValue: Double? = {
             guard !weightTrimmed.isEmpty else { return nil }
-            let normalized = weightTrimmed.replacingOccurrences(of: ",", with: ").")
+            let normalized = weightTrimmed.replacingOccurrences(of: ",", with: ".")
             guard let value = Double(normalized), value > 0 else { return nil }
             return value
         }()
@@ -237,7 +272,7 @@ struct EditProfileView: View {
                     weight: weightValue
                 )
 
-                if profile.type == .trainee, let weightValue {
+                if let weightValue {
                     try await syncTodayWeightMeasurement(profileId: profile.id, weightKg: weightValue)
                 }
 

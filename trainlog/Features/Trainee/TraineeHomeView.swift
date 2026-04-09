@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View, CalculatorsDestination: View>: View {
+struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View, CalculatorsDestination: View, CalendarDestination: View>: View {
     let profile: Profile
     let measurements: [Measurement]
     let goals: [Goal]
@@ -15,11 +15,11 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
     let activeMembershipsCount: Int
     let isLoading: Bool
     let onOpenProgress: () -> Void
-    let onOpenCalendar: () -> Void
     let onShareWithCoach: () -> Void
     @ViewBuilder let nutritionDestination: () -> NutritionDestination
     @ViewBuilder let membershipsDestination: () -> MembershipsDestination
     @ViewBuilder let calculatorsDestination: () -> CalculatorsDestination
+    @ViewBuilder let calendarDestination: () -> CalendarDestination
 
     private var trainerBlockDescription: String {
         guard !coachLinks.isEmpty else {
@@ -41,7 +41,6 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
                     trainerSection
                     personalActionsSection
                     additionalSection
-                    futureSection
                 }
             }
             .padding(.bottom, AppDesign.sectionSpacing)
@@ -57,32 +56,51 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
         ) {
             if !coachLinks.isEmpty {
                 VStack(spacing: 8) {
-                    NavigationLink(destination: nutritionDestination()) {
-                        HomeActionRow(
-                            icon: "coffee-cup-01",
-                            title: "Питание и добавки",
-                            subtitle: "План питания и назначения"
-                        )
-                    }
-                    .buttonStyle(PressableButtonStyle())
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10),
+                        ],
+                        spacing: 10
+                    ) {
+                        NavigationLink(destination: nutritionDestination()) {
+                            BigActionButtonToTwoColumn(
+                                icon: "tools-kitchen-2",
+                                title: "Питание и добавки",
+                                subtitle: "План и назначения"
+                            )
+                        }
+                        .buttonStyle(PressableButtonStyle(cornerRadius: 12))
 
-                    if membershipsCount > 0 {
                         NavigationLink(destination: membershipsDestination()) {
-                            HomeActionRow(
+                            BigActionButtonToTwoColumn(
                                 icon: "tag",
-                                title: "Мои абонементы",
+                                title: "Абонементы",
                                 subtitle: activeMembershipsCount > 0 ? "Активных: \(activeMembershipsCount)" : "Всего: \(membershipsCount)"
                             )
                         }
-                        .buttonStyle(PressableButtonStyle())
+                        .buttonStyle(PressableButtonStyle(cornerRadius: 12))
                     }
+
+                    NavigationLink(destination: calendarDestination()) {
+                        HomeActionRow(
+                            icon: "calendar-default",
+                            title: "Мой календарь",
+                            subtitle: "Посещения и события"
+                        )
+                    }
+                    .buttonStyle(PressableButtonStyle())
                 }
             } else {
                 Button(action: onShareWithCoach) {
                     HomeActionRow(
                         icon: "key-left",
                         title: "Подключить тренера",
-                        subtitle: "Открыть код для связи"
+                        subtitle: "Открыть код для связи",
+                        accent: AppColors.profileAccent,
+                        showsLeadingAccentBar: true,
+                        statusTitle: "Важно",
+                        statusColor: AppColors.profileAccent
                     )
                 }
                 .buttonStyle(PressableButtonStyle())
@@ -93,43 +111,29 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
     private var personalActionsSection: some View {
         ContentCard(
             title: "Мои действия",
-            description: "Все, что вы делаете сами: фиксируете прогресс, ведете календарь и делитесь доступом при необходимости"
+            description: "Все, что вы делаете сами в дневнике"
         ) {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 10),
-                    GridItem(.flexible(), spacing: 10),
-                ],
-                spacing: 10
-            ) {
-                Button(action: onOpenProgress) {
-                    BigActionButtonToTwoColumn(
-                        icon: "grid-dashboard-circle",
-                        title: "Прогресс",
-                        subtitle: "Замеры, цели и графики"
-                    )
-                }
-                .buttonStyle(PressableButtonStyle(cornerRadius: 12))
-
-                Button(action: onOpenCalendar) {
-                    BigActionButtonToTwoColumn(
-                        icon: "calendar-default",
-                        title: "Календарь",
-                        subtitle: "Посещения и события"
-                    )
-                }
-                .buttonStyle(PressableButtonStyle(cornerRadius: 12))
-            }
-
-            Button(action: onShareWithCoach) {
+            Button(action: onOpenProgress) {
                 HomeActionRow(
-                    icon: "key-left",
-                    title: "Поделиться с тренером",
-                    subtitle: "Показать код для доступа к дневнику"
+                    icon: "grid-dashboard-circle",
+                    title: "Мой прогресс",
+                    subtitle: "Замеры, цели и графики"
                 )
             }
             .buttonStyle(PressableButtonStyle())
-            .padding(.top, 8)
+            .padding(.bottom, 6)
+
+            HomeActionRow(
+                icon: "treadmill",
+                title: "Мои тренировки",
+                subtitle: "Планы и конструктор тренировок",
+                showChevron: false,
+                accent: AppColors.secondaryLabel,
+                showsLeadingAccentBar: true,
+                statusTitle: "Скоро",
+                statusColor: AppColors.secondaryLabel
+            )
+            .opacity(0.78)
         }
     }
 
@@ -142,34 +146,12 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
                 HomeActionRow(
                     icon: "grid-dashboard-02",
                     title: "Калькуляторы",
-                    subtitle: "Дополнительные расчеты"
+                    subtitle: "Дополнительные расчеты",
+                    accent: AppColors.profileAccent
                 )
             }
             .buttonStyle(PressableButtonStyle())
         }
-    }
-
-    private var futureSection: some View {
-        ContentCard(
-            title: "Скоро в дневнике",
-            description: "Скоро появятся новые разделы, чтобы вам было удобнее отслеживать тренировки и личные результаты"
-        ) {
-            VStack(spacing: 8) {
-                HomeActionRow(
-                    icon: "treadmill",
-                    title: "Тренировки",
-                    subtitle: "Планы и конструктор тренировок",
-                    showChevron: false
-                )
-                HomeActionRow(
-                    icon: "award-medal",
-                    title: "Мои рекорды",
-                    subtitle: "Достижения и личные максимумы",
-                    showChevron: false
-                )
-            }
-        }
-        .opacity(0.78)
     }
 
     private var homeSkeleton: some View {

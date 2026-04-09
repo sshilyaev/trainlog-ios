@@ -6,18 +6,28 @@ import UIKit
 enum AppColors {
     // MARK: - Brand / Accent
 
-    /// Основной акцент приложения (синий из бренд-иконки).
-    static let accent = Color(red: 0.29, green: 0.40, blue: 0.76)
+    // Базовая палитра по логотипу (используем только эти цвета и их прозрачности).
+    static let logoTeal = Color(hex: "#48AA8D")
+    static let logoRose = Color(hex: "#AA4865")
+    static let logoPurple = Color(hex: "#8D48AA")
+    static let logoBrown = Color(hex: "#B98A46")
+    static let logoIndigo = Color(hex: "#535BB4")
+    static let logoGreen = Color(hex: "#5BB453")
+    static let logoMagenta = Color(hex: "#AC53B4")
+    static let logoOlive = Color(hex: "#B4AC53")
+    static let logoSky = Color(hex: "#538CB4")
+    static let logoViolet = Color(hex: "#7B53B4")
+
+    /// Основной акцент приложения.
+    static let accent = logoIndigo
 
     /// Акцент в профиле (аватар/шапка и т.п.).
-    /// Сейчас совпадает с брендовым акцентом, чтобы не плодить отдельные дублирующие оттенки.
-    static let profileAccent = accent
+    static let profileAccent = logoTeal
 
     // MARK: - Gender (avatar)
 
-    /// Синий iOS (#007AFF) — совмещён с defaultColor и первой палитрой событий.
-    static let genderMale = Color(red: 0, green: 0.478, blue: 1) // == EventColor.defaultColor / palette[0] / palette[5]
-    static let genderFemale = Color(red: 0.96, green: 0.55, blue: 0.7)
+    static let genderMale = logoSky
+    static let genderFemale = logoRose
 
     // MARK: - Surfaces (system semantic)
 
@@ -80,29 +90,30 @@ enum AppColors {
 
     // MARK: - Charts (coach statistics)
 
-    static let visitsBySubscription = Color(.systemGreen)
-    /// Совмещён с палитрой событий (ближайший голубой #5AC8FA).
-    static let visitsOneTimePaid = Color(red: 0.353, green: 0.784, blue: 0.980) // == EventColor.palette[3]
-    static let visitsOneTimeDebt = Color(.systemOrange)
-    /// Совмещён с палитрой событий (красный #FF3B30).
-    static let visitsCancelled = Color(red: 1, green: 0.231, blue: 0.188) // == EventColor.palette[1]
+    static let visitsBySubscription = logoGreen
+    static let visitsOneTimePaid = logoSky
+    static let visitsOneTimeDebt = logoBrown
+    static let visitsCancelled = logoRose
 }
 
 // MARK: - Event colors (calendar palette)
 
 enum EventColor {
     /// Цвет по умолчанию, если у события не задан colorHex.
-    static let defaultColor = AppColors.genderMale // синий (#007AFF)
+    static let defaultColor = AppColors.accent
 
     /// Палитра для выбора цвета события: (hex без #, Color).
     static let palette: [(hex: String, color: Color)] = [
-        ("007AFF", AppColors.genderMale),                            // синий
-        ("FF3B30", AppColors.visitsCancelled),                       // красный
-        ("AF52DE", Color(red: 0.686, green: 0.322, blue: 0.871)),    // фиолетовый
-        ("5AC8FA", AppColors.visitsOneTimePaid),                     // голубой
-        ("FF2D55", Color(red: 1, green: 0.176, blue: 0.333)),        // розовый
-        // Объединено с #007AFF (чтобы не плодить лишние цвета в приложении).
-        ("5856D6", AppColors.genderMale),                             // индиго (в UI используем тот же цвет)
+        ("48AA8D", AppColors.logoTeal),
+        ("AA4865", AppColors.logoRose),
+        ("8D48AA", AppColors.logoPurple),
+        ("A9754B", AppColors.logoBrown),
+        ("535BB4", AppColors.logoIndigo),
+        ("5BB453", AppColors.logoGreen),
+        ("AC53B4", AppColors.logoMagenta),
+        ("B4AC53", AppColors.logoOlive),
+        ("538CB4", AppColors.logoSky),
+        ("7B53B4", AppColors.logoViolet),
     ]
 
     /// Цвет по hex-строке (без #). Если nil или невалидный — defaultColor.
@@ -124,6 +135,22 @@ enum EventColor {
             return defaultColor
         }
         return Color(red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255)
+    }
+}
+
+private extension Color {
+    init(hex: String) {
+        let value = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let s = value.hasPrefix("#") ? String(value.dropFirst()) : value
+        var r: UInt64 = 0, g: UInt64 = 0, b: UInt64 = 0
+        guard s.count == 6,
+              Scanner(string: String(s.prefix(2))).scanHexInt64(&r),
+              Scanner(string: String(s.dropFirst(2).prefix(2))).scanHexInt64(&g),
+              Scanner(string: String(s.suffix(2))).scanHexInt64(&b) else {
+            self = .clear
+            return
+        }
+        self = Color(red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255)
     }
 }
 

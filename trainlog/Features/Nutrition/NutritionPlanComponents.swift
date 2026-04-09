@@ -202,8 +202,9 @@ struct SupplementAssignmentRow: View {
 
     @ViewBuilder
     private var supplementMetaGrid: some View {
+        let dosageDisplay = dosageDisplayText
         let visibleItems: [InfoValueItem] = [
-            cleaned(assignment.dosage).map { InfoValueItem(title: "Дозировка", value: $0) },
+            dosageDisplay.map { InfoValueItem(title: "Дозировка", value: $0) },
             cleaned(assignment.timing).map { InfoValueItem(title: "Время", value: $0) },
             cleaned(assignment.frequency).map { InfoValueItem(title: "Частота", value: $0) }
         ].compactMap { $0 }
@@ -221,9 +222,19 @@ struct SupplementAssignmentRow: View {
     }
 
     private var hasAnyMeta: Bool {
-        cleaned(assignment.dosage) != nil
+        dosageDisplayText != nil
             || cleaned(assignment.timing) != nil
             || cleaned(assignment.frequency) != nil
+    }
+
+    private var dosageDisplayText: String? {
+        let value = cleaned(assignment.dosageValue)
+        let unit = assignment.dosageUnit?.displayName
+        if let value, let unit, !unit.isEmpty {
+            return "\(value) \(unit)"
+        }
+        if let value { return value }
+        return cleaned(assignment.dosage)
     }
 
     private var hintMessage: String {
@@ -338,6 +349,7 @@ private struct InfoValueChip: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.trailing, infoFootnote == nil ? 0 : 12)
                         .frame(minHeight: coachSummaryTitleMinHeight, alignment: .top)
                     Text(item.value)
                         .font(.headline.weight(.bold))
@@ -346,6 +358,13 @@ private struct InfoValueChip: View {
                         .minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity, minHeight: 72, alignment: .center)
+                .overlay(alignment: .topTrailing) {
+                    if let hint = infoFootnote {
+                        infoFootnoteButton(hint)
+                            .padding(.top, 1)
+                            .padding(.trailing, 1)
+                    }
+                }
             case .standard, .large:
                 Group {
                     if let hint = infoFootnote, item.infoFootnoteCompactIcon {

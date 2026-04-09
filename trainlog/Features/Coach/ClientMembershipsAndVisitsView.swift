@@ -1248,7 +1248,6 @@ struct ClientMembershipsNewView: View {
     @State private var memberships: [Membership] = []
     @State private var isLoading = true
     @State private var showArchived = false
-    @State private var showAddMembership = false
     @State private var isAddingVisitForMembershipId: String? = nil
     @State private var addVisitDateSheetMembership: Membership? = nil
     @State private var errorMessage: String?
@@ -1256,6 +1255,12 @@ struct ClientMembershipsNewView: View {
     @State private var loadingMembershipId: String? = nil
     @State private var allVisits: [Visit] = []
     @State private var showVisitsForMembership: Membership? = nil
+    @State private var createKind: MembershipKind = .byVisits
+    @State private var createTotalSessionsCount: Int = 10
+    @State private var createStartDate: Date = Date()
+    @State private var createDurationDays: Int = 30
+    @State private var createPriceText: String = ""
+    @State private var showCreateStartDatePicker = false
 
     private var activeList: [Membership] {
         memberships.filter { $0.isActive }
@@ -1263,6 +1268,17 @@ struct ClientMembershipsNewView: View {
     private var finishedList: [Membership] {
         memberships.filter { !$0.isActive }
     }
+    private var createPriceRub: Int? {
+        let t = createPriceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : Int(t)
+    }
+    private var createEndDate: Date {
+        Calendar.current.date(byAdding: .day, value: createDurationDays, to: Calendar.current.startOfDay(for: createStartDate)) ?? createStartDate
+    }
+    private let minSessions = 1
+    private let maxSessions = 999
+    private let minDays = 1
+    private let maxDays = 365
 
     var body: some View {
         ScrollView {
@@ -1295,54 +1311,6 @@ struct ClientMembershipsNewView: View {
         .allowsHitTesting(isAddingVisitForMembershipId == nil)
         .navigationTitle("Абонементы")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if !showArchived {
-                    Button {
-                        showAddMembership = true
-                    } label: {
-                        AppTablerIcon("plus-square")
-                            .font(.body.weight(.semibold))
-                    }
-                    .buttonStyle(PressableButtonStyle())
-                }
-            }
-        }
-        .sheet(isPresented: $showAddMembership) {
-            AddMembershipSheet(
-                isCreating: $isCreatingMembership,
-                onCreate: { kind, totalSessions, startDate, endDate, price in
-                    Task {
-                        await MainActor.run { isCreatingMembership = true }
-                        do {
-                            _ = try await membershipService.createMembership(
-                                coachProfileId: coachProfileId,
-                                traineeProfileId: trainee.id,
-                                kind: kind,
-                                totalSessions: totalSessions,
-                                startDate: startDate,
-                                endDate: endDate,
-                                priceRub: price
-                            )
-                            await load()
-                            await MainActor.run { showAddMembership = false }
-                            await MainActor.run {
-                                AppDesign.triggerSuccessHaptic()
-                                ToastCenter.shared.success("Абонемент создан")
-                            }
-                        } catch {
-                            await MainActor.run {
-                                ToastCenter.shared.error(from: error, fallback: "Не удалось создать абонемент")
-                                if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
-                            }
-                        }
-                        await MainActor.run { isCreatingMembership = false }
-                    }
-                },
-                onCancel: { showAddMembership = false }
-            )
-            .mainSheetPresentation(.half)
-        }
         .sheet(item: $showVisitsForMembership) { membership in
             let visits = allVisits.filter { $0.membershipId == membership.id }.sorted { $0.date > $1.date }
             MembershipVisitsSheet(
@@ -1351,6 +1319,23 @@ struct ClientMembershipsNewView: View {
                 initialMonth: MembershipVisitsSheet.initialMonthForVisits(visits),
                 onDismiss: { showVisitsForMembership = nil }
             )
+        }
+        .sheet(isPresented: $showCreateStartDatePicker) {
+            MainSheet(
+                title: "Дата начала",
+                onBack: { showCreateStartDatePicker = false },
+                trailing: {
+                    Button("Готово") { showCreateStartDatePicker = false }
+                        .fontWeight(.regular)
+                },
+                content: {
+                    DatePicker("", selection: $createStartDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .environment(\.locale, .ru)
+                        .padding()
+                }
+            )
+            .mainSheetPresentation(.calendar)
         }
         .sheet(item: $addVisitDateSheetMembership) { membership in
             AddVisitDateSheet(
@@ -1388,12 +1373,16 @@ struct ClientMembershipsNewView: View {
     @ViewBuilder
     private var activeContent: some View {
         if activeList.isEmpty {
-            ContentUnavailableView(
-                "Нет активных абонементов",
-                image: "tag",
-                description: Text("Добавьте абонемент кнопкой выше или перейдите во вкладку «Завершённые».")
-            )
-            .padding(.vertical, 32)
+            VStack(spacing: AppDesign.blockSpacing) {
+                ContentUnavailableView(
+                    "Нет активных абонементов",
+                    image: "tag",
+                    description: Text("Создайте первый абонемент прямо на этом экране.")
+                )
+                .padding(.top, 20)
+
+                createMembershipSection
+            }
         } else {
             VStack(spacing: AppDesign.blockSpacing) {
                 ForEach(activeList) { m in
@@ -1489,8 +1478,99 @@ struct ClientMembershipsNewView: View {
                         onViewVisits: { showVisitsForMembership = m }
                     )
                 }
+                createMembershipSection
             }
-            .padding(.horizontal, AppDesign.cardPadding)
+        }
+    }
+
+    private var createMembershipSection: some View {
+        SettingsCard(title: "Создать абонемент") {
+            VStack(spacing: 0) {
+                HStack(spacing: AppDesign.rectangularBlockSpacing) {
+                    createKindTile(kind: .byVisits, icon: "tag", title: "По посещению", description: "Фиксированное число занятий")
+                    createKindTile(kind: .unlimited, icon: "calendar-default", title: "Безлимитный", description: "На период по датам")
+                }
+
+                if createKind == .byVisits {
+                    FormSectionDivider()
+                    FormRow(icon: "tag", title: "Количество") {
+                        HStack(spacing: 20) {
+                            Button { if createTotalSessionsCount > minSessions { createTotalSessionsCount -= 1 } } label: {
+                                AppTablerIcon("minus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(createTotalSessionsCount <= minSessions ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(createTotalSessionsCount <= minSessions)
+                            Text("\(createTotalSessionsCount)")
+                                .font(.title.weight(.semibold))
+                                .monospacedDigit()
+                                .frame(minWidth: 56, alignment: .center)
+                            Button { if createTotalSessionsCount < maxSessions { createTotalSessionsCount += 1 } } label: {
+                                AppTablerIcon("plus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(createTotalSessionsCount >= maxSessions ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(createTotalSessionsCount >= maxSessions)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                } else {
+                    FormSectionDivider()
+                    FormRowDateSelection(
+                        title: "Дата начала",
+                        selection: Binding<Date?>(
+                            get: { createStartDate },
+                            set: { if let value = $0 { createStartDate = value } }
+                        ),
+                        allowsClear: false,
+                        onTap: { showCreateStartDatePicker = true }
+                    )
+                    FormSectionDivider()
+                    FormRow(icon: "tag", title: "Срок (дней)") {
+                        HStack(spacing: 20) {
+                            Button { if createDurationDays > minDays { createDurationDays -= 1 } } label: {
+                                AppTablerIcon("minus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(createDurationDays <= minDays ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(createDurationDays <= minDays)
+                            Text("\(createDurationDays)")
+                                .font(.title.weight(.semibold))
+                                .monospacedDigit()
+                                .frame(minWidth: 56, alignment: .center)
+                            Button { if createDurationDays < maxDays { createDurationDays += 1 } } label: {
+                                AppTablerIcon("plus-circle")
+                                    .font(.title2)
+                                    .foregroundStyle(createDurationDays >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
+                            }
+                            .disabled(createDurationDays >= maxDays)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    Text("Абонемент действует до \(createEndDate.formattedRuMedium)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 6)
+                }
+
+                FormSectionDivider()
+                FormRow(icon: "wallet-default", title: "Стоимость (₽)") {
+                    TextField("5000", text: $createPriceText)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(.trailing)
+                        .formInputStyle()
+                }
+
+                MainActionButton(
+                    title: "Создать абонемент",
+                    isLoading: isCreatingMembership,
+                    isDisabled: false,
+                    action: { Task { await createMembershipInline() } }
+                )
+                .padding(.top, 12)
+            }
         }
     }
 
@@ -1517,6 +1597,83 @@ struct ClientMembershipsNewView: View {
                 }
             }
             .padding(.horizontal, AppDesign.cardPadding)
+        }
+    }
+
+    private func createKindTile(
+        kind: MembershipKind,
+        icon: String,
+        title: String,
+        description: String
+    ) -> some View {
+        let isSelected = createKind == kind
+        let tint = kind == .byVisits ? AppColors.logoTeal : AppColors.logoViolet
+        return Button {
+            createKind = kind
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                AppTablerIcon(icon)
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? tint : AppColors.accent)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(AppDesign.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.secondarySystemGroupedBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
+                    .stroke(
+                        isSelected ? tint.opacity(0.95) : AppColors.separator.opacity(0.35),
+                        lineWidth: isSelected ? 1.2 : 0.8
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
+
+    private func createMembershipInline() async {
+        await MainActor.run { isCreatingMembership = true }
+        defer { Task { @MainActor in isCreatingMembership = false } }
+        do {
+            if createKind == .byVisits {
+                _ = try await membershipService.createMembership(
+                    coachProfileId: coachProfileId,
+                    traineeProfileId: trainee.id,
+                    kind: .byVisits,
+                    totalSessions: createTotalSessionsCount,
+                    startDate: nil,
+                    endDate: nil,
+                    priceRub: createPriceRub
+                )
+            } else {
+                let start = Calendar.current.startOfDay(for: createStartDate)
+                _ = try await membershipService.createMembership(
+                    coachProfileId: coachProfileId,
+                    traineeProfileId: trainee.id,
+                    kind: .unlimited,
+                    totalSessions: nil,
+                    startDate: start,
+                    endDate: createEndDate,
+                    priceRub: createPriceRub
+                )
+            }
+            await load()
+            await MainActor.run {
+                AppDesign.triggerSuccessHaptic()
+                ToastCenter.shared.success("Абонемент создан")
+            }
+        } catch {
+            await MainActor.run {
+                ToastCenter.shared.error(from: error, fallback: "Не удалось создать абонемент")
+                if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
+            }
         }
     }
 
@@ -2191,13 +2348,20 @@ struct AddMembershipSheet: View {
                         ScrollView {
                             VStack(spacing: 0) {
                                 SettingsCard(title: "Основное") {
-                                    VStack(spacing: 0) {
-                                        FormRow(icon: "tag", title: "Тип") {
-                                            Picker("", selection: $selectedKind) {
-                                                Text("По посещениям").tag(MembershipKind.byVisits)
-                                                Text("Безлимитный").tag(MembershipKind.unlimited)
-                                            }
-                                            .pickerStyle(.segmented)
+                                    VStack(spacing: 12) {
+                                        HStack(spacing: AppDesign.rectangularBlockSpacing) {
+                                            membershipKindTile(
+                                                kind: .byVisits,
+                                                icon: "tag",
+                                                title: "По посещению",
+                                                description: "Фиксированное число занятий"
+                                            )
+                                            membershipKindTile(
+                                                kind: .unlimited,
+                                                icon: "calendar-default",
+                                                title: "Безлимитный",
+                                                description: "На период по датам"
+                                            )
                                         }
                                     }
                                 }
@@ -2312,6 +2476,44 @@ struct AddMembershipSheet: View {
             )
             .mainSheetPresentation(.calendar)
         }
+    }
+
+    private func membershipKindTile(
+        kind: MembershipKind,
+        icon: String,
+        title: String,
+        description: String
+    ) -> some View {
+        let isSelected = selectedKind == kind
+        let tint = kind == .byVisits ? AppColors.logoTeal : AppColors.logoViolet
+        return Button {
+            selectedKind = kind
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                AppTablerIcon(icon)
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? tint : AppColors.accent)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(AppDesign.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.secondarySystemGroupedBackground)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
+                    .stroke(
+                        isSelected ? tint.opacity(0.95) : AppColors.separator.opacity(0.35),
+                        lineWidth: isSelected ? 1.2 : 0.8
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 }
 

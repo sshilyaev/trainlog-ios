@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ProfileSelectionView: View {
     let profiles: [Profile]
@@ -21,7 +22,6 @@ struct ProfileSelectionView: View {
     @State private var passwordResetError: String?
     @State private var showChangePasswordSheet = false
     @State private var showSignOutConfirmation = false
-    @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
     @State private var quickType: ProfileType = .trainee
     @State private var quickGender: ProfileGender? = .male
     @State private var quickName: String = ""
@@ -46,11 +46,12 @@ struct ProfileSelectionView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     accountHeader
-                    themeSection
                     profilesSection
                 }
                 .padding(.vertical, AppDesign.blockSpacing)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .dismissKeyboardOnTap()
             .background(AppColors.systemGroupedBackground)
             .navigationTitle("Мои профили")
             .navigationBarTitleDisplayMode(.inline)
@@ -61,14 +62,6 @@ struct ProfileSelectionView: View {
                     } label: {
                         AppTablerIcon("log-out-right")
                             .font(.subheadline)
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        onCreate()
-                    } label: {
-                        AppTablerIcon("plus-square")
-                            .font(.subheadline.weight(.semibold))
                     }
                 }
             }
@@ -131,55 +124,28 @@ struct ProfileSelectionView: View {
     // MARK: - Sections
 
     private var accountHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(displayName)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    if let email = authService.currentUserEmail,
-                       !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text(email)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-            }
+        HeroCard(
+            icon: "user-circle",
+            title: "Аккаунт",
+            headline: displayName,
+            description: authService.currentUserEmail ?? ""
+        ) {
             Button {
                 showChangePasswordSheet = true
             } label: {
-                WideActionButtonToOneColumn(
-                    icon: "lock-close",
-                    title: "Сменить пароль",
-                    subtitle: "",
-                    iconColor: AppColors.secondaryLabel,
-                    chevronColor: AppColors.tertiaryLabel
-                )
+                HStack(spacing: 8) {
+                    AppTablerIcon("lock-close")
+                    Text("Сменить пароль")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppColors.white)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 46)
+                .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10))
             }
-            .buttonStyle(PressableButtonStyle(cornerRadius: AppDesign.cornerRadius))
+            .buttonStyle(PressableButtonStyle(cornerRadius: 10))
         }
-        .padding(AppDesign.cardPadding)
-        .background(
-            AppColors.secondarySystemGroupedBackground,
-            in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
-        )
         .padding(.horizontal, AppDesign.cardPadding)
-    }
-
-    private var themeSection: some View {
-        SettingsCard(title: "Тема оформления") {
-            SegmentedPicker(
-                title: "",
-                selection: $appThemeRaw,
-                options: [
-                    (AppTheme.light.rawValue, "Светлая"),
-                    (AppTheme.dark.rawValue, "Тёмная"),
-                    (AppTheme.system.rawValue, "Системная")
-                ]
-            )
-        }
-        .padding(.top, AppDesign.blockSpacing)
     }
 
     private var profilesSection: some View {
@@ -189,49 +155,7 @@ struct ProfileSelectionView: View {
         return VStack(alignment: .leading, spacing: 12) {
             if selectableProfiles.isEmpty {
                 VStack(spacing: 16) {
-                    SettingsCard(title: "Создать первый профиль") {
-                        VStack(spacing: 12) {
-                            HStack(spacing: AppDesign.rectangularBlockSpacing) {
-                                quickTypeTile(type: .trainee, icon: "file-default", title: "Дневник", description: "Замеры, цели и календарь.")
-                                quickTypeTile(type: .coach, icon: "user-love-heart", title: "Тренер", description: "Клиенты, абонементы, посещения.")
-                            }
-                            FormSectionDivider()
-                            Picker("", selection: Binding(
-                                get: { quickGender ?? .male },
-                                set: { quickGender = $0 }
-                            )) {
-                                Text("Мужчина").tag(ProfileGender.male)
-                                Text("Женщина").tag(ProfileGender.female)
-                            }
-                            .pickerStyle(.segmented)
-
-                            FormRowTextField(
-                                icon: "writing-sign",
-                                title: "Имя в профиле",
-                                placeholder: "Как к вам обращаться",
-                                text: $quickName,
-                                textContentType: .name,
-                                autocapitalization: .words
-                            )
-                        }
-                    }
-                    .padding(.horizontal, AppDesign.cardPadding)
-
-                    MainActionButton(
-                        title: "Создать профиль",
-                        isLoading: isQuickCreating,
-                        isDisabled: quickName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                        action: { Task { await quickCreateProfile() } }
-                    )
-                    .padding(.horizontal, AppDesign.cardPadding)
-
-                    if let msg = quickCreateError, !msg.isEmpty {
-                        Text(msg)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.destructive)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, AppDesign.cardPadding)
-                    }
+                    quickAddProfileBlock(title: "Создать первый профиль")
                 }
             } else {
                 if !coaches.isEmpty {
@@ -249,9 +173,57 @@ struct ProfileSelectionView: View {
                         .padding(.top, coaches.isEmpty ? 0 : 8)
                     profileList(for: trainees)
                 }
+                quickAddProfileBlock(title: "Быстрое добавление профиля")
             }
         }
         .padding(.top, AppDesign.sectionSpacing)
+    }
+
+    private func quickAddProfileBlock(title: String) -> some View {
+        VStack(spacing: 16) {
+            SettingsCard(title: title) {
+                VStack(spacing: 12) {
+                    HStack(spacing: AppDesign.rectangularBlockSpacing) {
+                        quickTypeTile(type: .trainee, icon: "note.text", title: "Дневник", description: "Замеры, цели и календарь.")
+                        quickTypeTile(type: .coach, icon: "figure.strengthtraining.traditional", title: "Тренер", description: "Клиенты, абонементы, посещения.")
+                    }
+                    FormSectionDivider()
+                    Picker("", selection: Binding(
+                        get: { quickGender ?? .male },
+                        set: { quickGender = $0 }
+                    )) {
+                        Text("Мужчина").tag(ProfileGender.male)
+                        Text("Женщина").tag(ProfileGender.female)
+                    }
+                    .pickerStyle(.segmented)
+
+                    FormRowTextField(
+                        icon: "writing-sign",
+                        title: "Имя в профиле",
+                        placeholder: "Как к вам обращаться",
+                        text: $quickName,
+                        textContentType: .name,
+                        autocapitalization: .words
+                    )
+                }
+            }
+
+            MainActionButton(
+                title: "Создать профиль",
+                isLoading: isQuickCreating,
+                isDisabled: quickName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                action: { Task { await quickCreateProfile() } }
+            )
+            .padding(.horizontal, AppDesign.cardPadding)
+
+            if let msg = quickCreateError, !msg.isEmpty {
+                Text(msg)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.destructive)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppDesign.cardPadding)
+            }
+        }
     }
 
     private func profileList(for items: [Profile]) -> some View {
@@ -302,37 +274,28 @@ struct ProfileSelectionView: View {
 
     private func quickTypeTile(type: ProfileType, icon: String, title: String, description: String) -> some View {
         let isSelected = quickType == type
+        let tileTint = type == .trainee ? AppColors.logoTeal : AppColors.logoViolet
         return Button {
             quickType = type
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
                     .font(.title2)
-                    .foregroundStyle(isSelected ? .white : AppColors.accent)
+                    .foregroundStyle(isSelected ? tileTint : AppColors.accent)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(.primary)
                 Text(description)
                     .font(.caption)
-                    .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(AppDesign.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                isSelected
-                ? AnyView(
-                    LinearGradient(
-                        colors: [AppColors.accent, AppColors.accent.opacity(0.8)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                : AnyView(AppColors.secondarySystemGroupedBackground)
-            )
+            .background(AppColors.secondarySystemGroupedBackground)
             .overlay(
                 RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
-                    .stroke(isSelected ? AppColors.accent.opacity(0.9) : AppColors.clear, lineWidth: 1)
+                    .stroke(isSelected ? tileTint.opacity(0.95) : AppColors.separator.opacity(0.35), lineWidth: isSelected ? 1.2 : 0.8)
             )
             .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
         }
@@ -405,48 +368,61 @@ private struct ChangePasswordSheet: View {
             },
             content: {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Обновите пароль для входа в аккаунт. Минимум 6 символов.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, AppDesign.cardPadding)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HeroCard(
+                            icon: "lock-close",
+                            title: "Безопасность",
+                            headline: "Минимум 6 символов",
+                            description: "",
+                            accent: AppColors.visitsOneTimeDebt
+                        )
+                        .padding(.horizontal, AppDesign.cardPadding)
 
-                        VStack(spacing: 12) {
-                            SecureField("Текущий пароль", text: $currentPassword)
-                                .textContentType(.password)
-                                .padding(12)
-                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                            SecureField("Новый пароль (не менее 6 символов)", text: $newPassword)
-                                .textContentType(.newPassword)
-                                .padding(12)
-                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                            SecureField("Повторите новый пароль", text: $confirmPassword)
-                                .textContentType(.newPassword)
-                                .padding(12)
-                                .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
-
-                            if !newPassword.isEmpty && newPassword != confirmPassword {
-                                Text("Пароли не совпадают")
-                                    .font(.caption)
-                                    .foregroundStyle(AppColors.destructive)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            } else if !newPassword.isEmpty && newPassword.count < 6 {
-                                Text("Пароль должен быть не короче 6 символов")
-                                    .font(.caption)
-                                    .foregroundStyle(AppColors.destructive)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                        SettingsCard(title: "Пароль") {
+                            VStack(spacing: 10) {
+                                passwordRow(title: "Текущий", text: $currentPassword, contentType: .password)
+                                FormSectionDivider()
+                                passwordRow(title: "Новый", text: $newPassword, contentType: .newPassword)
+                                FormSectionDivider()
+                                passwordRow(title: "Повтор", text: $confirmPassword, contentType: .newPassword)
                             }
                         }
-                        .padding(.horizontal, AppDesign.cardPadding)
+
+                        if !newPassword.isEmpty && newPassword != confirmPassword {
+                            Text("Пароли не совпадают")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.destructive)
+                                .padding(.horizontal, AppDesign.cardPadding)
+                        } else if !newPassword.isEmpty && newPassword.count < 6 {
+                            Text("Пароль должен быть не короче 6 символов")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.destructive)
+                                .padding(.horizontal, AppDesign.cardPadding)
+                        }
                     }
                     .padding(.top, 16)
                     .padding(.bottom, AppDesign.sectionSpacing)
                 }
                 .background(AppColors.systemGroupedBackground)
+                .scrollDismissesKeyboard(.interactively)
+                .dismissKeyboardOnTap()
             }
         )
+    }
+
+    private func passwordRow(
+        title: String,
+        text: Binding<String>,
+        contentType: UITextContentType
+    ) -> some View {
+        FormRow(icon: "lock-close", title: title) {
+            PasswordField(
+                title: "Введите",
+                text: text,
+                textContentType: contentType
+            )
+            .frame(maxWidth: 190)
+        }
     }
 
     private func submit() {

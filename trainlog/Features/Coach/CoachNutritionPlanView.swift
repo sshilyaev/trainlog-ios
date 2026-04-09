@@ -343,14 +343,16 @@ private struct CoachSupplementsEditorSheet: View {
         let id: String
         let supplementId: String
         let supplementName: String
-        let dosage: String
+        let dosageValue: String
+        let dosageUnit: SupplementDosageUnit?
         let timing: String
         let frequency: String
         let note: String
     }
 
     struct SupplementEditPayload {
-        let dosage: String
+        let dosageValue: String
+        let dosageUnit: SupplementDosageUnit?
         let timing: String
         let frequency: String
         let note: String
@@ -394,7 +396,8 @@ private struct CoachSupplementsEditorSheet: View {
                 if let draft = editingDraft {
                 SupplementAssignmentEditScreen(
                     supplementName: draft.supplementName,
-                    initialDosage: draft.dosage,
+                    initialDosageValue: draft.dosageValue,
+                    initialDosageUnit: draft.dosageUnit,
                     initialTiming: draft.timing,
                     initialFrequency: draft.frequency,
                     initialNote: draft.note,
@@ -612,6 +615,8 @@ private struct CoachSupplementsEditorSheet: View {
                 traineeProfileId: traineeProfileId,
                 supplementId: item.id,
                 dosage: nil,
+                dosageValue: nil,
+                dosageUnit: item.resolvedDosageUnit,
                 timing: nil,
                 frequency: nil,
                 note: nil
@@ -639,7 +644,8 @@ private struct CoachSupplementsEditorSheet: View {
         _ draft: SupplementEditDraft,
         payload: SupplementEditPayload
     ) async throws {
-        let normalizedDosage = payload.dosage.isEmpty ? nil : payload.dosage
+        let normalizedDosageValue = payload.dosageValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : payload.dosageValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedDosage = composeLegacyDosage(value: normalizedDosageValue, unit: payload.dosageUnit)
         let normalizedTiming = payload.timing.isEmpty ? nil : payload.timing
         let normalizedFrequency = payload.frequency.isEmpty ? nil : payload.frequency
         let normalizedNote = payload.note.isEmpty ? nil : payload.note
@@ -647,6 +653,8 @@ private struct CoachSupplementsEditorSheet: View {
         _ = try await nutritionService.updateSupplementAssignment(
             assignmentId: draft.id,
             dosage: normalizedDosage,
+            dosageValue: normalizedDosageValue,
+            dosageUnit: payload.dosageUnit,
             timing: normalizedTiming,
             frequency: normalizedFrequency,
             note: normalizedNote
@@ -724,7 +732,8 @@ private struct CoachSupplementsEditorSheet: View {
             id: assignment.id,
             supplementId: assignment.supplementId,
             supplementName: assignment.supplementName,
-            dosage: assignment.dosage ?? "",
+            dosageValue: assignment.dosageValue ?? parsedDosageValueFallback(assignment.dosage) ?? "",
+            dosageUnit: assignment.dosageUnit,
             timing: assignment.timing ?? "",
             frequency: assignment.frequency ?? "",
             note: assignment.note ?? ""
@@ -736,6 +745,21 @@ private struct CoachSupplementsEditorSheet: View {
             editingDraft = draft
             showEditSheet = true
         }
+    }
+
+    private func parsedDosageValueFallback(_ legacyDosage: String?) -> String? {
+        guard let legacyDosage else { return nil }
+        let trimmed = legacyDosage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let firstToken = trimmed.split(separator: " ").first.map(String.init) ?? ""
+        let normalized = firstToken.replacingOccurrences(of: ",", with: ".")
+        return Double(normalized) == nil ? nil : firstToken
+    }
+
+    private func composeLegacyDosage(value: String?, unit: SupplementDosageUnit?) -> String? {
+        guard let value, !value.isEmpty else { return nil }
+        guard let unit else { return value }
+        return "\(value) \(unit.displayName)"
     }
 
     @ViewBuilder
@@ -817,13 +841,15 @@ private struct CoachSupplementsEditorSheet: View {
 private struct SupplementAssignmentEditScreen: View {
     @MainActor
     final class FormModel: ObservableObject {
-        @Published var dosage: String
+        @Published var dosageValue: String
+        @Published var dosageUnit: SupplementDosageUnit?
         @Published var timing: String
         @Published var frequency: String
         @Published var note: String
 
-        init(dosage: String, timing: String, frequency: String, note: String) {
-            self.dosage = dosage
+        init(dosageValue: String, dosageUnit: SupplementDosageUnit?, timing: String, frequency: String, note: String) {
+            self.dosageValue = dosageValue
+            self.dosageUnit = dosageUnit
             self.timing = timing
             self.frequency = frequency
             self.note = note
@@ -831,7 +857,8 @@ private struct SupplementAssignmentEditScreen: View {
     }
 
     let supplementName: String
-    let initialDosage: String
+    let initialDosageValue: String
+    let initialDosageUnit: SupplementDosageUnit?
     let initialTiming: String
     let initialFrequency: String
     let initialNote: String
@@ -844,21 +871,24 @@ private struct SupplementAssignmentEditScreen: View {
 
     init(
         supplementName: String,
-        initialDosage: String,
+        initialDosageValue: String,
+        initialDosageUnit: SupplementDosageUnit?,
         initialTiming: String,
         initialFrequency: String,
         initialNote: String,
         onSave: @escaping @MainActor (CoachSupplementsEditorSheet.SupplementEditPayload) async throws -> Void
     ) {
         self.supplementName = supplementName
-        self.initialDosage = initialDosage
+        self.initialDosageValue = initialDosageValue
+        self.initialDosageUnit = initialDosageUnit
         self.initialTiming = initialTiming
         self.initialFrequency = initialFrequency
         self.initialNote = initialNote
         self.onSave = onSave
         _form = StateObject(
             wrappedValue: FormModel(
-                dosage: initialDosage,
+                dosageValue: initialDosageValue,
+                dosageUnit: initialDosageUnit,
                 timing: initialTiming,
                 frequency: initialFrequency,
                 note: initialNote
@@ -888,15 +918,38 @@ private struct SupplementAssignmentEditScreen: View {
                                     .foregroundStyle(AppColors.secondaryLabel)
                                 HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
-                                        Text("Дозировка")
+                                        Text("Значение дозировки")
                                             .font(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
-                                        TextField("1 капсула", text: $form.dosage)
+                                        TextField("500", text: $form.dosageValue)
                                             .font(.subheadline)
+                                            .keyboardType(.decimalPad)
                                             .textFieldStyle(.plain)
                                             .formInputStyle()
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Единица")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.secondaryLabel)
+                                        Picker(
+                                            "",
+                                            selection: Binding<SupplementDosageUnit?>(
+                                                get: { form.dosageUnit },
+                                                set: { form.dosageUnit = $0 }
+                                            )
+                                        ) {
+                                            Text("Не выбрано").tag(nil as SupplementDosageUnit?)
+                                            ForEach(SupplementDosageUnit.allCases) { unit in
+                                                Text(unit.displayName).tag(Optional(unit))
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Время приема")
                                             .font(.caption)
@@ -949,12 +1002,14 @@ private struct SupplementAssignmentEditScreen: View {
     }
 
     private func submit() {
-        let currentDosage = form.dosage
+        let currentDosageValue = form.dosageValue
+        let currentDosageUnit = form.dosageUnit
         let currentTiming = form.timing
         let currentFrequency = form.frequency
         let currentNote = form.note
         let payload = CoachSupplementsEditorSheet.SupplementEditPayload(
-            dosage: currentDosage,
+            dosageValue: currentDosageValue,
+            dosageUnit: currentDosageUnit,
             timing: currentTiming,
             frequency: currentFrequency,
             note: currentNote
@@ -1140,10 +1195,6 @@ private struct EditNutritionPlanSheet: View {
                     guard let d = Double(sanitized) else { return }
                     let rounded = max(0, roundTo0_1(d))
                     weightKg = rounded
-                    let formatted = rounded.measurementFormatted
-                    if weightText != formatted {
-                        weightText = formatted
-                    }
                 }
         }
     }
