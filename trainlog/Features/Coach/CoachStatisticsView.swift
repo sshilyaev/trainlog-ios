@@ -40,6 +40,27 @@ struct CoachStatisticsView: View {
         return f.string(from: selectedMonth).capitalized
     }
 
+    /// Подпись к блоку метрик: один месяц или диапазон «февраль – апрель 2026».
+    private var metricsPeriodLabel: String {
+        if periodMonths <= 1 {
+            return periodTitle.lowercased()
+        }
+        guard let start = calendar.date(byAdding: .month, value: -(periodMonths - 1), to: selectedMonth) else {
+            return periodTitle.lowercased()
+        }
+        let monthFmt = DateFormatter()
+        monthFmt.locale = .ru
+        monthFmt.dateFormat = "LLLL"
+        let startStr = monthFmt.string(from: start).capitalized
+        let endStr = monthFmt.string(from: selectedMonth).capitalized
+        let yStart = calendar.component(.year, from: start)
+        let yEnd = calendar.component(.year, from: selectedMonth)
+        if yStart == yEnd {
+            return "\(startStr) – \(endStr) \(yEnd)"
+        }
+        return "\(startStr) \(yStart) – \(endStr) \(yEnd)"
+    }
+
     var body: some View {
         Group {
             if isLoading && !hasInitialLoadFinished {
@@ -50,7 +71,11 @@ struct CoachStatisticsView: View {
                         periodPicker
                         visitsChartCard(stats)
                         metricsGrid(stats)
+                            .id(
+                                "metrics-\(monthParameter)-\(periodMonths)-\(metricsTraineesValue(stats))-\(metricsMembershipsValue(stats))"
+                            )
                         endingSoonCard(stats)
+                            .id("ending-\(monthParameter)-\(stats.memberships.endingSoonCount)")
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
             .padding(.bottom, AppDesign.sectionSpacing)
@@ -441,24 +466,6 @@ struct CoachStatisticsView: View {
         return f.string(from: date).capitalized
     }
 
-    private func traineesSubtitle(_ s: CoachStatisticsDTO) -> String {
-        if periodMonths > 1, !statsForPeriod.isEmpty {
-            let newInPeriod = statsForPeriod.reduce(0) { $0 + $1.trainees.newThisMonth }
-            return newInPeriod > 0 ? "+\(newInPeriod) за период" : "активных"
-        }
-        return s.trainees.newThisMonth > 0 ? "+\(s.trainees.newThisMonth) за месяц" : "активных"
-    }
-
-    private func membershipsSubtitle(_ m: CoachStatisticsDTO.MembershipsBlock) -> String {
-        let unlim = m.unlimitedCount ?? 0
-        let byVis = m.byVisitsCount ?? 0
-        var parts: [String] = []
-        if unlim > 0 { parts.append("безлимит: \(unlim)") }
-        if byVis > 0 { parts.append("по занятиям: \(byVis)") }
-        if parts.isEmpty { return "активных" }
-        return parts.joined(separator: ", ")
-    }
-
     private var previousMonthTitle: String {
         guard let prev = calendar.date(byAdding: .month, value: -1, to: selectedMonth) else { return "Прошлый" }
         let f = DateFormatter()
@@ -536,20 +543,37 @@ struct CoachStatisticsView: View {
         )
     }
 
+    private func metricsTraineesValue(_ s: CoachStatisticsDTO) -> Int {
+        s.trainees.uniqueWithVisitsInPeriod ?? s.trainees.activeCount
+    }
+
+    private func metricsMembershipsValue(_ s: CoachStatisticsDTO) -> Int {
+        s.memberships.createdInPeriod ?? s.memberships.activeCount
+    }
+
     private func metricsGrid(_ s: CoachStatisticsDTO) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppDesign.blockSpacing) {
-            StatMetricCard(
-                icon: "user-default",
-                title: "Подопечных",
-                value: "\(s.trainees.activeCount)",
-                subtitle: traineesSubtitle(s)
-            )
-            StatMetricCard(
-                icon: "tag",
-                title: "Абонементов",
-                value: "\(s.memberships.activeCount)",
-                subtitle: membershipsSubtitle(s.memberships)
-            )
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Показатели за \(metricsPeriodLabel)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(AppColors.secondaryLabel)
+            HStack(alignment: .top, spacing: AppDesign.blockSpacing) {
+                StatMetricCard(
+                    icon: "user-default",
+                    title: "Подопечных",
+                    value: "\(metricsTraineesValue(s))",
+                    subtitle: "Уникальные с посещениями"
+                )
+                .frame(maxWidth: .infinity)
+                .id("trainees-\(monthParameter)-\(periodMonths)-\(metricsTraineesValue(s))")
+                StatMetricCard(
+                    icon: "tag",
+                    title: "Абонементов",
+                    value: "\(metricsMembershipsValue(s))",
+                    subtitle: "Создано за период"
+                )
+                .frame(maxWidth: .infinity)
+                .id("memberships-\(monthParameter)-\(periodMonths)-\(metricsMembershipsValue(s))")
+            }
         }
         .padding(.top, AppDesign.blockSpacing)
     }
@@ -578,6 +602,10 @@ struct CoachStatisticsView: View {
     }
 
     private func load() async {
+        let requestedMonth = monthParameter
+        let requestedPeriod = periodMonths
+        let requestedMonthDate = selectedMonth
+
         await MainActor.run { isLoading = true; errorMessage = nil }
         defer {
             Task { @MainActor in
@@ -586,29 +614,57 @@ struct CoachStatisticsView: View {
             }
         }
         do {
-            if periodMonths > 1 {
-                var arr: [CoachStatisticsDTO] = []
-                let cal = Calendar.current
-                for i in 0..<periodMonths {
-                    guard let monthDate = cal.date(byAdding: .month, value: -i, to: selectedMonth),
-                          let startOfMonth = cal.dateInterval(of: .month, for: monthDate)?.start else { break }
-                    let comps = cal.dateComponents([.year, .month], from: startOfMonth)
+            // График и нижний ряд: месяц в календаре + длина окна; метрики «подопечные/абонементы» — за то же окно (см. API `months`).
+            let monthSnapshot = try await statisticsService.fetchStatistics(
+                coachProfileId: coachProfileId,
+                month: requestedMonth,
+                periodMonths: requestedPeriod
+            )
+            try Task.checkCancellation()
+
+            if requestedPeriod > 1 {
+                var series: [CoachStatisticsDTO] = []
+                for i in 0..<requestedPeriod {
+                    guard let monthDate = calendar.date(byAdding: .month, value: -i, to: requestedMonthDate),
+                          let startOfMonth = calendar.dateInterval(of: .month, for: monthDate)?.start else { break }
+                    let comps = calendar.dateComponents([.year, .month], from: startOfMonth)
                     let ym = String(format: "%04d-%02d", comps.year ?? 0, comps.month ?? 1)
-                    let r = try await statisticsService.fetchStatistics(coachProfileId: coachProfileId, month: ym)
-                    arr.append(r)
+                    if ym == requestedMonth {
+                        series.append(monthSnapshot)
+                    } else {
+                        let r = try await statisticsService.fetchStatistics(
+                            coachProfileId: coachProfileId,
+                            month: ym,
+                            periodMonths: 1
+                        )
+                        series.append(r)
+                        try Task.checkCancellation()
+                    }
                 }
-                let ordered = arr.reversed()
+                let ordered = series.reversed()
                 await MainActor.run {
+                    guard requestedMonth == monthParameter,
+                          requestedPeriod == periodMonths,
+                          calendar.isDate(requestedMonthDate, equalTo: selectedMonth, toGranularity: .month)
+                    else { return }
                     statsForPeriod = Array(ordered)
-                    stats = statsForPeriod.last
+                    stats = monthSnapshot
                 }
             } else {
-                let result = try await statisticsService.fetchStatistics(coachProfileId: coachProfileId, month: monthParameter)
-                await MainActor.run { statsForPeriod = [result] }
-                await MainActor.run { stats = result }
+                await MainActor.run {
+                    guard requestedMonth == monthParameter,
+                          requestedPeriod == periodMonths,
+                          calendar.isDate(requestedMonthDate, equalTo: selectedMonth, toGranularity: .month)
+                    else { return }
+                    statsForPeriod = [monthSnapshot]
+                    stats = monthSnapshot
+                }
             }
+        } catch is CancellationError {
+            // Пользователь сменил месяц/период — не показываем ошибку.
         } catch {
             await MainActor.run {
+                guard requestedMonth == monthParameter, requestedPeriod == periodMonths else { return }
                 if let msg = AppErrors.userMessageIfNeeded(for: error) {
                     stats = nil
                     statsForPeriod = []

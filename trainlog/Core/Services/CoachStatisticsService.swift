@@ -15,6 +15,8 @@ struct CoachStatisticsDTO: Decodable {
     struct TraineesBlock: Decodable {
         let activeCount: Int
         let newThisMonth: Int
+        /// Уникальные подопечные с хотя бы одним завершённым посещением за интервал (см. query `months`).
+        let uniqueWithVisitsInPeriod: Int?
     }
 
     struct VisitsBlock: Decodable {
@@ -44,9 +46,11 @@ struct CoachStatisticsDTO: Decodable {
         let endingSoonCount: Int
         let unlimitedCount: Int?
         let byVisitsCount: Int?
+        /// Абонементы, созданные за тот же интервал, что и `uniqueWithVisitsInPeriod`.
+        let createdInPeriod: Int?
     }
 }
 
 protocol CoachStatisticsServiceProtocol: Sendable {
-    func fetchStatistics(coachProfileId: String, month: String) async throws -> CoachStatisticsDTO
+    func fetchStatistics(coachProfileId: String, month: String, periodMonths: Int) async throws -> CoachStatisticsDTO
 }
