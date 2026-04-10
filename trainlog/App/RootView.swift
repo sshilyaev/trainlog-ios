@@ -33,6 +33,8 @@ struct RootView: View {
     let nutritionService: NutritionServiceProtocol
     let calculatorsService: CalculatorsServiceProtocol
     let coachOverviewService: CoachOverviewServiceProtocol
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     private let startupTimeoutSeconds: Double = 15
 
     var body: some View {
@@ -112,6 +114,8 @@ struct RootView: View {
             profiles: appState.profiles,
             authService: authService,
             profileService: profileService,
+            supportCampaignService: supportCampaignService,
+            rewardedAdService: rewardedAdService,
             accountDisplayName: authService.currentUserDisplayName,
             onSelect: { appState.selectProfile($0) },
             onCreate: { appState.showCreateProfile() },
@@ -253,6 +257,8 @@ struct RootView: View {
                     calendarSummaryService: calendarSummaryService,
                     nutritionService: nutritionService,
                     calculatorsService: calculatorsService,
+                    supportCampaignService: supportCampaignService,
+                    rewardedAdService: rewardedAdService,
                     myTraineeProfiles: appState.profiles.filter { $0.type == .trainee },
                     postRegistrationOnboardingProfileId: appState.profileIdForPostRegistrationOnboarding,
                     onClearPostRegistrationOnboarding: { appState.profileIdForPostRegistrationOnboarding = nil }
@@ -273,6 +279,8 @@ struct RootView: View {
                     healthService: healthService,
                     nutritionService: nutritionService,
                     calculatorsService: calculatorsService,
+                    supportCampaignService: supportCampaignService,
+                    rewardedAdService: rewardedAdService,
                     onSwitchProfile: { appState.showProfileSelection() },
                     onDeleteProfile: { await deleteCurrentProfile() },
                     onProfileUpdated: { appState.updateProfile($0) },

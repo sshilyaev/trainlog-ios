@@ -3,16 +3,22 @@ import SwiftUI
 struct AppSettingsView: View {
     let showsDeveloperSettings: Bool
     let developerSettingsDestination: (() -> AnyView)?
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
 
     @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
     @AppStorage("appFontSizeStep") private var fontSizeStep = 0
 
     init(
         showsDeveloperSettings: Bool = false,
-        developerSettingsDestination: (() -> AnyView)? = nil
+        developerSettingsDestination: (() -> AnyView)? = nil,
+        supportCampaignService: SupportCampaignServiceProtocol = MockSupportCampaignService(),
+        rewardedAdService: RewardedAdServiceProtocol = DevMockRewardedAdService()
     ) {
         self.showsDeveloperSettings = showsDeveloperSettings
         self.developerSettingsDestination = developerSettingsDestination
+        self.supportCampaignService = supportCampaignService
+        self.rewardedAdService = rewardedAdService
     }
 
     var body: some View {
@@ -32,6 +38,23 @@ struct AppSettingsView: View {
 
                 SettingsCard(title: "Размер текста в приложении") {
                     TextSizeSliderRow(step: $fontSizeStep)
+                }
+
+                SettingsCard(title: "Поддержать проект") {
+                    NavigationLink {
+                        SupportProjectView(
+                            campaignService: supportCampaignService,
+                            rewardedAdService: rewardedAdService
+                        )
+                    } label: {
+                        CardRow(
+                            icon: "heart-handshake",
+                            title: "Игровая поддержка",
+                            value: "Добровольно",
+                            showsDisclosure: true
+                        )
+                    }
+                    .buttonStyle(PressableButtonStyle())
                 }
 
                 SettingsCard(title: "Правовая информация") {

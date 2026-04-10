@@ -29,6 +29,8 @@ struct TrainLogApp: App {
     private let nutritionService: NutritionServiceProtocol
     private let calculatorsService: CalculatorsServiceProtocol
     private let coachOverviewService: CoachOverviewServiceProtocol
+    private let supportCampaignService: SupportCampaignServiceProtocol
+    private let rewardedAdService: RewardedAdServiceProtocol
 
     init() {
         FirebaseApp.configure()
@@ -67,6 +69,11 @@ struct TrainLogApp: App {
 
         calculatorsService = APICalculatorsService(client: client)
         coachOverviewService = APICoachOverviewService(client: client)
+        supportCampaignService = APISupportCampaignService(client: client)
+        rewardedAdService = HybridRewardedAdService(
+            primary: YandexRewardedAdService(),
+            fallback: DevMockRewardedAdService()
+        )
     }
 
     var body: some Scene {
@@ -90,7 +97,9 @@ struct TrainLogApp: App {
                 calendarSummaryService: calendarSummaryService,
                 nutritionService: nutritionService,
                 calculatorsService: calculatorsService,
-                coachOverviewService: coachOverviewService
+                coachOverviewService: coachOverviewService,
+                supportCampaignService: supportCampaignService,
+                rewardedAdService: rewardedAdService
             )
         }
     }

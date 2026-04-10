@@ -26,6 +26,8 @@ struct CoachMainView: View {
     let calendarSummaryService: CalendarSummaryServiceProtocol
     let nutritionService: NutritionServiceProtocol
     let calculatorsService: CalculatorsServiceProtocol
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     let myTraineeProfiles: [Profile]
     /// Если равен profile.id — показываем онбординг после регистрации (добавить подопечного → предложить абонемент).
     var postRegistrationOnboardingProfileId: String?
@@ -750,7 +752,9 @@ struct CoachMainView: View {
         ProfileManagementSection(
             showsDeveloperSettings: profile.isDeveloperModeEnabled,
             deleteSubtitle: "Удаляется только этот профиль тренера и связь с подопечными. Вход в аккаунт сохранится",
-            onDeleteTap: { showDeleteProfileConfirmation = true }
+            onDeleteTap: { showDeleteProfileConfirmation = true },
+            supportCampaignService: supportCampaignService,
+            rewardedAdService: rewardedAdService
         ) {
             DeveloperSettingsView(profile: profile)
         }
@@ -1361,6 +1365,8 @@ private struct TraineeInlineCalendar: View {
         calendarSummaryService: MockCalendarSummaryService(),
         nutritionService: MockNutritionService(),
         calculatorsService: APICalculatorsService(client: client),
+        supportCampaignService: MockSupportCampaignService(),
+        rewardedAdService: DevMockRewardedAdService(),
         myTraineeProfiles: []
     )
 }

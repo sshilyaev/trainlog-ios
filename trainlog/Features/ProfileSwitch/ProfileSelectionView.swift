@@ -10,6 +10,8 @@ struct ProfileSelectionView: View {
     let profiles: [Profile]
     let authService: AuthServiceProtocol
     let profileService: ProfileServiceProtocol
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     /// Отображаемое имя пользователя (displayName или email из Auth). Если не задано — берётся из authService.
     var accountDisplayName: String? = nil
     let onSelect: (Profile) -> Void
@@ -147,7 +149,11 @@ struct ProfileSelectionView: View {
                 .buttonStyle(PressableButtonStyle(cornerRadius: 10))
 
                 NavigationLink {
-                    AppSettingsView(showsDeveloperSettings: false)
+                    AppSettingsView(
+                        showsDeveloperSettings: false,
+                        supportCampaignService: supportCampaignService,
+                        rewardedAdService: rewardedAdService
+                    )
                 } label: {
                     HStack(spacing: 8) {
                         AppTablerIcon("settings")
@@ -524,6 +530,8 @@ struct ProfileRow: View {
         ],
         authService: MockAuthService(),
         profileService: MockProfileService(),
+        supportCampaignService: MockSupportCampaignService(),
+        rewardedAdService: DevMockRewardedAdService(),
         accountDisplayName: "Сергей",
         onSelect: { _ in },
         onCreate: {},

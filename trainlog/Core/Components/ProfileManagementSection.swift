@@ -4,6 +4,8 @@ struct ProfileManagementSection<DeveloperDestination: View>: View {
     let showsDeveloperSettings: Bool
     let deleteSubtitle: String
     let onDeleteTap: () -> Void
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     @ViewBuilder let developerDestination: () -> DeveloperDestination
 
     var body: some View {
@@ -13,13 +15,15 @@ struct ProfileManagementSection<DeveloperDestination: View>: View {
                     showsDeveloperSettings: showsDeveloperSettings,
                     developerSettingsDestination: {
                         AnyView(developerDestination())
-                    }
+                    },
+                    supportCampaignService: supportCampaignService,
+                    rewardedAdService: rewardedAdService
                 )
             } label: {
                 WideActionButtonToOneColumn(
                     icon: "settings",
                     title: "Настройки",
-                    subtitle: "Тема, размер текста, документы",
+                    subtitle: "Тема, размер текста, поддержка проекта, документы",
                     iconColor: AppColors.secondaryLabel,
                     chevronColor: AppColors.tertiaryLabel,
                     accent: AppColors.accent,

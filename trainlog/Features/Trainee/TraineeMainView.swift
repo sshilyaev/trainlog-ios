@@ -20,6 +20,8 @@ struct TraineeMainView: View {
     let healthService: HealthServiceProtocol
     let nutritionService: NutritionServiceProtocol
     let calculatorsService: CalculatorsServiceProtocol
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     let onSwitchProfile: () -> Void
     let onDeleteProfile: () async -> Void
     let onProfileUpdated: (Profile) -> Void
@@ -727,7 +729,9 @@ struct TraineeMainView: View {
         ProfileManagementSection(
             showsDeveloperSettings: profile.isDeveloperModeEnabled,
             deleteSubtitle: "Удаляется только этот профиль. Замеры и цели будут удалены. Вход в аккаунт сохранится",
-            onDeleteTap: { showDeleteProfileConfirmation = true }
+            onDeleteTap: { showDeleteProfileConfirmation = true },
+            supportCampaignService: supportCampaignService,
+            rewardedAdService: rewardedAdService
         ) {
             DeveloperSettingsView(profile: profile)
         }
@@ -998,6 +1002,8 @@ struct TraineeMainView: View {
         healthService: MockHealthService(),
         nutritionService: MockNutritionService(),
         calculatorsService: APICalculatorsService(client: client),
+        supportCampaignService: MockSupportCampaignService(),
+        rewardedAdService: DevMockRewardedAdService(),
         onSwitchProfile: {},
         onDeleteProfile: { },
         onProfileUpdated: { _ in }
