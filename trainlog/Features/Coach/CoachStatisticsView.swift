@@ -561,7 +561,8 @@ struct CoachStatisticsView: View {
                     icon: "user-default",
                     title: "Подопечных",
                     value: "\(metricsTraineesValue(s))",
-                    subtitle: "Уникальные с посещениями"
+                    hintTitle: "Подопечные",
+                    hintMessage: "Количество уникальных подопечных с хотя бы одним завершённым посещением за выбранный период."
                 )
                 .frame(maxWidth: .infinity)
                 .id("trainees-\(monthParameter)-\(periodMonths)-\(metricsTraineesValue(s))")
@@ -569,7 +570,8 @@ struct CoachStatisticsView: View {
                     icon: "tag",
                     title: "Абонементов",
                     value: "\(metricsMembershipsValue(s))",
-                    subtitle: "Создано за период"
+                    hintTitle: "Абонементы",
+                    hintMessage: "Количество абонементов, созданных в выбранный период."
                 )
                 .frame(maxWidth: .infinity)
                 .id("memberships-\(monthParameter)-\(periodMonths)-\(metricsMembershipsValue(s))")
@@ -732,28 +734,76 @@ private struct StatMetricCard: View {
     let icon: String
     let title: String
     let value: String
-    let subtitle: String
+    let hintTitle: String
+    let hintMessage: String
+
+    @State private var infoButtonFrame: CGRect = .zero
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                AppTablerIcon(icon)
-                    .font(.body)
-                    .foregroundStyle(AppColors.accent)
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 8) {
+                HStack(spacing: 8) {
+                    AppTablerIcon(icon)
+                        .font(.body)
+                        .foregroundStyle(AppColors.accent)
+                    Text(title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 6)
+                infoHintButton
             }
             Text(value)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 112, alignment: .topLeading)
         .padding(AppDesign.cardPadding)
         .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+        .onPreferenceChange(InfoButtonFramePreferenceKey.self) { frame in
+            guard frame.width > 0, frame.height > 0 else { return }
+            infoButtonFrame = frame
+        }
+    }
+
+    private var infoHintButton: some View {
+        Button {
+            guard infoButtonFrame.width > 0, infoButtonFrame.height > 0 else { return }
+            InfoHintPopupPresenter.shared.show(
+                title: hintTitle,
+                message: hintMessage,
+                anchorRect: infoButtonFrame,
+                preferredSide: .right,
+                width: 280
+            )
+        } label: {
+            AppTablerIcon("info.circle")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppColors.secondaryLabel)
+        }
+        .buttonStyle(.plain)
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(
+                        key: InfoButtonFramePreferenceKey.self,
+                        value: proxy.frame(in: .global)
+                    )
+            }
+        )
+    }
+}
+
+private struct InfoButtonFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next.width > 0, next.height > 0 {
+            value = next
+        }
     }
 }
 
