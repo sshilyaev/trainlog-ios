@@ -49,9 +49,48 @@ enum SupplementDosageUnit: String, Codable, CaseIterable, Identifiable {
         case .serving: return "порция"
         }
     }
+
+    /// Код для REST API (совпадает с `SupplementDosageUnitNormalizer::CANONICAL_UNITS` на бэкенде).
+    var apiCode: String {
+        switch self {
+        case .capsule: return "capsule"
+        case .tablet: return "tablet"
+        case .gram: return "gram"
+        case .milligram: return "milligram"
+        case .milliliter: return "milliliter"
+        case .iu: return "iu"
+        case .scoop: return "scoop"
+        case .drop: return "drop"
+        case .serving: return "serving"
+        }
+    }
+
+    /// Разбор значения из API: канонический `rawValue`, другой регистр или распространённые сокращения (ME, mg, …).
+    static func fromAPI(_ raw: String) -> SupplementDosageUnit? {
+        let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return nil }
+        if let u = SupplementDosageUnit(rawValue: t) { return u }
+        let lower = t.lowercased()
+        if let u = SupplementDosageUnit(rawValue: lower) { return u }
+        switch lower {
+        case "me": return .iu
+        case "mg": return .milligram
+        case "g": return .gram
+        case "ml": return .milliliter
+        case "millilitre": return .milliliter
+        default: break
+        }
+        // Кириллица «МЕ» (часто в подписях к дозировке).
+        let lowerUtf = t.lowercased(with: Locale(identifier: "ru_RU"))
+        switch lowerUtf {
+        case "ме", "мэ": return .iu
+        default: break
+        }
+        return nil
+    }
 }
 
-struct SportsSupplementCatalogItem: Identifiable, Codable, Equatable {
+struct SportsSupplementCatalogItem: Identifiable, Equatable {
     let id: String
     let name: String
     let type: SportsSupplementType
@@ -59,6 +98,44 @@ struct SportsSupplementCatalogItem: Identifiable, Codable, Equatable {
     let isActive: Bool
     let sortOrder: Int?
     let defaultDosageUnit: SupplementDosageUnit?
+}
+
+extension SportsSupplementCatalogItem: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case type
+        case description
+        case isActive
+        case sortOrder
+        case defaultDosageUnit
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        type = try c.decode(SportsSupplementType.self, forKey: .type)
+        description = try c.decode(String.self, forKey: .description)
+        isActive = try c.decode(Bool.self, forKey: .isActive)
+        sortOrder = try c.decodeIfPresent(Int.self, forKey: .sortOrder)
+        if let raw = try c.decodeIfPresent(String.self, forKey: .defaultDosageUnit) {
+            defaultDosageUnit = SupplementDosageUnit.fromAPI(raw)
+        } else {
+            defaultDosageUnit = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(type, forKey: .type)
+        try c.encode(description, forKey: .description)
+        try c.encode(isActive, forKey: .isActive)
+        try c.encodeIfPresent(sortOrder, forKey: .sortOrder)
+        try c.encodeIfPresent(defaultDosageUnit, forKey: .defaultDosageUnit)
+    }
 }
 
 struct TraineeSportsSupplementAssignment: Identifiable, Codable, Equatable, Hashable {
@@ -165,7 +242,7 @@ struct TraineeSportsSupplementAssignment: Identifiable, Codable, Equatable, Hash
         dosage = try container.decodeIfPresent(String.self, forKey: .dosage)
         dosageValue = try container.decodeIfPresent(String.self, forKey: .dosageValue)
         if let rawUnit = try container.decodeIfPresent(String.self, forKey: .dosageUnit) {
-            dosageUnit = SupplementDosageUnit(rawValue: rawUnit)
+            dosageUnit = SupplementDosageUnit.fromAPI(rawUnit)
         } else {
             dosageUnit = nil
         }
@@ -205,6 +282,7 @@ extension SportsSupplementCatalogItem {
         case .gram: return "5 г"
         case .milligram: return "400 мг"
         case .milliliter: return "10 мл"
+        case .iu: return "500 МЕ"
         case .scoop: return "1 мерная ложка"
         case .drop: return "2 капли"
         case .serving: return "1 порция"

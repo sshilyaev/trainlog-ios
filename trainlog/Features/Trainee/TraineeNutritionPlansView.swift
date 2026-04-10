@@ -55,18 +55,15 @@ struct TraineeNutritionPlansView: View {
                             message: "Когда тренер добавит рекомендации, они появятся здесь в вашем разделе питания"
                         )
                     } else {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 10) {
                             let sortedAssignments = supplementAssignments.sorted(by: { $0.updatedAt > $1.updatedAt })
-                            ForEach(Array(sortedAssignments.enumerated()), id: \.element.id) { index, assignment in
+                            ForEach(sortedAssignments) { assignment in
                                 SupplementAssignmentRow(
                                     assignment: assignment,
-                                    contentHorizontalPadding: 0,
-                                    contentVerticalPadding: 8
+                                    presentation: .card,
+                                    contentHorizontalPadding: 12,
+                                    contentVerticalPadding: 10
                                 )
-                                if index < sortedAssignments.count - 1 {
-                                    Divider()
-                                        .padding(.leading, AppDesign.listDividerLeadingCompact)
-                                }
                             }
                         }
                     }

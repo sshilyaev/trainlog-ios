@@ -59,19 +59,16 @@ struct CoachNutritionPlanView: View {
                         if supplements.isEmpty {
                             supplementsEmptyStateBlock
                         } else {
-                            VStack(alignment: .leading, spacing: 4) {
-                            let sortedSupplements = supplements.sorted(by: { $0.updatedAt > $1.updatedAt })
-                            ForEach(Array(sortedSupplements.enumerated()), id: \.element.id) { index, assignment in
-                                SupplementAssignmentRow(
-                                    assignment: assignment,
-                                    contentHorizontalPadding: 0,
-                                    contentVerticalPadding: 8
-                                )
-                                if index < sortedSupplements.count - 1 {
-                                    Divider()
-                                        .padding(.leading, AppDesign.listDividerLeadingCompact)
+                            VStack(alignment: .leading, spacing: 10) {
+                                let sortedSupplements = supplements.sorted(by: { $0.updatedAt > $1.updatedAt })
+                                ForEach(sortedSupplements) { assignment in
+                                    SupplementAssignmentRow(
+                                        assignment: assignment,
+                                        presentation: .card,
+                                        contentHorizontalPadding: 12,
+                                        contentVerticalPadding: 10
+                                    )
                                 }
-                            }
                             }
                         }
 
@@ -464,6 +461,7 @@ private struct CoachSupplementsEditorSheet: View {
                     ForEach(Array(assignments.enumerated()), id: \.element.id) { index, assignment in
                         SupplementAssignmentRow(
                             assignment: assignment,
+                            presentation: .listRow,
                             showsDeleteAction: true,
                             showsEditAction: true,
                             showsActionsMenu: true,
@@ -615,7 +613,7 @@ private struct CoachSupplementsEditorSheet: View {
                 traineeProfileId: traineeProfileId,
                 supplementId: item.id,
                 dosage: nil,
-                dosageValue: nil,
+                dosageValue: item.defaultDosageValue,
                 dosageUnit: item.resolvedDosageUnit,
                 timing: nil,
                 frequency: nil,
@@ -926,29 +924,43 @@ private struct SupplementAssignmentEditScreen: View {
                                             .keyboardType(.decimalPad)
                                             .textFieldStyle(.plain)
                                             .formInputStyle()
+                                            .onChange(of: form.dosageValue) { _, newValue in
+                                                let sanitized = sanitizeDosageValueInput(newValue)
+                                                if sanitized != newValue {
+                                                    form.dosageValue = sanitized
+                                                }
+                                            }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Единица")
                                             .font(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
-                                        Picker(
-                                            "",
-                                            selection: Binding<SupplementDosageUnit?>(
-                                                get: { form.dosageUnit },
-                                                set: { form.dosageUnit = $0 }
-                                            )
-                                        ) {
-                                            Text("Не выбрано").tag(nil as SupplementDosageUnit?)
+                                        Menu {
+                                            Button("Не выбрано") { form.dosageUnit = nil }
                                             ForEach(SupplementDosageUnit.allCases) { unit in
-                                                Text(unit.displayName).tag(Optional(unit))
+                                                Button(unit.displayName) { form.dosageUnit = unit }
                                             }
+                                        } label: {
+                                            HStack {
+                                                Text(form.dosageUnit?.displayName ?? "Не выбрано")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(AppColors.label)
+                                                    .lineLimit(1)
+                                                Spacer(minLength: 8)
+                                                AppTablerIcon("chevron.down")
+                                                    .appIcon(.s14)
+                                                    .foregroundStyle(AppColors.secondaryLabel)
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .formInputStyle()
                                         }
-                                        .pickerStyle(.menu)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                Text("Введите только число, например 500 или 2.5")
+                                    .font(.caption2)
+                                    .foregroundStyle(AppColors.secondaryLabel)
                                 HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Время приема")
@@ -1027,6 +1039,17 @@ private struct SupplementAssignmentEditScreen: View {
                 errorMessage = message
             }
         }
+    }
+
+    private func sanitizeDosageValueInput(_ raw: String) -> String {
+        var text = raw.replacingOccurrences(of: ",", with: ".")
+        text = text.filter { $0.isNumber || $0 == "." }
+        if let dot = text.firstIndex(of: ".") {
+            let before = text[..<text.index(after: dot)]
+            let after = text[text.index(after: dot)...].replacingOccurrences(of: ".", with: "")
+            text = String(before) + after
+        }
+        return text
     }
 }
 

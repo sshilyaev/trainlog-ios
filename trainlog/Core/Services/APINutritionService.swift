@@ -204,7 +204,7 @@ final class APINutritionService: NutritionServiceProtocol {
         ]
         if let dosage, !dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["dosage"] = dosage }
         if let dosageValue, !dosageValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["dosageValue"] = dosageValue }
-        if let dosageUnit { body["dosageUnit"] = dosageUnit.rawValue }
+        if let dosageUnit { body["dosageUnit"] = dosageUnit.apiCode }
         if let timing, !timing.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["timing"] = timing }
         if let frequency, !frequency.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["frequency"] = frequency }
         if let note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { body["note"] = note }
@@ -226,21 +226,44 @@ final class APINutritionService: NutritionServiceProtocol {
         frequency: String?,
         note: String?
     ) async throws -> TraineeSportsSupplementAssignment {
-        struct UpdateBody: Encodable {
+        /// Явно кодируем `dosageUnit: null`, чтобы PATCH мог сбросить единицу; пустые строки — как в других полях.
+        struct SupplementAssignmentPatchBody: Encodable {
             let dosage: String
             let dosageValue: String
-            let dosageUnit: String?
+            let dosageUnit: SupplementDosageUnit?
             let timing: String
             let frequency: String
             let note: String
+
+            enum CodingKeys: String, CodingKey {
+                case dosage
+                case dosageValue
+                case dosageUnit
+                case timing
+                case frequency
+                case note
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(dosage, forKey: .dosage)
+                try c.encode(dosageValue, forKey: .dosageValue)
+                if let unit = dosageUnit {
+                    // Явный код API (на случай несоответствия rawValue и бэкенда).
+                    try c.encode(unit.apiCode, forKey: .dosageUnit)
+                } else {
+                    try c.encodeNil(forKey: .dosageUnit)
+                }
+                try c.encode(timing, forKey: .timing)
+                try c.encode(frequency, forKey: .frequency)
+                try c.encode(note, forKey: .note)
+            }
         }
 
-        // Send a stable typed body instead of [String: Any] + JSONSerialization.
-        // Empty strings are accepted by backend and normalized to null there.
-        let body = UpdateBody(
+        let body = SupplementAssignmentPatchBody(
             dosage: dosage ?? "",
             dosageValue: dosageValue ?? "",
-            dosageUnit: dosageUnit?.rawValue,
+            dosageUnit: dosageUnit,
             timing: timing ?? "",
             frequency: frequency ?? "",
             note: note ?? ""

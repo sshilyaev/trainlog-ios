@@ -130,20 +130,44 @@ struct ProfileSelectionView: View {
             headline: displayName,
             description: authService.currentUserEmail ?? ""
         ) {
-            Button {
-                showChangePasswordSheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    AppTablerIcon("lock-close")
-                    Text("Сменить пароль")
+            VStack(spacing: 10) {
+                Button {
+                    showChangePasswordSheet = true
+                } label: {
+                    HStack(spacing: 8) {
+                        AppTablerIcon("lock-close")
+                        Text("Сменить пароль")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 46)
+                    .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10))
                 }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppColors.white)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 46)
-                .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10))
+                .buttonStyle(PressableButtonStyle(cornerRadius: 10))
+
+                NavigationLink {
+                    AppSettingsView(showsDeveloperSettings: false)
+                } label: {
+                    HStack(spacing: 8) {
+                        AppTablerIcon("settings")
+                        Text("Настройки")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColors.accent)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 46)
+                    .background(
+                        AppColors.secondarySystemGroupedBackground.opacity(0.85),
+                        in: RoundedRectangle(cornerRadius: 10)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(AppColors.accent.opacity(0.35), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PressableButtonStyle(cornerRadius: 10))
             }
-            .buttonStyle(PressableButtonStyle(cornerRadius: 10))
         }
         .padding(.horizontal, AppDesign.cardPadding)
     }

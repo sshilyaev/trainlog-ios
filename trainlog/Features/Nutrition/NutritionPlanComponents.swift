@@ -112,8 +112,16 @@ struct NutritionPlanCard: View {
 
 }
 
+enum SupplementAssignmentRowPresentation: Equatable {
+    /// Каждая добавка в отдельном блоке: прозрачная подложка и обводка (дневник, просмотр у тренера).
+    case card
+    /// Строка списка с разделителем — без отдельной «карточки» на строку (редактор назначенных добавок).
+    case listRow
+}
+
 struct SupplementAssignmentRow: View {
     let assignment: TraineeSportsSupplementAssignment
+    var presentation: SupplementAssignmentRowPresentation = .card
     var showsDeleteAction: Bool = false
     var showsEditAction: Bool = false
     var showsActionsMenu: Bool = false
@@ -124,76 +132,41 @@ struct SupplementAssignmentRow: View {
     var onDelete: (() -> Void)? = nil
     @State private var infoButtonFrame: CGRect = .zero
 
+    private var cardStrokeColor: Color {
+        AppColors.separator.opacity(0.4)
+    }
+
     var body: some View {
-        ListActionRow(
-            verticalPadding: contentVerticalPadding,
-            horizontalPadding: contentHorizontalPadding,
-            cornerRadius: 0,
-            isInteractive: false
-        ) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    HStack(alignment: .center, spacing: 6) {
-                        Text(assignment.supplementName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppColors.label)
-
-                        Button {
-                            guard infoButtonFrame.width > 0, infoButtonFrame.height > 0 else { return }
-                            InfoHintPopupPresenter.shared.show(
-                                title: "Информация о добавке",
-                                message: hintMessage,
-                                anchorRect: infoButtonFrame,
-                                preferredSide: hintSide
-                            )
-                        } label: {
-                            AppTablerIcon("info.circle")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(AppColors.secondaryLabel)
-                        }
-                        .buttonStyle(.plain)
-                        .background(
-                            GeometryReader { proxy in
-                                Color.clear
-                                    .preference(
-                                        key: InfoButtonFramePreferenceKey.self,
-                                        value: proxy.frame(in: .global)
-                                    )
-                            }
-                        )
-                    }
-                    Spacer()
+        Group {
+            switch presentation {
+            case .card:
+                cardChrome {
+                    assignmentBody()
                 }
-
-                if hasAnyMeta {
-                    supplementMetaGrid
-                }
-
-                if let note = cleaned(assignment.note), !note.isEmpty {
-                    Text(note)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.tertiaryLabel)
-                        .padding(.top, 2)
-                }
-            }
-            .onPreferenceChange(InfoButtonFramePreferenceKey.self) { frame in
-                guard frame.width > 0, frame.height > 0 else { return }
-                infoButtonFrame = frame
-            }
-        } trailing: {
-            if showsActionsMenu {
-                TiniActionButton(
-                    color: AppColors.label,
-                    font: .title3,
-                    minWidth: 28,
-                    minHeight: 28,
-                    style: .plain
+            case .listRow:
+                ListActionRow(
+                    verticalPadding: contentVerticalPadding,
+                    horizontalPadding: contentHorizontalPadding,
+                    cornerRadius: 0,
+                    isInteractive: false
                 ) {
-                    if showsEditAction, let onEdit {
-                        EditMenuAction(action: onEdit)
-                    }
-                    if showsDeleteAction, let onDelete {
-                        DeleteMenuAction(action: onDelete)
+                    assignmentBody()
+                } trailing: {
+                    if showsActionsMenu {
+                        TiniActionButton(
+                            color: AppColors.label,
+                            font: .title3,
+                            minWidth: 28,
+                            minHeight: 28,
+                            style: .plain
+                        ) {
+                            if showsEditAction, let onEdit {
+                                EditMenuAction(action: onEdit)
+                            }
+                            if showsDeleteAction, let onDelete {
+                                DeleteMenuAction(action: onDelete)
+                            }
+                        }
                     }
                 }
             }
@@ -201,18 +174,105 @@ struct SupplementAssignmentRow: View {
     }
 
     @ViewBuilder
-    private var supplementMetaGrid: some View {
-        let dosageDisplay = dosageDisplayText
-        let visibleItems: [InfoValueItem] = [
-            dosageDisplay.map { InfoValueItem(title: "Дозировка", value: $0) },
-            cleaned(assignment.timing).map { InfoValueItem(title: "Время", value: $0) },
-            cleaned(assignment.frequency).map { InfoValueItem(title: "Частота", value: $0) }
-        ].compactMap { $0 }
+    private func cardChrome<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(contentHorizontalPadding)
+            .padding(.vertical, contentVerticalPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(cardStrokeColor, lineWidth: 1)
+            )
+    }
 
-        InfoValueTripleRow(
-            items: visibleItems,
-            style: .standard
-        )
+    @ViewBuilder
+    private func assignmentBody() -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .center, spacing: 6) {
+                    Text(assignment.supplementName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.label)
+                        .multilineTextAlignment(.leading)
+
+                    Button {
+                        guard infoButtonFrame.width > 0, infoButtonFrame.height > 0 else { return }
+                        InfoHintPopupPresenter.shared.show(
+                            title: "Информация о добавке",
+                            message: hintMessage,
+                            anchorRect: infoButtonFrame,
+                            preferredSide: hintSide
+                        )
+                    } label: {
+                        AppTablerIcon("info.circle")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppColors.secondaryLabel)
+                    }
+                    .buttonStyle(.plain)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .preference(
+                                    key: InfoButtonFramePreferenceKey.self,
+                                    value: proxy.frame(in: .global)
+                                )
+                        }
+                    )
+                }
+                Spacer(minLength: 0)
+            }
+
+            if hasAnyMeta {
+                supplementMetaLayout
+            }
+
+            if let note = cleaned(assignment.note), !note.isEmpty {
+                supplementLabeledField(title: "Заметка", value: note)
+            }
+        }
+        .onPreferenceChange(InfoButtonFramePreferenceKey.self) { frame in
+            guard frame.width > 0, frame.height > 0 else { return }
+            infoButtonFrame = frame
+        }
+    }
+
+    @ViewBuilder
+    private var supplementMetaLayout: some View {
+        let dosage = dosageDisplayText
+        let frequency = cleaned(assignment.frequency)
+        let timing = cleaned(assignment.timing)
+
+        if dosage != nil || frequency != nil {
+            HStack(alignment: .top, spacing: 12) {
+                if let dosage {
+                    supplementLabeledField(title: "Дозировка", value: dosage)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if let frequency {
+                    supplementLabeledField(title: "Частота", value: frequency)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+
+        if let timing {
+            supplementLabeledField(title: "Время приёма", value: timing)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func supplementLabeledField(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(AppColors.secondaryLabel)
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(AppColors.label)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func cleaned(_ value: String?) -> String? {
