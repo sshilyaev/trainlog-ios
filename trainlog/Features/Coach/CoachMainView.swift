@@ -321,6 +321,8 @@ struct CoachMainView: View {
                 isLoading: isLoadingTrainees,
                 coachProfileId: profile.id,
                 calculatorsService: calculatorsService,
+                supportCampaignService: supportCampaignService,
+                rewardedAdService: rewardedAdService,
                 coachStatisticsService: coachStatisticsService,
                 quickPickRows: homeQuickPickRows,
                 onAddTrainee: { openAddTraineeFromHome() },
@@ -427,6 +429,9 @@ struct CoachMainView: View {
                                 .font(.body)
                         }
                         .buttonStyle(PressableButtonStyle())
+                        .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Сортировка списка")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -436,20 +441,26 @@ struct CoachMainView: View {
                                 .font(.body)
                         }
                         .buttonStyle(PressableButtonStyle())
+                        .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Поиск по имени")
                     }
-                        ToolbarItem(placement: .topBarTrailing) {
-                            if !traineesShowingArchived {
-                                Button {
-                                    linkedIdsBeforeAdd = Set(traineeItems.map(\.profile.id))
-                                    showAddTraineeByNavigation = true
-                                } label: {
-                                    AppTablerIcon("plus-square")
-                                        .font(.body.weight(.semibold))
-                                }
-                                .buttonStyle(PressableButtonStyle())
+                    ToolbarItem(placement: .topBarTrailing) {
+                        if !traineesShowingArchived {
+                            Button {
+                                linkedIdsBeforeAdd = Set(traineeItems.map(\.profile.id))
+                                showAddTraineeByNavigation = true
+                            } label: {
+                                AppTablerIcon("plus-square")
+                                    .font(.body.weight(.semibold))
                             }
+                            .buttonStyle(PressableButtonStyle())
+                            .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                            .contentShape(Rectangle())
+                            .accessibilityLabel("Добавить подопечного")
                         }
                     }
+                }
                 .navigationDestination(isPresented: $showAddTraineeByNavigation) {
                     AddTraineeView(
                         coachProfile: profile,
@@ -649,6 +660,7 @@ struct CoachMainView: View {
                 .padding(.bottom, AppDesign.sectionSpacing)
             }
             .background(AdaptiveScreenBackground())
+            .navigationTitle("Профиль")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -657,6 +669,9 @@ struct CoachMainView: View {
                             .font(.subheadline)
                     }
                     .buttonStyle(PressableButtonStyle())
+                    .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Сменить профиль")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditProfile = true } label: {
@@ -665,6 +680,9 @@ struct CoachMainView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
+                    .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Редактировать профиль")
                 }
             }
         }

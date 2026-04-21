@@ -184,6 +184,7 @@ struct MeasurementsAndChartsScreen: View {
                     .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("О разделе")
             .padding(10)
         }
     }

@@ -20,6 +20,9 @@ enum AppDesign {
     /// Скругление карточек и кнопок
     static let cornerRadius: CGFloat = 12
 
+    /// Минимальный размер касания для иконок-кнопок (Apple HIG).
+    static let minTouchTarget: CGFloat = 44
+
     /// Высота основной кнопки (Войти, Сохранить, Создать, Обновить)
     static let primaryButtonHeight: CGFloat = 50
 

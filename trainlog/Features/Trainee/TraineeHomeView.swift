@@ -16,6 +16,8 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
     let isLoading: Bool
     let onOpenProgress: () -> Void
     let onShareWithCoach: () -> Void
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     @ViewBuilder let nutritionDestination: () -> NutritionDestination
     @ViewBuilder let membershipsDestination: () -> MembershipsDestination
     @ViewBuilder let calculatorsDestination: () -> CalculatorsDestination
@@ -121,19 +123,13 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
                 )
             }
             .buttonStyle(PressableButtonStyle())
-            .padding(.bottom, 6)
+            .padding(.bottom, 4)
 
-            HomeActionRow(
-                icon: "treadmill",
-                title: "Мои тренировки",
-                subtitle: "Планы и конструктор тренировок",
-                showChevron: false,
-                accent: AppColors.secondaryLabel,
-                showsLeadingAccentBar: true,
-                statusTitle: "Скоро",
-                statusColor: AppColors.secondaryLabel
-            )
-            .opacity(0.78)
+            Text("Планы тренировок и конструктор — в следующих версиях; сейчас фокус на прогрессе и связи с тренером.")
+                .font(.caption)
+                .foregroundStyle(AppColors.secondaryLabel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 2)
         }
     }
 
@@ -142,15 +138,32 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
             title: "Дополнительно",
             description: "Дополнительные инструменты, которые можно использовать при необходимости"
         ) {
-            NavigationLink(destination: calculatorsDestination()) {
-                HomeActionRow(
-                    icon: "grid-dashboard-02",
-                    title: "Калькуляторы",
-                    subtitle: "Дополнительные расчеты",
-                    accent: AppColors.profileAccent
-                )
+            VStack(spacing: 8) {
+                NavigationLink(destination: calculatorsDestination()) {
+                    HomeActionRow(
+                        icon: "grid-dashboard-02",
+                        title: "Калькуляторы",
+                        subtitle: "Дополнительные расчеты",
+                        accent: AppColors.profileAccent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink {
+                    SupportProjectView(
+                        campaignService: supportCampaignService,
+                        rewardedAdService: rewardedAdService
+                    )
+                } label: {
+                    HomeActionRow(
+                        icon: "currency-rubel",
+                        title: "Поддержать проект",
+                        subtitle: "Мини-игра: помощь виртуальным клиентам",
+                        accent: AppColors.profileAccent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
             }
-            .buttonStyle(PressableButtonStyle())
         }
     }
 
@@ -168,11 +181,8 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
                 VStack(alignment: .leading, spacing: 10) {
                     SkeletonLine(width: 120, height: 14)
                     SkeletonLine(width: 250, height: 12)
-                    HStack(spacing: 10) {
-                        SkeletonBlock(height: 112, cornerRadius: 12)
-                        SkeletonBlock(height: 112, cornerRadius: 12)
-                    }
                     SkeletonBlock(height: 44, cornerRadius: 10)
+                    SkeletonLine(width: 280, height: 10)
                 }
             }
             SettingsCard {

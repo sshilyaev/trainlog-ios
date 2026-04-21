@@ -20,6 +20,8 @@ struct CoachHomeView: View {
     let isLoading: Bool
     let coachProfileId: String
     let calculatorsService: CalculatorsServiceProtocol
+    let supportCampaignService: SupportCampaignServiceProtocol
+    let rewardedAdService: RewardedAdServiceProtocol
     let coachStatisticsService: CoachStatisticsServiceProtocol
     let quickPickRows: [CoachHomeQuickPickRow]
     let onAddTrainee: () -> Void
@@ -198,6 +200,20 @@ struct CoachHomeView: View {
                         icon: "grid-dashboard-02",
                         title: "Калькуляторы",
                         subtitle: "Справочные расчёты"
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink {
+                    SupportProjectView(
+                        campaignService: supportCampaignService,
+                        rewardedAdService: rewardedAdService
+                    )
+                } label: {
+                    HomeActionRow(
+                        icon: "currency-rubel",
+                        title: "Поддержать проект",
+                        subtitle: "Мини-игра: помощь виртуальным клиентам"
                     )
                 }
                 .buttonStyle(PressableButtonStyle())

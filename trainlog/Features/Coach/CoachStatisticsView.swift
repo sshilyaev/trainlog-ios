@@ -81,25 +81,25 @@ struct CoachStatisticsView: View {
             .padding(.bottom, AppDesign.sectionSpacing)
                 }
             } else if !isLoading {
-                VStack(spacing: 18) {
-                    Spacer().frame(height: 24)
-                    AppTablerIcon("grid-dashboard-circle")
-                        .appIcon(.s56)
-                        .foregroundStyle(AppColors.accent.opacity(0.85))
-                        .symbolRenderingMode(.hierarchical)
-                    Text("Статистика пока недоступна")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(errorMessage ?? "Попробуйте обновить позже.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 28)
-                    Text("Подсказка: данные обновляются не чаще чем раз в 5 минут.")
+                VStack(spacing: 20) {
+                    ContentUnavailableView(
+                        "Статистика пока недоступна",
+                        image: "tabler-outline-grid-dashboard-circle",
+                        description: Text(errorMessage ?? "Попробуйте обновить позже.")
+                    )
+                    Button("Повторить") {
+                        errorMessage = nil
+                        Task { await load() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Text("Данные обновляются не чаще чем раз в 5 минут.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppColors.secondaryLabel)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppDesign.cardPadding)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 24)
             } else {
                 AppColors.clear
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -115,17 +115,6 @@ struct CoachStatisticsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task(id: "\(monthParameter)-\(periodMonths)") { await load() }
         .refreshable { await load() }
-        .appConfirmationDialog(
-            title: "Ошибка",
-            message: errorMessage ?? "Произошла ошибка.",
-            isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            ),
-            confirmTitle: "OK",
-            onConfirm: { errorMessage = nil },
-            onCancel: { errorMessage = nil }
-        )
         .sheet(isPresented: $showVisitsFilterSheet) {
             MainSheet(
                 title: "Типы посещений",

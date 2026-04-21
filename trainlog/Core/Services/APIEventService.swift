@@ -44,7 +44,7 @@ final class APIEventService: EventServiceProtocol {
         return events
     }
 
-    func createEvent(coachProfileId: String, traineeProfileId: String, title: String, date: Date, eventDescription: String?, remind: Bool, colorHex: String?, idempotencyKey: String? = nil) async throws -> Event {
+    func createEvent(coachProfileId: String, traineeProfileId: String, title: String, date: Date, eventDescription: String?, remind: Bool, colorHex: String?, eventType: EventType, idempotencyKey: String? = nil) async throws -> Event {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         fmt.locale = Locale(identifier: "en_US_POSIX")
@@ -56,6 +56,7 @@ final class APIEventService: EventServiceProtocol {
             let description: String?
             let remind: Bool
             let colorHex: String?
+            let eventType: String
             let idempotencyKey: String?
         }
         let body = CreateBody(
@@ -66,6 +67,7 @@ final class APIEventService: EventServiceProtocol {
             description: eventDescription,
             remind: remind,
             colorHex: colorHex,
+            eventType: eventType.rawValue,
             idempotencyKey: idempotencyKey
         )
         let event: Event = try await client.request(path: "api/v1/events", method: "POST", body: body, useDateTimeDecoder: true)
@@ -83,6 +85,7 @@ final class APIEventService: EventServiceProtocol {
             let description: String?
             let remind: Bool?
             let colorHex: String?
+            let eventType: String?
             let isCancelled: Bool?
         }
         let body = PatchBody(
@@ -91,6 +94,7 @@ final class APIEventService: EventServiceProtocol {
             description: event.eventDescription,
             remind: event.remind,
             colorHex: event.colorHex,
+            eventType: event.eventType.rawValue,
             isCancelled: event.isCancelled
         )
         _ = try await client.request(path: "api/v1/events/\(event.id)", method: "PATCH", body: body, useDateTimeDecoder: true) as Event

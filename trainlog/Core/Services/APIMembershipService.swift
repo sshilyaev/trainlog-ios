@@ -61,7 +61,7 @@ final class APIMembershipService: MembershipServiceProtocol {
 
     func fetchActiveMembership(coachProfileId: String, traineeProfileId: String) async throws -> Membership? {
         let list = try await fetchMemberships(coachProfileId: coachProfileId, traineeProfileId: traineeProfileId)
-        return list.first(where: { $0.status == .active && $0.remainingSessions > 0 })
+        return list.first(where: { $0.isActive })
     }
 
     func fetchMemberships(coachProfileId: String, traineeProfileId: String) async throws -> [Membership] {

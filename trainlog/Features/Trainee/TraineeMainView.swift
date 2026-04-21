@@ -312,6 +312,8 @@ struct TraineeMainView: View {
                 isLoading: isProfileBlockDataLoading,
                 onOpenProgress: { selectedTab = 1 },
                 onShareWithCoach: { showConnectionTokenSheet = true },
+                supportCampaignService: supportCampaignService,
+                rewardedAdService: rewardedAdService,
                 nutritionDestination: {
                     TraineeNutritionPlansView(
                         trainee: profile,
@@ -369,6 +371,7 @@ struct TraineeMainView: View {
                 .padding(.bottom, AppDesign.sectionSpacing)
             }
             .background(AdaptiveScreenBackground())
+            .navigationTitle("Профиль")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -377,6 +380,9 @@ struct TraineeMainView: View {
                             .font(.subheadline)
                     }
                     .buttonStyle(PressableButtonStyle())
+                    .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Сменить профиль")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditProfile = true } label: {
@@ -385,6 +391,9 @@ struct TraineeMainView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
+                    .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Редактировать профиль")
                 }
             }
         }

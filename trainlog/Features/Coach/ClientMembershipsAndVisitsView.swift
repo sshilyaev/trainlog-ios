@@ -101,7 +101,7 @@ struct VisitsCalendarView: View {
             let absent = activeVisits.contains { $0.status == .noShow }
             let debt = activeVisits.contains { $0.paymentStatus == .debt }
             let hasOnlyEvents = activeVisits.isEmpty && !activeEventsOnDay.isEmpty
-            let eventColor: Color? = activeEventsOnDay.first.map { EventColor.color(from: $0.colorHex) }
+            let eventColor: Color? = activeEventsOnDay.first.map { EventColor.color(eventType: $0.eventType, overrideHex: $0.colorHex) }
             result.append(DayItem(day: day, hasVisit: hasVisit, absent: absent, debt: debt, count: count, eventColor: eventColor, hasOnlyEvents: hasOnlyEvents))
         }
         let totalCells = 42
@@ -633,7 +633,7 @@ private struct EventRowView: View {
             ) {
                 HStack(spacing: 12) {
                     AppTablerIcon("award-medal")
-                        .foregroundStyle(event.isCancelled ? .secondary : EventColor.color(from: event.colorHex))
+                        .foregroundStyle(event.isCancelled ? .secondary : EventColor.color(eventType: event.eventType, overrideHex: event.colorHex))
                         .frame(width: 28, alignment: .center)
                     HStack(spacing: 4) {
                         Text(dateText)
@@ -669,7 +669,7 @@ private struct EventRowView: View {
             } trailing: {
                 if canAct {
                     TiniActionButton(
-                        color: EventColor.color(from: event.colorHex),
+                        color: EventColor.color(eventType: event.eventType, overrideHex: event.colorHex),
                         font: .title3,
                         minWidth: 40,
                         minHeight: 40,
@@ -1265,6 +1265,12 @@ struct ClientMembershipsNewView: View {
     private var activeList: [Membership] {
         memberships.filter { $0.isActive }
     }
+    private var endingSoonList: [Membership] {
+        activeList.filter { $0.isEndingSoon }
+    }
+    private var regularActiveList: [Membership] {
+        activeList.filter { !$0.isEndingSoon }
+    }
     private var finishedList: [Membership] {
         memberships.filter { !$0.isActive }
     }
@@ -1377,7 +1383,7 @@ struct ClientMembershipsNewView: View {
                 ContentUnavailableView(
                     "Нет активных абонементов",
                     image: "tag",
-                    description: Text("Создайте первый абонемент прямо на этом экране.")
+                    description: Text("Создайте первый абонемент, чтобы вести посещения и заранее видеть, когда нужно продление.")
                 )
                 .padding(.top, 20)
 
@@ -1385,102 +1391,123 @@ struct ClientMembershipsNewView: View {
             }
         } else {
             VStack(spacing: AppDesign.blockSpacing) {
-                ForEach(activeList) { m in
-                    MembershipCardNewView(
-                        membership: m,
-                        isActive: true,
-                        loadingMembershipId: loadingMembershipId,
-                        onAddVisit: { addVisitDateSheetMembership = m },
-                        onFreeze: { days in
-                            Task {
-                                await MainActor.run { loadingMembershipId = m.id }
-                                do {
-                                    var updated = m
-                                    updated.freezeDays += days
-                                    try await membershipService.updateMembership(updated)
-                                    await load()
-                                    let actualFreezeDays = await MainActor.run {
-                                        memberships.first(where: { $0.id == m.id })?.freezeDays ?? m.freezeDays
-                                    }
-                                    if actualFreezeDays <= m.freezeDays {
-                                        await MainActor.run {
-                                            errorMessage = "Заморозка пока не применена на сервере. Проверьте backend PATCH memberships"
-                                            ToastCenter.shared.warning("Заморозка пока не применена на сервере")
-                                        }
-                                    }
-                                    await MainActor.run {
-                                        AppDesign.triggerSuccessHaptic()
-                                        ToastCenter.shared.success("Абонемент заморожен")
-                                    }
-                                } catch {
-                                    let msg = AppErrors.userMessageIfNeeded(for: error) ?? "Не удалось применить заморозку"
-                                    await MainActor.run {
-                                        errorMessage = msg
-                                        ToastCenter.shared.error(msg)
-                                    }
-                                }
-                                await MainActor.run { loadingMembershipId = nil }
+                if !endingSoonList.isEmpty {
+                    SettingsCard(title: "Скоро заканчиваются") {
+                        VStack(spacing: 10) {
+                            ForEach(endingSoonList) { m in
+                                membershipCard(m)
                             }
-                        },
-                        onUnfreeze: {
-                            Task {
-                                await MainActor.run { loadingMembershipId = m.id }
-                                do {
-                                    var updated = m
-                                    updated.freezeDays = 0
-                                    try await membershipService.updateMembership(updated)
-                                    await load()
-                                    let actualFreezeDays = await MainActor.run {
-                                        memberships.first(where: { $0.id == m.id })?.freezeDays ?? m.freezeDays
-                                    }
-                                    if actualFreezeDays != 0 {
-                                        await MainActor.run {
-                                            errorMessage = "Снятие заморозки пока не применено на сервере. Проверьте backend PATCH memberships"
-                                            ToastCenter.shared.warning("Снятие заморозки пока не применено на сервере")
-                                        }
-                                    }
-                                    await MainActor.run {
-                                        AppDesign.triggerSuccessHaptic()
-                                        ToastCenter.shared.success("Заморозка снята")
-                                    }
-                                } catch {
-                                    let msg = AppErrors.userMessageIfNeeded(for: error) ?? "Не удалось снять заморозку"
-                                    await MainActor.run {
-                                        errorMessage = msg
-                                        ToastCenter.shared.error(msg)
-                                    }
-                                }
-                                await MainActor.run { loadingMembershipId = nil }
+                        }
+                    }
+                }
+
+                if !regularActiveList.isEmpty {
+                    SettingsCard(title: "Активные") {
+                        VStack(spacing: 10) {
+                            ForEach(regularActiveList) { m in
+                                membershipCard(m)
                             }
-                        },
-                        onClose: {
-                            Task {
-                                await MainActor.run { loadingMembershipId = m.id }
-                                do {
-                                    var updated = m
-                                    updated.status = .finished
-                                    updated.closedManually = true
-                                    try await membershipService.updateMembership(updated)
-                                    await load()
-                                    await MainActor.run {
-                                        AppDesign.triggerSuccessHaptic()
-                                        ToastCenter.shared.success("Абонемент завершен")
-                                    }
-                                } catch {
-                                    await MainActor.run {
-                                        ToastCenter.shared.error(from: error, fallback: "Не удалось завершить абонемент")
-                                        if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
-                                    }
-                                }
-                                await MainActor.run { loadingMembershipId = nil }
-                            }
-                        },
-                        onViewVisits: { showVisitsForMembership = m }
-                    )
+                        }
+                    }
                 }
                 createMembershipSection
             }
         }
+    }
+
+    @ViewBuilder
+    private func membershipCard(_ m: Membership) -> some View {
+        MembershipCardNewView(
+            membership: m,
+            isActive: true,
+            loadingMembershipId: loadingMembershipId,
+            onAddVisit: { addVisitDateSheetMembership = m },
+            onFreeze: { days in
+                Task {
+                    await MainActor.run { loadingMembershipId = m.id }
+                    do {
+                        var updated = m
+                        updated.freezeDays += days
+                        try await membershipService.updateMembership(updated)
+                        await load()
+                        let actualFreezeDays = await MainActor.run {
+                            memberships.first(where: { $0.id == m.id })?.freezeDays ?? m.freezeDays
+                        }
+                        if actualFreezeDays <= m.freezeDays {
+                            await MainActor.run {
+                                errorMessage = "Заморозка пока не применена на сервере. Проверьте backend PATCH memberships"
+                                ToastCenter.shared.warning("Заморозка пока не применена на сервере")
+                            }
+                        }
+                        await MainActor.run {
+                            AppDesign.triggerSuccessHaptic()
+                            ToastCenter.shared.success("Абонемент заморожен")
+                        }
+                    } catch {
+                        let msg = AppErrors.userMessageIfNeeded(for: error) ?? "Не удалось применить заморозку"
+                        await MainActor.run {
+                            errorMessage = msg
+                            ToastCenter.shared.error(msg)
+                        }
+                    }
+                    await MainActor.run { loadingMembershipId = nil }
+                }
+            },
+            onUnfreeze: {
+                Task {
+                    await MainActor.run { loadingMembershipId = m.id }
+                    do {
+                        var updated = m
+                        updated.freezeDays = 0
+                        try await membershipService.updateMembership(updated)
+                        await load()
+                        let actualFreezeDays = await MainActor.run {
+                            memberships.first(where: { $0.id == m.id })?.freezeDays ?? m.freezeDays
+                        }
+                        if actualFreezeDays != 0 {
+                            await MainActor.run {
+                                errorMessage = "Снятие заморозки пока не применено на сервере. Проверьте backend PATCH memberships"
+                                ToastCenter.shared.warning("Снятие заморозки пока не применено на сервере")
+                            }
+                        }
+                        await MainActor.run {
+                            AppDesign.triggerSuccessHaptic()
+                            ToastCenter.shared.success("Заморозка снята")
+                        }
+                    } catch {
+                        let msg = AppErrors.userMessageIfNeeded(for: error) ?? "Не удалось снять заморозку"
+                        await MainActor.run {
+                            errorMessage = msg
+                            ToastCenter.shared.error(msg)
+                        }
+                    }
+                    await MainActor.run { loadingMembershipId = nil }
+                }
+            },
+            onClose: {
+                Task {
+                    await MainActor.run { loadingMembershipId = m.id }
+                    do {
+                        var updated = m
+                        updated.status = .finished
+                        updated.closedManually = true
+                        try await membershipService.updateMembership(updated)
+                        await load()
+                        await MainActor.run {
+                            AppDesign.triggerSuccessHaptic()
+                            ToastCenter.shared.success("Абонемент завершен")
+                        }
+                    } catch {
+                        await MainActor.run {
+                            ToastCenter.shared.error(from: error, fallback: "Не удалось завершить абонемент")
+                            if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
+                        }
+                    }
+                    await MainActor.run { loadingMembershipId = nil }
+                }
+            },
+            onViewVisits: { showVisitsForMembership = m }
+        )
     }
 
     private var createMembershipSection: some View {
@@ -2061,6 +2088,7 @@ struct AddEditEventSheet: View {
     @State private var date: Date = Date()
     @State private var eventDescription: String = ""
     @State private var remind: Bool = false
+    @State private var selectedEventType: EventType = .general
     @State private var selectedColorHex: String?
     @State private var isSaving = false
     @State private var showDatePicker = false
@@ -2087,12 +2115,14 @@ struct AddEditEventSheet: View {
         switch mode {
         case .create(let initialDate):
             _date = State(initialValue: initialDate)
+            _selectedColorHex = State(initialValue: EventColor.defaultHex(for: .general))
         case .edit(let event):
             _title = State(initialValue: event.title)
             _date = State(initialValue: event.date)
             _eventDescription = State(initialValue: event.eventDescription ?? "")
             _remind = State(initialValue: event.remind)
-            _selectedColorHex = State(initialValue: event.colorHex)
+            _selectedEventType = State(initialValue: event.eventType)
+            _selectedColorHex = State(initialValue: event.colorHex ?? EventColor.defaultHex(for: event.eventType))
         }
     }
 
@@ -2132,6 +2162,18 @@ struct AddEditEventSheet: View {
                                     .textInputAutocapitalization(.sentences)
                                     .multilineTextAlignment(.trailing)
                                     .formInputStyle()
+                            }
+                        }
+
+                        SettingsCard(title: "Тип события") {
+                            Picker("Тип события", selection: $selectedEventType) {
+                                ForEach(EventType.allCases, id: \.rawValue) { type in
+                                    Text(type.title).tag(type)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: selectedEventType) { _, newValue in
+                                selectedColorHex = EventColor.defaultHex(for: newValue)
                             }
                         }
 
@@ -2213,6 +2255,7 @@ struct AddEditEventSheet: View {
                         eventDescription: desc.isEmpty ? nil : desc,
                         remind: remind,
                         colorHex: selectedColorHex,
+                        eventType: selectedEventType,
                         idempotencyKey: UUID().uuidString
                     )
                 case .edit(let event):
@@ -2222,6 +2265,7 @@ struct AddEditEventSheet: View {
                     updated.eventDescription = desc.isEmpty ? nil : desc
                     updated.remind = remind
                     updated.colorHex = selectedColorHex
+                    updated.eventType = selectedEventType
                     try await eventService.updateEvent(updated)
                 }
                 await MainActor.run {

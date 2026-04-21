@@ -48,7 +48,7 @@ struct AppSettingsView: View {
                         )
                     } label: {
                         CardRow(
-                            icon: "heart-handshake",
+                            icon: "currency-rubel",
                             title: "Игровая поддержка",
                             value: "Добровольно",
                             showsDisclosure: true

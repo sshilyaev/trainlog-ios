@@ -6,6 +6,7 @@ struct CalculatorsCatalogView: View {
 
     @State private var isLoading = true
     @State private var catalog: [CalculatorCatalogItem] = []
+    @State private var loadError: String?
 
     private static let accentCycle: [Color] = [
         AppColors.accent,
@@ -24,6 +25,21 @@ struct CalculatorsCatalogView: View {
                 if isLoading {
                     LoadingBlockView(message: "Загружаю калькуляторы…")
                         .padding(.horizontal, AppDesign.cardPadding)
+                } else if let loadError {
+                    VStack(spacing: 16) {
+                        ContentUnavailableView(
+                            "Не удалось загрузить",
+                            image: "tabler-outline-cloud-off",
+                            description: Text(loadError)
+                        )
+                        Button("Повторить") {
+                            self.loadError = nil
+                            Task { await load() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.top, 32)
+                    .padding(.horizontal, AppDesign.cardPadding)
                 } else if catalog.isEmpty {
                     ContentUnavailableView(
                         "Пока нет доступных калькуляторов",
@@ -141,17 +157,22 @@ struct CalculatorsCatalogView: View {
 
     private func load() async {
         do {
-            isLoading = true
+            await MainActor.run {
+                isLoading = true
+                loadError = nil
+            }
             let items = try await calculatorsService.fetchCatalog()
             await MainActor.run {
                 catalog = items.filter(\.isEnabled).sorted { $0.order < $1.order }
                 isLoading = false
+                loadError = nil
             }
         } catch {
             await MainActor.run {
                 isLoading = false
+                catalog = []
+                loadError = AppErrors.userMessageIfNeeded(for: error) ?? "Не удалось загрузить калькуляторы"
             }
-            ToastCenter.shared.error(from: error, fallback: "Не удалось загрузить калькуляторы")
         }
     }
 }

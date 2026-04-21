@@ -21,6 +21,8 @@ enum MembershipKind: String, Codable, CaseIterable {
 
 /// Абонемент: либо по количеству посещений, либо безлимитный до даты окончания.
 struct Membership: Identifiable, Codable, Equatable {
+    static let endingSoonVisitsThreshold = 2
+    static let endingSoonDaysThreshold = 14
     let id: String
     let coachProfileId: String
     let traineeProfileId: String
@@ -118,6 +120,26 @@ struct Membership: Identifiable, Codable, Equatable {
             let startDay = calendar.startOfDay(for: start)
             let endDay = calendar.startOfDay(for: end)
             return day >= startDay && day <= endDay
+        }
+    }
+
+    var daysUntilEnd: Int? {
+        guard kind == .unlimited, let end = effectiveEndDate else { return nil }
+        let calendar = Calendar.current
+        let now = calendar.startOfDay(for: Date())
+        let endDay = calendar.startOfDay(for: end)
+        let diff = calendar.dateComponents([.day], from: now, to: endDay).day ?? 0
+        return max(0, diff)
+    }
+
+    var isEndingSoon: Bool {
+        guard status == .active else { return false }
+        switch kind {
+        case .byVisits:
+            return remainingSessions <= Self.endingSoonVisitsThreshold
+        case .unlimited:
+            guard let daysUntilEnd else { return false }
+            return daysUntilEnd <= Self.endingSoonDaysThreshold
         }
     }
 }

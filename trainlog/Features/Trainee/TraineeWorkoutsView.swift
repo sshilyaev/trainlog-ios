@@ -271,11 +271,20 @@ struct TraineeMembershipsView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if memberships.isEmpty {
-                ContentUnavailableView(
-                    "Нет абонементов",
-                    image: "tag",
-                    description: Text("Абонементы, которые оформит тренер, появятся здесь.")
-                )
+                VStack(spacing: AppDesign.blockSpacing) {
+                    ContentUnavailableView(
+                        "Нет абонементов",
+                        image: "tag",
+                        description: Text("Абонементы, которые оформит тренер, появятся здесь.")
+                    )
+                    SettingsCard(title: "Что сделать дальше") {
+                        Text("Напишите тренеру, какой формат вам нужен: по посещениям или безлимит на период. После создания абонемент появится автоматически.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, AppDesign.cardPadding)
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -329,11 +338,20 @@ struct TraineeMembershipsView: View {
     @ViewBuilder
     private var traineeActiveContent: some View {
         if activeList.isEmpty {
-            ContentUnavailableView(
-                "Нет активных абонементов",
-                image: "tag",
-                description: Text("Перейдите во вкладку «Завершённые».")
-            )
+            VStack(spacing: AppDesign.blockSpacing) {
+                ContentUnavailableView(
+                    "Нет активных абонементов",
+                    image: "tag",
+                    description: Text("Перейдите во вкладку «Завершённые».")
+                )
+                SettingsCard(title: "Подсказка") {
+                    Text("Если тренер уже закрыл абонемент, его история будет во вкладке «Завершённые». Для нового периода попросите создать новый абонемент.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, AppDesign.cardPadding)
+            }
             .padding(.vertical, 32)
         } else {
             VStack(spacing: AppDesign.blockSpacing) {

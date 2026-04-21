@@ -116,6 +116,23 @@ enum EventColor {
         ("7B53B4", AppColors.logoViolet),
     ]
 
+    static func defaultHex(for type: EventType) -> String {
+        switch type {
+        case .general: return "535BB4"
+        case .workout: return "48AA8D"
+        case .measurement: return "538CB4"
+        case .nutrition: return "B4AC53"
+        case .reminder: return "AA4865"
+        }
+    }
+
+    static func color(eventType: EventType, overrideHex: String?) -> Color {
+        if let overrideHex, !overrideHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return color(from: overrideHex)
+        }
+        return color(from: defaultHex(for: eventType))
+    }
+
     /// Цвет по hex-строке (без #). Если nil или невалидный — defaultColor.
     static func color(from hex: String?) -> Color {
         guard let hex = hex?.trimmingCharacters(in: .whitespaces).uppercased(),

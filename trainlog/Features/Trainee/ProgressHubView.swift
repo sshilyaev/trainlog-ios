@@ -97,6 +97,8 @@ struct ProgressHubView: View {
                 .foregroundStyle(AppColors.secondaryLabel)
                 .lineLimit(2)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(value). \(hint)")
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)

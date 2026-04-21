@@ -14,7 +14,7 @@ final class MockEventService: EventServiceProtocol {
             .sorted { $0.date > $1.date }
     }
 
-    func createEvent(coachProfileId: String, traineeProfileId: String, title: String, date: Date, eventDescription: String?, remind: Bool, colorHex: String?, idempotencyKey: String? = nil) async throws -> Event {
+    func createEvent(coachProfileId: String, traineeProfileId: String, title: String, date: Date, eventDescription: String?, remind: Bool, colorHex: String?, eventType: EventType, idempotencyKey: String? = nil) async throws -> Event {
         let e = Event(
             id: UUID().uuidString,
             coachProfileId: coachProfileId,
@@ -24,6 +24,7 @@ final class MockEventService: EventServiceProtocol {
             eventDescription: eventDescription,
             remind: remind,
             colorHex: colorHex,
+            eventType: eventType,
             isCancelled: false
         )
         store.append(e)

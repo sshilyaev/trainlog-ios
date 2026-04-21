@@ -208,6 +208,7 @@ struct MembershipCardNewView: View {
 
     private var accentColor: Color {
         if !isActive { return .secondary }
+        if membership.isEndingSoon { return AppColors.visitsOneTimeDebt }
         return isFrozen ? AppColors.visitsOneTimeDebt : AppColors.profileAccent
     }
 
@@ -215,7 +216,19 @@ struct MembershipCardNewView: View {
         if !isActive {
             return showClosedManuallyLabel ? "Завершён досрочно" : "Завершён"
         }
+        if membership.isEndingSoon { return "Скоро закончится" }
         return isFrozen ? "Заморожен" : "Активен"
+    }
+
+    private var endingSoonHint: String? {
+        guard isActive, membership.isEndingSoon else { return nil }
+        switch membership.kind {
+        case .byVisits:
+            return "Осталось \(membership.remainingSessions) посещения. Рекомендуется заранее продлить."
+        case .unlimited:
+            let days = membership.daysUntilEnd ?? 0
+            return "До окончания \(days) дн. Предложите продление заранее."
+        }
     }
 
     private var mainTitle: String {
@@ -424,6 +437,19 @@ struct MembershipCardNewView: View {
                             }
                             .frame(height: 6)
                         }
+                    }
+
+                    if let endingSoonHint {
+                        Label(endingSoonHint, appIcon: "alert-triangle")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.visitsOneTimeDebt)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(AppColors.visitsOneTimeDebt.opacity(0.12))
+                            )
                     }
 
                     HStack(spacing: 12) {
