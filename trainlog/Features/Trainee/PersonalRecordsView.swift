@@ -87,7 +87,7 @@ struct PersonalRecordsView: View {
                             let (sectionTitle, items) = pair
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(sectionTitle)
-                                    .font(.subheadline.weight(.semibold))
+                                    .appTypography(.bodyEmphasis)
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 2)
                                 ForEach(items) { record in
@@ -257,7 +257,7 @@ struct PersonalRecordsView: View {
             AppTablerIcon(icon)
                 .foregroundStyle(AppColors.secondaryLabel)
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
         }
         .padding(.horizontal, 12)
@@ -286,7 +286,7 @@ struct PersonalRecordsView: View {
                 .appIcon(.s56)
                 .foregroundStyle(AppColors.accent.opacity(0.85))
             Text(readOnly ? "Пока нет достижений" : "Создайте первое достижение")
-                .font(.headline)
+                .appTypography(.sectionTitle)
             Text(
                 readOnly
                 ? "Подопечный ещё не добавил достижения."
@@ -300,9 +300,9 @@ struct PersonalRecordsView: View {
                 Button(action: { showCreateSheet = true }) {
                     HStack(spacing: 10) {
                         AppTablerIcon("plus-circle")
-                            .font(.title3)
+                            .appTypography(.numericMetric)
                         Text("Добавить достижение")
-                            .font(.headline.weight(.semibold))
+                            .appTypography(.sectionTitle)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -322,9 +322,9 @@ struct PersonalRecordsView: View {
         Button(action: { showCreateSheet = true }) {
             HStack(spacing: 10) {
                 AppTablerIcon("plus-circle")
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                 Text("Добавить достижение")
-                    .font(.headline.weight(.semibold))
+                    .appTypography(.sectionTitle)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -346,12 +346,12 @@ struct PersonalRecordsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top) {
                     Text(record.activityName)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Spacer()
                     if isPr {
                         Text("PR")
-                            .font(.caption2.weight(.bold))
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.destructive)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -363,13 +363,13 @@ struct PersonalRecordsView: View {
 
                 if let activityType = record.activityType, !activityType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(activityType)
-                        .font(.caption2)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.tertiaryLabel)
                 }
 
                 if let notes = record.notes, !notes.isEmpty {
                     Text(notes)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .lineLimit(2)
                 }
@@ -437,10 +437,10 @@ struct PersonalRecordsView: View {
             ) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.name)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Text("Записей: \(item.count) · Последнее: \(item.lastDate.formattedRuShort)")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
             } trailing: {
@@ -459,7 +459,7 @@ struct PersonalRecordsView: View {
             .joined(separator: "  ·  ")
 
         return Text(summary)
-            .font(.caption.weight(.medium))
+            .appTypography(.caption)
             .foregroundStyle(AppColors.secondaryLabel)
             .lineLimit(2)
             .frame(maxWidth: .infinity, alignment: .leading)

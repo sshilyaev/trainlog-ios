@@ -76,7 +76,7 @@ struct CreateProfileView: View {
                         AppDesign.dismissKeyboardThen { createProfile() }
                     } label: {
                         Text("Создать")
-                            .font(.body)
+                            .appTypography(.body)
                             .fontWeight(.regular)
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -225,13 +225,13 @@ struct CreateProfileView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(isSelected ? .white : tileTint)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(isSelected ? .white : .primary)
                 Text(description)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -265,13 +265,13 @@ struct CreateProfileView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(isSelected ? .white : tileTint)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(isSelected ? .white : .primary)
                 Text(description)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

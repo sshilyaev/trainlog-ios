@@ -115,7 +115,7 @@ struct SettingsCard<Content: View>: View {
         VStack(alignment: .leading, spacing: AppDesign.rowSpacing) {
             if let title, !title.isEmpty {
                 Text(title)
-                    .font(.headline)
+                    .appTypography(.sectionTitle)
             }
             content()
         }
@@ -136,7 +136,7 @@ struct SegmentedPicker<T: Hashable, Label: StringProtocol>: View {
         VStack(alignment: .leading, spacing: 10) {
             if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(title)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
             }
 
@@ -240,7 +240,7 @@ struct FormRow<Content: View>: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 28, alignment: .center)
             Text(title)
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(minWidth: 100, alignment: .leading)
@@ -328,7 +328,7 @@ struct FormRowDateSelection: View {
                 Button(action: onTap) {
                     Text(selection.map { Self.dateFormatter.string(from: $0) } ?? placeholder)
                         .foregroundStyle(selection != nil ? .primary : .secondary)
-                        .font(.subheadline)
+                        .appTypography(.formValue)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .buttonStyle(.plain)
@@ -337,7 +337,7 @@ struct FormRowDateSelection: View {
                         selection = nil
                     } label: {
                         AppTablerIcon("multiple-cross-cancel-circle")
-                            .font(.body)
+                            .appTypography(.body)
                             .foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
@@ -436,7 +436,7 @@ struct NotesBlockView: View {
             Divider()
                 .padding(.leading, 40)
             Text(notes)
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)

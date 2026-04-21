@@ -126,7 +126,7 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
             .padding(.bottom, 4)
 
             Text("Планы тренировок и конструктор — в следующих версиях; сейчас фокус на прогрессе и связи с тренером.")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 2)

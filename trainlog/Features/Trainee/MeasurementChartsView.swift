@@ -94,16 +94,16 @@ struct MeasurementChartsGridContent: View {
             .max(by: { $0.1 < $1.1 })
         return GridActionTile {
             Text(type.displayName)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
                 .lineLimit(1)
             Text(latestValue.map { "\($0.0.measurementFormatted) \(type.unit)" } ?? "Нет данных")
-                .font(.title3.weight(.bold))
+                .appTypography(.numericMetric)
                 .foregroundStyle(AppColors.label)
                 .lineLimit(1)
         } trailing: {
             AppTablerIcon("chevron-right")
-                .font(.footnote.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.tertiaryLabel)
         }
     }
@@ -323,10 +323,10 @@ struct ChartDetailView: View {
                 .appIcon(.s56)
                 .foregroundStyle(.secondary)
             Text("Нет данных")
-                .font(.headline)
+                .appTypography(.sectionTitle)
                 .foregroundStyle(.primary)
             Text("Добавьте замеры с метрикой «\(type.displayName)», чтобы построить график.")
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppDesign.cardPadding)
@@ -375,13 +375,13 @@ struct ChartDetailView: View {
     private var noDataForPeriodBlock: some View {
         VStack(spacing: 8) {
             AppTablerIcon("calendar-filled")
-                .font(.title2)
+                .appTypography(.screenTitle)
                 .foregroundStyle(.secondary)
             Text("Нет данных за период")
-                .font(.subheadline.weight(.medium))
+                .appTypography(.secondary)
                 .foregroundStyle(.primary)
             Text("Выберите другой период или добавьте замеры за эти даты.")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -395,14 +395,14 @@ struct ChartDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(type.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Spacer()
                 Button {
                     showAllValues.toggle()
                 } label: {
                     Text(showAllValues ? "Скрыть значения" : "Показать значения")
-                        .font(.caption.weight(.medium))
+                        .appTypography(.caption)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -424,7 +424,7 @@ struct ChartDetailView: View {
                 .annotation(position: .top, spacing: 2) {
                     if showAllValues {
                         Text(p.value.measurementFormatted)
-                            .font(.caption2)
+                            .appTypography(.caption)
                             .foregroundStyle(.primary)
                     }
                 }
@@ -436,7 +436,7 @@ struct ChartDetailView: View {
                     AxisValueLabel {
                         if let i = value.as(Int.self), i >= 0, i < points.count {
                             Text(shortDateLabel(points[i].date))
-                                .font(.caption2)
+                                .appTypography(.caption)
                         }
                     }
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
@@ -471,7 +471,7 @@ struct ChartDetailView: View {
         SettingsCard(title: "Цели") {
             if goals.isEmpty {
                 Text("Нет целей по этой метрике")
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 8)

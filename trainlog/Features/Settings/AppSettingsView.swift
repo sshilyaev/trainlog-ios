@@ -107,8 +107,7 @@ private struct TextSizeSliderRow: View {
 
     private var currentTitle: String {
         switch AppFontSizeStepStorage.clamp(step) {
-        case 1: return "Средний"
-        case 2: return "Большой"
+        case 1: return "Увеличенный"
         default: return "Стандарт"
         }
     }
@@ -117,17 +116,17 @@ private struct TextSizeSliderRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("A")
-                    .font(.body)
+                    .appTypography(.body)
                     .foregroundStyle(.secondary)
-                Slider(value: sliderBinding, in: 0...2, step: 1)
+                Slider(value: sliderBinding, in: 0...1, step: 1)
                     .tint(AppColors.accent)
                 Text("A")
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(.primary)
             }
 
             Text(currentTitle)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
@@ -139,7 +138,7 @@ private struct LegalDocumentsPlaceholderView: View {
         ScrollView {
             SettingsCard(title: "Документы и соглашения") {
                 Text("Раздел документов скоро будет обновлён.")
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

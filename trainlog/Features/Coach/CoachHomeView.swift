@@ -82,7 +82,7 @@ struct CoachHomeView: View {
 
             if isWeekSummaryEmpty {
                 Text("Данные появятся после внесения посещений и событий за эту неделю.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 6)
@@ -140,7 +140,7 @@ struct CoachHomeView: View {
             Group {
                 if quickPickRows.isEmpty {
                     Text("Добавьте активного подопечного — здесь появится выбор для перехода в карточку.")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
@@ -153,10 +153,10 @@ struct CoachHomeView: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Карточка")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                                 .foregroundStyle(AppColors.label)
                             Text("Выберите подопечного")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.secondaryLabel)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)

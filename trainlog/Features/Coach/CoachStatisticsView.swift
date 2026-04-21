@@ -93,7 +93,7 @@ struct CoachStatisticsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     Text("Данные обновляются не чаще чем раз в 5 минут.")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, AppDesign.cardPadding)
@@ -160,7 +160,7 @@ struct CoachStatisticsView: View {
                 AppTablerIcon("calendar-default")
                     .foregroundStyle(AppColors.accent)
                 Text("Период")
-                    .font(.subheadline.weight(.medium))
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                 Spacer()
                 MonthPicker(selection: $selectedMonth)
@@ -173,7 +173,7 @@ struct CoachStatisticsView: View {
             }
             .pickerStyle(.segmented)
             Text("Обновляется не чаще чем раз в 5 минут")
-                .font(.caption2)
+                .appTypography(.caption)
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 12)
@@ -225,10 +225,10 @@ struct CoachStatisticsView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 AppTablerIcon("calendar-filled")
-                    .font(.body)
+                    .appTypography(.body)
                     .foregroundStyle(AppColors.accent)
                 Text("Посещения")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -238,7 +238,7 @@ struct CoachStatisticsView: View {
                         showVisitsFilterSheet = true
                     } label: {
                         Label("Фильтр", appIcon: "filter-horizontal")
-                            .font(.caption.weight(.medium))
+                            .appTypography(.caption)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -247,7 +247,7 @@ struct CoachStatisticsView: View {
                         showVisitsChartValues.toggle()
                     } label: {
                         Text(showVisitsChartValues ? "Скрыть значения" : "Показать значения")
-                            .font(.caption.weight(.medium))
+                            .appTypography(.caption)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -260,10 +260,10 @@ struct CoachStatisticsView: View {
                         .foregroundStyle(AppColors.accent.opacity(0.85))
                         .symbolRenderingMode(.hierarchical)
                     Text("Пока нет посещений")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.primary)
                     Text("Начните отмечать посещения у подопечных — и здесь появится динамика по месяцам.")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
@@ -294,11 +294,11 @@ struct CoachStatisticsView: View {
                                     HStack(spacing: 0) {
                                         ForEach(Array(item.orderedParts.enumerated()), id: \.offset) { i, part in
                                             Text("\(part.value)")
-                                                .font(.caption2.weight(.semibold))
+                                                .appTypography(.caption)
                                                 .foregroundStyle(typeColor[part.type] ?? .primary)
                                             if i != item.orderedParts.count - 1 {
                                                 Text(" ")
-                                                    .font(.caption2.weight(.semibold))
+                                                    .appTypography(.caption)
                                                     .foregroundStyle(.secondary)
                                             }
                                         }
@@ -363,7 +363,7 @@ struct CoachStatisticsView: View {
                     visitsTrendLabel(current: s.visits.thisMonth, previous: s.visits.previousMonth)
                     Spacer()
                     Text("Всего: \(s.visits.total)")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -468,15 +468,15 @@ struct CoachStatisticsView: View {
         let diff = current - previous
         if diff > 0 {
             Label("+\(diff) к прошлому месяцу", appIcon: "arrow-up-right")
-                .font(.caption.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.genderMale)
         } else if diff < 0 {
             Label("\(diff) к прошлому месяцу", appIcon: "arrow-down-right")
-                .font(.caption.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(Color.gray)
         } else {
             Text("Без изменений")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -518,10 +518,10 @@ struct CoachStatisticsView: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(title)
-                .font(.caption2)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
             Text("\(value)")
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(.primary)
         }
         .padding(.vertical, 4)
@@ -543,7 +543,7 @@ struct CoachStatisticsView: View {
     private func metricsGrid(_ s: CoachStatisticsDTO) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Показатели за \(metricsPeriodLabel)")
-                .font(.caption.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
             HStack(alignment: .top, spacing: AppDesign.blockSpacing) {
                 StatMetricCard(
@@ -574,14 +574,14 @@ struct CoachStatisticsView: View {
         if s.memberships.endingSoonCount > 0 {
             HStack(spacing: 12) {
                 AppTablerIcon("message-exclamation")
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(AppColors.visitsOneTimeDebt)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Скоро заканчиваются")
-                        .font(.subheadline.weight(.medium))
+                        .appTypography(.secondary)
                         .foregroundStyle(.primary)
                     Text("\(s.memberships.endingSoonCount) абонемент(ов) — осталось 1–2 занятия или окончание в ближайшие 14 дней")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -680,12 +680,12 @@ private struct MonthPicker: View {
                 }
             } label: {
                 AppTablerIcon("chevron-left")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
             Text(monthYearString(selection))
-                .font(.subheadline.weight(.medium))
+                .appTypography(.secondary)
                 .foregroundStyle(.primary)
                 .frame(minWidth: 140)
             Button {
@@ -696,7 +696,7 @@ private struct MonthPicker: View {
                 }
             } label: {
                 AppTablerIcon("chevron-right")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(canSelectNextMonth ? .secondary : .tertiary)
                     .frame(width: 36, height: 36)
             }
@@ -733,17 +733,17 @@ private struct StatMetricCard: View {
             HStack(alignment: .top, spacing: 8) {
                 HStack(spacing: 8) {
                     AppTablerIcon(icon)
-                        .font(.body)
+                        .appTypography(.body)
                         .foregroundStyle(AppColors.accent)
                     Text(title)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 6)
                 infoHintButton
             }
             Text(value)
-                .font(.title2.weight(.bold))
+                .appTypography(.screenTitle)
                 .foregroundStyle(.primary)
             Spacer(minLength: 0)
         }
@@ -769,7 +769,7 @@ private struct StatMetricCard: View {
             )
         } label: {
             AppTablerIcon("info.circle")
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
         }
         .buttonStyle(.plain)

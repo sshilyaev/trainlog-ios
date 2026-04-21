@@ -18,7 +18,7 @@ struct NutritionPlanCard: View {
             VStack(alignment: .center, spacing: 14) {
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
 
@@ -67,16 +67,16 @@ struct NutritionPlanCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Данные для расчёта:")
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Text("Вес: \(plan.weightKgUsed.measurementFormatted) кг")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Text("Белки: \(plan.proteinPerKg.measurementFormatted) г/кг · Жиры: \(plan.fatPerKg.measurementFormatted) г/кг · Углеводы: \(plan.carbsPerKg.measurementFormatted) г/кг")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Text("Калорий: \(plan.calories)")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,10 +99,10 @@ struct NutritionPlanCard: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(color)
             Text("\(percent)%")
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 6)
@@ -192,7 +192,7 @@ struct SupplementAssignmentRow: View {
             HStack(alignment: .top, spacing: 8) {
                 HStack(alignment: .center, spacing: 6) {
                     Text(assignment.supplementName)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                         .multilineTextAlignment(.leading)
 
@@ -206,7 +206,7 @@ struct SupplementAssignmentRow: View {
                         )
                     } label: {
                         AppTablerIcon("info.circle")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .buttonStyle(.plain)
@@ -265,10 +265,10 @@ struct SupplementAssignmentRow: View {
     private func supplementLabeledField(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
             Text(value)
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(AppColors.label)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -404,7 +404,7 @@ private struct InfoValueChip: View {
             case .coachSummary:
                 VStack(alignment: .center, spacing: 4) {
                     Text(item.title)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(titleColor)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -412,7 +412,7 @@ private struct InfoValueChip: View {
                         .padding(.trailing, infoFootnote == nil ? 0 : 12)
                         .frame(minHeight: coachSummaryTitleMinHeight, alignment: .top)
                     Text(item.value)
-                        .font(.headline.weight(.bold))
+                        .appTypography(.sectionTitle)
                         .foregroundStyle(AppColors.label)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)

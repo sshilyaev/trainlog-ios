@@ -150,15 +150,15 @@ struct CoachMainView: View {
                     .symbolRenderingMode(.hierarchical)
                     .emptyStateIconPulse()
                 Text("Пока нет подопечных")
-                    .font(.title2.weight(.semibold))
+                    .appTypography(.screenTitle)
                     .foregroundStyle(.primary)
                 Text("Добавьте клиента по коду или подключите свой профиль дневника — и начните отмечать посещения.")
-                    .font(.body)
+                    .appTypography(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
                 Text("Совет: можно отмечать посещения даже офлайн — синхронизация произойдёт позже.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
@@ -168,7 +168,7 @@ struct CoachMainView: View {
                     showAddTraineeByNavigation = true
                 } label: {
                     Text("Добавить подопечного")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                 }
@@ -200,10 +200,10 @@ struct CoachMainView: View {
                     .symbolRenderingMode(.hierarchical)
                     .emptyStateIconPulse()
                 Text("В архиве пусто")
-                    .font(.title2.weight(.semibold))
+                    .appTypography(.screenTitle)
                     .foregroundStyle(.primary)
                 Text("Сюда попадают клиенты, которые перестали заниматься. Вы всегда сможете вернуть их обратно.")
-                    .font(.body)
+                    .appTypography(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
@@ -426,7 +426,7 @@ struct CoachMainView: View {
                             }
                         } label: {
                             AppTablerIcon("arrows-sort")
-                                .font(.body)
+                                .appTypography(.body)
                         }
                         .buttonStyle(PressableButtonStyle())
                         .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
@@ -438,7 +438,7 @@ struct CoachMainView: View {
                             isSearchPresented = true
                         } label: {
                             AppTablerIcon("search-default")
-                                .font(.body)
+                                .appTypography(.body)
                         }
                         .buttonStyle(PressableButtonStyle())
                         .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
@@ -452,7 +452,7 @@ struct CoachMainView: View {
                                 showAddTraineeByNavigation = true
                             } label: {
                                 AppTablerIcon("plus-square")
-                                    .font(.body.weight(.semibold))
+                                    .appTypography(.bodyEmphasis)
                             }
                             .buttonStyle(PressableButtonStyle())
                             .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
@@ -666,7 +666,7 @@ struct CoachMainView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: onSwitchProfile) {
                         AppTablerIcon("replace-user")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
                     .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
@@ -676,7 +676,7 @@ struct CoachMainView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditProfile = true } label: {
                         AppTablerIcon("pencil-edit")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
@@ -742,14 +742,14 @@ struct CoachMainView: View {
                     showEditProfile = true
                 } label: {
                     Text(profile.name)
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                 }
                 .buttonStyle(PressableButtonStyle())
 
                 if let age = profile.ageFormatted, !age.isEmpty {
                     Text(age)
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -1129,25 +1129,25 @@ private struct TraineeCardRow: View {
                         .fill(avatarColor.opacity(isArchived ? 0.14 : 0.18))
                         .frame(width: 44, height: 44)
                     Text(initial)
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(avatarColor)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(title)
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(isArchived ? .secondary : .primary)
                             .lineLimit(1)
                         if isArchived {
                             AppTablerIcon("folder-default")
-                                .font(.caption2)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                     if let summary = membershipSummary, !summary.isEmpty {
                         Text(summary)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -1159,7 +1159,7 @@ private struct TraineeCardRow: View {
                 if let onToggleExpand, !isArchived {
                     Button(action: onToggleExpand) {
                         AppTablerIcon(isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
@@ -1167,7 +1167,7 @@ private struct TraineeCardRow: View {
                     .buttonStyle(.plain)
                 } else {
                     AppTablerIcon("chevron-right")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.tertiary)
                         .frame(width: 22, alignment: .trailing)
                 }

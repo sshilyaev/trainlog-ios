@@ -159,15 +159,15 @@ struct TraineeNutritionPlansView: View {
     private func emptyStateWideBlock(icon: String, title: String, message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             AppTablerIcon(icon)
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.black)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.label)
                 Text(message)
-                    .font(.footnote)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)
@@ -330,13 +330,13 @@ private struct EditTraineeWeightSheet: View {
                         SettingsCard(title: "Вес") {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Значения Б/Ж/У не изменяются — пересчёт делается по новому весу.")
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.secondaryLabel)
 
                                 TextField("0.1", text: $weightText)
                                     .keyboardType(.decimalPad)
                                     .textFieldStyle(.plain)
-                                    .font(.subheadline.weight(.semibold))
+                                    .appTypography(.bodyEmphasis)
                                     .multilineTextAlignment(.leading)
                                     .formInputStyle()
                                     .onChange(of: weightText) { _, newValue in
@@ -369,7 +369,7 @@ private struct EditTraineeWeightSheet: View {
                         if let errorMessage, !errorMessage.isEmpty {
                             SettingsCard {
                                 Text(errorMessage)
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.destructive)
                             }
                         }

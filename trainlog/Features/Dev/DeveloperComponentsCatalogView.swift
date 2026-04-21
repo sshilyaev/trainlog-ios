@@ -52,10 +52,10 @@ struct DeveloperComponentsCatalogView: View {
                         ForEach(AppIconSize.allCases, id: \.rawValue) { size in
                             HStack {
                                 Text("appIcon(.\(String(describing: size)))")
-                                    .font(.callout)
+                                    .appTypography(.body)
                                 Spacer()
                                 Text("\(Int(size.rawValue)) pt")
-                                    .font(.callout.monospacedDigit())
+                                    .font(.body.monospacedDigit())
                                     .foregroundStyle(.secondary)
                                 AppTablerIcon("calendar-default")
                                     .appIcon(size)
@@ -79,7 +79,7 @@ struct DeveloperComponentsCatalogView: View {
                                     )
                                     .overlay(alignment: .topLeading) {
                                         Text("контейнер")
-                                            .font(.caption2)
+                                            .appTypography(.caption)
                                             .foregroundStyle(.secondary)
                                             .padding(8)
                                     }
@@ -89,7 +89,7 @@ struct DeveloperComponentsCatalogView: View {
                                     .frame(width: 90)
                                     .overlay {
                                         Text("контент")
-                                            .font(.caption2)
+                                            .appTypography(.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                     .padding(AppDesign.cardPadding)
@@ -103,15 +103,15 @@ struct DeveloperComponentsCatalogView: View {
                                 RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
                                     .fill(AppColors.accent.opacity(0.18))
                                     .frame(width: 68, height: 44)
-                                    .overlay(Text("\(Int(AppDesign.cornerRadius))").font(.caption2).foregroundStyle(.secondary))
+                                    .overlay(Text("\(Int(AppDesign.cornerRadius))").appTypography(.caption).foregroundStyle(.secondary))
                                 RoundedRectangle(cornerRadius: AppDesign.avatarCornerRadiusSmall)
                                     .fill(AppColors.avatarColor(gender: .male).opacity(0.18))
                                     .frame(width: 44, height: 44)
-                                    .overlay(Text("\(Int(AppDesign.avatarCornerRadiusSmall))").font(.caption2).foregroundStyle(.secondary))
+                                    .overlay(Text("\(Int(AppDesign.avatarCornerRadiusSmall))").appTypography(.caption).foregroundStyle(.secondary))
                                 RoundedRectangle(cornerRadius: AppDesign.avatarCornerRadiusLarge)
                                     .fill(AppColors.avatarColor(gender: .female).opacity(0.18))
                                     .frame(width: 80, height: 44)
-                                    .overlay(Text("\(Int(AppDesign.avatarCornerRadiusLarge))").font(.caption2).foregroundStyle(.secondary))
+                                    .overlay(Text("\(Int(AppDesign.avatarCornerRadiusLarge))").appTypography(.caption).foregroundStyle(.secondary))
                             }
                         }
 
@@ -139,24 +139,24 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Иконки (все токены AppTablerIcon)") {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Полный список token-имен, которые понимает `AppTablerIcon` (source -> mapped -> asset).")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                         Text("Всего: \(AppTablerIcon.iconCatalog.count)")
-                            .font(.caption2)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
 
                         ForEach(AppTablerIcon.iconCatalog) { item in
                             HStack(spacing: 10) {
                                 AppTablerIcon(item.sourceName)
-                                    .font(.title3)
+                                    .appTypography(.numericMetric)
                                     .foregroundStyle(.primary)
                                     .frame(width: 28, alignment: .center)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.sourceName)
-                                        .font(.caption.weight(.semibold))
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.label)
                                     Text("\(item.mappedName) · \(item.assetName)")
-                                        .font(.caption2)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                         .lineLimit(1)
                                 }
@@ -172,13 +172,13 @@ struct DeveloperComponentsCatalogView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Toggle")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             Toggle("Напомнить о событии", isOn: $toggleSample)
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Picker (.segmented) — 2 варианта")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             Picker("", selection: $segmentedTwo) {
                                 Text("Активные").tag(0)
                                 Text("Завершённые").tag(1)
@@ -188,7 +188,7 @@ struct DeveloperComponentsCatalogView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Picker (.segmented) — 3 варианта")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             Picker("", selection: $segmentedThree) {
                                 Text("1 мес").tag(0)
                                 Text("3 мес").tag(1)
@@ -199,7 +199,7 @@ struct DeveloperComponentsCatalogView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("DatePicker (compact)")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             DatePicker("Дата", selection: $dateSample, displayedComponents: .date)
                                 .labelsHidden()
                                 .environment(\.locale, .ru)
@@ -207,7 +207,7 @@ struct DeveloperComponentsCatalogView: View {
 
                         VStack(alignment: .leading, spacing: 6) {
                             Text("DatePicker (.graphical)")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             DatePicker("", selection: $dateSample, displayedComponents: .date)
                                 .datePickerStyle(.graphical)
                                 .environment(\.locale, .ru)
@@ -220,9 +220,9 @@ struct DeveloperComponentsCatalogView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("FormRowDateOfBirth + FormDatePickerSheet")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             Text("Строка показывает значение/плейсхолдер, по тапу открывает календарь в sheet (ru_RU).")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                             FormRowDateOfBirth(selection: $dateOptionalSample, onTap: { showDatePickerSheetDemo = true })
                         }
@@ -238,13 +238,13 @@ struct DeveloperComponentsCatalogView: View {
                                     Text("Graphical DatePicker (фиксированная высота)")
                                         .foregroundStyle(.primary)
                                     Text("Используем, чтобы календарь не открывался на весь экран.")
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)
                                 }
                                 Spacer()
                                 AppTablerIcon("chevron-right")
-                                    .font(.footnote.weight(.semibold))
+                                    .appTypography(.caption)
                                     .foregroundStyle(.tertiary)
                             }
                             .padding(.vertical, 12)
@@ -259,7 +259,7 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Цвета (все токены AppColors + EventColor)") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Отсортировано по оттенку (hue). Для системных/dynamic цветов показаны Light/Dark варианты.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
 
                         let tokens = colorTokensSortedByHue()
@@ -287,13 +287,13 @@ struct DeveloperComponentsCatalogView: View {
                                     Text("Открыть пример щита")
                                         .foregroundStyle(.primary)
                                     Text("Покажет detents и drag-indicator на практике.")
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)
                                 }
                                 Spacer()
                                 AppTablerIcon("chevron-right")
-                                    .font(.footnote.weight(.semibold))
+                                    .appTypography(.caption)
                                     .foregroundStyle(.tertiary)
                             }
                             .padding(.vertical, 12)
@@ -308,9 +308,9 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Карточки (SettingsCard)") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("SettingsCard")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                         Text("Используем для блоков настроек/управления. Внутри — любые строки или кастомный контент.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -394,7 +394,7 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Nutrition UI (переиспользуемые)") {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("MacroTripleInputRow")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                         MacroTripleInputRow(
                             proteinPerKg: $nutritionProteinSample,
                             fatPerKg: $nutritionFatSample,
@@ -403,7 +403,7 @@ struct DeveloperComponentsCatalogView: View {
 
                         Divider()
                         Text("NutritionPreviewCard + MacroRatioDonutView")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                         NutritionPreviewCard(preview: nutritionPreviewSample)
                     }
                     .padding(.vertical, 4)
@@ -427,7 +427,7 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Стикеры") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("OfflineSticker")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                         OfflineSticker()
                             .frame(height: 90)
                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -437,9 +437,9 @@ struct DeveloperComponentsCatalogView: View {
                 SettingsCard(title: "Абонементы") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("MembershipProgressInlineView")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                         Text("Показывает прогресс (дни/занятия) для активного абонемента.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                         MembershipProgressInlineView(
                             membership: sampleMembershipByVisits,
@@ -452,21 +452,21 @@ struct DeveloperComponentsCatalogView: View {
                     VStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("ActionBlockRow + actionBlockStyle()")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             ActionBlockRow(icon: "user-default", title: "Пол", value: "Мужской")
                                 .actionBlockStyle()
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("CardRow")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             CardRow(icon: "calendar-default", title: "Дата рождения", value: "12.03.1998", showsDisclosure: true)
                                 .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("RectangularBlockContent + rectangularBlockStyle()")
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             HStack(spacing: AppDesign.rectangularBlockSpacing) {
                                 RectangularBlockContent(icon: "tag", title: "Абонементы", value: "2")
                                     .rectangularBlockStyle()
@@ -496,7 +496,7 @@ struct DeveloperComponentsCatalogView: View {
                 trailing: {
                     Button { showGraphicalHeightSheetDemo = false } label: {
                         Text("Готово")
-                            .font(.body)
+                            .appTypography(.body)
                             .fontWeight(.regular)
                     }
                     .foregroundStyle(.primary)
@@ -517,7 +517,7 @@ struct DeveloperComponentsCatalogView: View {
                 trailing: {
                     Button { showDetentsDemo = false } label: {
                         Text("Закрыть")
-                            .font(.body)
+                            .appTypography(.body)
                             .fontWeight(.regular)
                     }
                     .foregroundStyle(.primary)
@@ -528,9 +528,9 @@ struct DeveloperComponentsCatalogView: View {
                             SettingsCard(title: "Что такое detents") {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Detents — это допустимые высоты sheet.")
-                                        .font(.subheadline.weight(.semibold))
+                                        .appTypography(.bodyEmphasis)
                                     Text("`.medium` — средняя высота. Для календарей используем `.height(...)`, чтобы не растягивалось и не уходило на весь экран.")
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 4)
@@ -595,11 +595,11 @@ struct DeveloperComponentsCatalogView: View {
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
-                    .font(.callout)
+                    .appTypography(.body)
                     .foregroundStyle(.primary)
                 if let code, !code.isEmpty {
                     Text(code)
-                        .font(.caption2.monospacedDigit())
+                        .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -611,9 +611,9 @@ struct DeveloperComponentsCatalogView: View {
     private func ruleRow(title: String, text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
             Text(text)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -623,7 +623,7 @@ struct DeveloperComponentsCatalogView: View {
     private func exampleBlock<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
             content()
         }
@@ -633,11 +633,11 @@ struct DeveloperComponentsCatalogView: View {
     private func sizeRow(_ name: String, _ value: String) -> some View {
         HStack {
             Text(name)
-                .font(.callout)
+                .appTypography(.body)
                 .foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.callout.monospacedDigit())
+                .font(.body.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
     }
@@ -645,9 +645,9 @@ struct DeveloperComponentsCatalogView: View {
     private func componentCatalogRow(_ title: String, _ list: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
             Text(list)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -656,7 +656,7 @@ struct DeveloperComponentsCatalogView: View {
     private func textLine(_ title: String, font: Font, color: Color) -> some View {
         HStack {
             Text(title)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
             Text("Пример текста")

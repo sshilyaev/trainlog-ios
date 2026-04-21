@@ -73,13 +73,13 @@ struct MacroTripleInputRow: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(color)
 
             TextField("0.1", text: text)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.plain)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .multilineTextAlignment(.leading)
                 .formInputStyle()
                 .onAppear {
@@ -216,10 +216,10 @@ struct NutritionPreviewCard: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(color)
             Text("\(percent)%")
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 6)
@@ -230,10 +230,10 @@ struct NutritionPreviewCard: View {
     private func previewTile(title: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(color)
             Text(value)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

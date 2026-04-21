@@ -279,7 +279,7 @@ struct TraineeMembershipsView: View {
                     )
                     SettingsCard(title: "Что сделать дальше") {
                         Text("Напишите тренеру, какой формат вам нужен: по посещениям или безлимит на период. После создания абонемент появится автоматически.")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -346,7 +346,7 @@ struct TraineeMembershipsView: View {
                 )
                 SettingsCard(title: "Подсказка") {
                     Text("Если тренер уже закрыл абонемент, его история будет во вкладке «Завершённые». Для нового периода попросите создать новый абонемент.")
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

@@ -152,21 +152,21 @@ struct PersonalRecordExerciseDetailView: View {
 
                 if points.isEmpty {
                     Text("Недостаточно данных для графика.")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 6)
                 } else {
                     HStack {
                         Text(effectiveMetricType?.title ?? "График")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(AppColors.label)
                         Spacer()
                         Button {
                             showAllValues.toggle()
                         } label: {
                             Text(showAllValues ? "Скрыть значения" : "Показать значения")
-                                .font(.caption.weight(.medium))
+                                .appTypography(.caption)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -190,7 +190,7 @@ struct PersonalRecordExerciseDetailView: View {
                         .annotation(position: .top, spacing: 2) {
                             if showAllValues {
                                 Text(p.value.measurementFormatted)
-                                    .font(.caption2)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.label)
                             }
                         }
@@ -203,7 +203,7 @@ struct PersonalRecordExerciseDetailView: View {
                             AxisValueLabel {
                                 if let i = value.as(Int.self), i >= 0, i < points.count {
                                     Text(shortDateLabel(points[i].date))
-                                        .font(.caption2)
+                                        .appTypography(.caption)
                                 }
                             }
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
@@ -241,7 +241,7 @@ struct PersonalRecordExerciseDetailView: View {
             AppTablerIcon(icon)
                 .foregroundStyle(AppColors.secondaryLabel)
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
         }
         .padding(.horizontal, 12)
@@ -289,19 +289,19 @@ struct PersonalRecordExerciseDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(record.recordDate.formattedRuShort)
-                                    .font(.subheadline.weight(.semibold))
+                                    .appTypography(.bodyEmphasis)
                                     .foregroundStyle(AppColors.label)
                                 Spacer()
                             }
 
                             Text(record.metrics.map { "\($0.metricType.title): \($0.value.measurementFormatted) \($0.metricType.defaultUnit ?? $0.unit)" }.joined(separator: "  ·  "))
-                                .font(.caption.weight(.medium))
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.secondaryLabel)
                                 .lineLimit(2)
 
                             if let notes = record.notes, !notes.isEmpty {
                                 Text(notes)
-                                    .font(.caption)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                                     .lineLimit(2)
                             }

@@ -195,7 +195,7 @@ struct RootView: View {
                 HStack(spacing: 10) {
                     if showOfflineInfo {
                         Text("Офлайн‑режим: данные берём из кэша. Действия сохраняются локально и синхронизируются при появлении связи (после открытия приложения).")
-                            .font(.footnote)
+                            .appTypography(.caption)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.leading)
                             .padding(.vertical, 10)

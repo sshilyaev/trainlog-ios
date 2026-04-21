@@ -77,7 +77,7 @@ struct AddTraineeView: View {
                 SettingsCard(title: "Добавить вручную") {
                     VStack(spacing: 0) {
                         Text("Если клиент без приложения, создайте подопечного прямо здесь. Позже профиль можно объединить.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.bottom, 10)
@@ -152,7 +152,7 @@ struct AddTraineeView: View {
                 FormNotesCard(notes: $manualNotes)
 
                 Text("* Обязательные поля: имя, пол и вес")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppDesign.cardPadding)
@@ -169,7 +169,7 @@ struct AddTraineeView: View {
 
                 if let msg = errorMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.destructive)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)

@@ -170,17 +170,17 @@ struct EditProfileView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(title, appIcon: icon)
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
                 TextField(unit, text: value)
-                    .font(.body)
+                    .appTypography(.body)
                     .keyboardType(.decimalPad)
                     .autocorrectionDisabled(true)
                     .textInputAutocapitalization(.never)
                 Text(unit)
-                    .font(.footnote)
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 10)

@@ -43,13 +43,13 @@ struct CoachPostRegistrationOnboardingView: View {
                         .padding(.top, 4)
 
                     Text("Первый шаг — клиент в списке")
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
 
                     Text("Добавьте подопечного за минуту: по коду из приложения или вручную. Дальше — абонемент, посещения и прогресс в одном месте.")
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
@@ -68,7 +68,7 @@ struct CoachPostRegistrationOnboardingView: View {
 
                     Button(action: onSkip) {
                         Text("Сначала осмотрю приложение")
-                            .font(.subheadline.weight(.medium))
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .padding(.top, 6)
@@ -89,7 +89,7 @@ struct CoachPostRegistrationOnboardingView: View {
                 .frame(width: 52, height: 52)
                 .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
             Text(caption)
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
         }
     }
@@ -97,15 +97,15 @@ struct CoachPostRegistrationOnboardingView: View {
     private func featureRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             AppTablerIcon(icon)
-                .font(.title3)
+                .appTypography(.numericMetric)
                 .foregroundStyle(AppColors.accent)
                 .frame(width: 28, alignment: .center)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)
@@ -140,13 +140,13 @@ struct TraineePostRegistrationOnboardingView: View {
                         .background(AppColors.secondarySystemGroupedBackground, in: Circle())
 
                     Text("Заполните дневник за 2 минуты")
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
 
                     Text("Замеры и цели открываются в одном окне — удобно внести вес, объёмы и целевые даты. Достижения фиксируют лучшие веса, разы и времена по упражнениям.")
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
@@ -168,7 +168,7 @@ struct TraineePostRegistrationOnboardingView: View {
 
                     Button(action: onSkip) {
                         Text("Сделаю позже")
-                            .font(.subheadline.weight(.medium))
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .padding(.top, 4)
@@ -185,10 +185,10 @@ struct TraineePostRegistrationOnboardingView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 AppTablerIcon("chart-area-line")
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.accent)
                 Text("Как будет считаться прогресс")
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
 
@@ -223,7 +223,7 @@ struct TraineePostRegistrationOnboardingView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
             Text(title)
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
         }
         .padding(.horizontal, 3)
@@ -232,15 +232,15 @@ struct TraineePostRegistrationOnboardingView: View {
     private func featureRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             AppTablerIcon(icon)
-                .font(.title3)
+                .appTypography(.numericMetric)
                 .foregroundStyle(AppColors.accent)
                 .frame(width: 28, alignment: .center)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)
@@ -279,13 +279,13 @@ struct GoalCreatedMeasurementOfferView: View {
                         .symbolRenderingMode(.hierarchical)
 
                     Text("Закрепим старт с замерами")
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
 
                     Text("Цели уже есть — добавьте текущий вес и объёмы в том же окне с переключателем «Замеры / Цели», и графики сразу покажут динамику.")
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
@@ -297,7 +297,7 @@ struct GoalCreatedMeasurementOfferView: View {
 
                     Button(action: onSkip) {
                         Text("Позже")
-                            .font(.subheadline.weight(.medium))
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .padding(.top, 4)

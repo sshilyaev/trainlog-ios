@@ -163,7 +163,7 @@ struct EditTraineeSheet: View {
                                         .scaleEffect(AppDesign.loadingScale)
                                         .tint(AppColors.white)
                                     Text("Сохранение…")
-                                        .font(AppDesign.loadingMessageFont)
+                                        .appTypography(.secondary)
                                         .foregroundStyle(AppColors.white)
                                 }
                             }

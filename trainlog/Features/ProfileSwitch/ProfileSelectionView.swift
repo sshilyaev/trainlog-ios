@@ -63,7 +63,7 @@ struct ProfileSelectionView: View {
                         showSignOutConfirmation = true
                     } label: {
                         AppTablerIcon("log-out-right")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                     }
                 }
             }
@@ -140,7 +140,7 @@ struct ProfileSelectionView: View {
                         AppTablerIcon("lock-close")
                         Text("Сменить пароль")
                     }
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.white)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 46)
@@ -159,7 +159,7 @@ struct ProfileSelectionView: View {
                         AppTablerIcon("settings")
                         Text("Настройки")
                     }
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.accent)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 46)
@@ -190,14 +190,14 @@ struct ProfileSelectionView: View {
             } else {
                 if !coaches.isEmpty {
                     Text("Тренерские профили")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, AppDesign.cardPadding)
                     profileList(for: coaches)
                 }
                 if !trainees.isEmpty {
                     Text("Дневники")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, AppDesign.cardPadding)
                         .padding(.top, coaches.isEmpty ? 0 : 8)
@@ -248,7 +248,7 @@ struct ProfileSelectionView: View {
 
             if let msg = quickCreateError, !msg.isEmpty {
                 Text(msg)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.destructive)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppDesign.cardPadding)
@@ -310,13 +310,13 @@ struct ProfileSelectionView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(isSelected ? tileTint : AppColors.accent)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(description)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -420,12 +420,12 @@ private struct ChangePasswordSheet: View {
 
                         if !newPassword.isEmpty && newPassword != confirmPassword {
                             Text("Пароли не совпадают")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.destructive)
                                 .padding(.horizontal, AppDesign.cardPadding)
                         } else if !newPassword.isEmpty && newPassword.count < 6 {
                             Text("Пароль должен быть не короче 6 символов")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.destructive)
                                 .padding(.horizontal, AppDesign.cardPadding)
                         }

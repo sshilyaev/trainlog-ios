@@ -51,7 +51,7 @@ struct CalculatorsCatalogView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Что посчитать сегодня")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(AppColors.secondaryLabel)
                             .padding(.horizontal, AppDesign.cardPadding)
 
@@ -86,14 +86,14 @@ struct CalculatorsCatalogView: View {
     private var introBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Ориентиры за минуту")
-                .font(.title3.weight(.bold))
+                .appTypography(.numericMetric)
                 .foregroundStyle(AppColors.label)
             Text("Подберите калорийность, нормы БЖУ, воду, рабочие веса и другие ориентиры — без таблиц и ручного счёта.")
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Это не медицинский диагноз: при сомнениях обсудите результат с врачом или тренером.")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.tertiaryLabel)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -123,14 +123,14 @@ struct CalculatorsCatalogView: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.title)
-                        .font(.headline.weight(.semibold))
+                        .appTypography(.sectionTitle)
                         .foregroundStyle(AppColors.label)
                         .multilineTextAlignment(.leading)
 
                     let desc = item.description.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !desc.isEmpty {
                         Text(desc)
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)

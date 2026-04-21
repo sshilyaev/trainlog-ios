@@ -14,7 +14,7 @@ enum AppIconSize: CGFloat, CaseIterable {
 
 extension AppTablerIcon {
     func appIcon(_ size: AppIconSize, weight: Font.Weight = .semibold) -> some View {
-        self.font(.system(size: size.rawValue, weight: weight))
+        self.fontSystemWithAppExtra(size: size.rawValue, weight: weight)
     }
 }
 

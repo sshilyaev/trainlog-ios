@@ -35,7 +35,7 @@ struct AddByTokenSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Подопечный создаёт временный код в разделе «Подключить по коду» в своём профиле.")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, AppDesign.cardPadding)
@@ -58,14 +58,14 @@ struct AddByTokenSheet: View {
                                     }
                                 } label: {
                                     Label("Вставить из буфера", appIcon: "copy-default")
-                                        .font(.subheadline)
+                                        .appTypography(.secondary)
                                         .foregroundStyle(AppColors.accent)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.top, 8)
                                 if let msg = errorMessage, !msg.isEmpty {
                                     Text(msg)
-                                        .font(.footnote)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.destructive)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.top, 6)

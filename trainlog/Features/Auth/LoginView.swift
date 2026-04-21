@@ -22,7 +22,7 @@ struct LoginView: View {
 
                     VStack(spacing: AppDesign.sectionSpacing) {
                         Text("Вход")
-                            .font(.title.bold())
+                            .appTypography(.screenTitle)
 
                         TextField("Email", text: $email)
                             .textContentType(.emailAddress)
@@ -42,13 +42,13 @@ struct LoginView: View {
 
                         if let msg = errorMessage {
                             Text(msg)
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.destructive)
                                 .multilineTextAlignment(.center)
                         }
 
                         Button("Нет аккаунта? Регистрация", action: onSignUp)
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                     }
                     .padding(.horizontal, 24)
                     .frame(maxWidth: 400)

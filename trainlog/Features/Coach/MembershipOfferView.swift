@@ -22,13 +22,13 @@ struct MembershipOfferView: View {
                         .padding(.top, 12)
 
                     Text("Оформим абонемент для \(traineeName)?")
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 12)
 
                     Text("Один абонемент — порядок в посещениях: остаток занятий, безлимит на срок, календарь и история. Клиент видит то же в дневнике.")
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
@@ -59,7 +59,7 @@ struct MembershipOfferView: View {
 
                     Button(action: onSkip) {
                         Text("Настрою позже")
-                            .font(.subheadline.weight(.medium))
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .padding(.top, 4)
@@ -75,15 +75,15 @@ struct MembershipOfferView: View {
     private func offerRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             AppTablerIcon(icon)
-                .font(.title2)
+                .appTypography(.screenTitle)
                 .foregroundStyle(AppColors.accent)
                 .frame(width: 28, alignment: .center)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)

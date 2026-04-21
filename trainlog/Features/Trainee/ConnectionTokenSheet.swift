@@ -33,7 +33,7 @@ struct ConnectionTokenSheet: View {
                         ScrollView {
                             SettingsCard(title: "Ошибка") {
                                 Text(msg)
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(.primary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -68,7 +68,7 @@ struct ConnectionTokenSheet: View {
             VStack(spacing: 0) {
                 SettingsCard(title: "Что сделать тренеру") {
                     Text("1. Откройте приложение и войдите в профиль тренера.\n2. Перейдите в раздел «Подопечные» → «Добавить подопечного».\n3. Выберите «Добавить по коду» и введите код ниже.")
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -76,7 +76,7 @@ struct ConnectionTokenSheet: View {
                 SettingsCard(title: "Код для ввода") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(t.id)
-                            .font(.system(.title2, design: .monospaced))
+                            .font(.title2.monospaced())
                             .fontWeight(.semibold)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,7 +101,7 @@ struct ConnectionTokenSheet: View {
                         }
 
                         Text("Код действителен до \(formattedExpiry(t.expiresAt))")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }

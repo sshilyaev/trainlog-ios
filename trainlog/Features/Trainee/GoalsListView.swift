@@ -86,15 +86,15 @@ private struct GoalBlockView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(typeName)
-                .font(.headline)
+                .appTypography(.sectionTitle)
                 .foregroundStyle(.primary)
             HStack {
                 Text("Значение")
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(valueText)
-                    .font(.subheadline.weight(.medium))
+                    .appTypography(.secondary)
                     .foregroundStyle(.primary)
             }
         }

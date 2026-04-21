@@ -157,15 +157,15 @@ struct CoachNutritionPlanView: View {
     private func emptyStateWideBlock(icon: String, title: String, message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             AppTablerIcon(icon)
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.black)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.label)
                 Text(message)
-                    .font(.footnote)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)
@@ -455,7 +455,7 @@ private struct CoachSupplementsEditorSheet: View {
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Можно указать дозировку, время и частоту при редактировании.")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .padding(.bottom, 2)
                     ForEach(Array(assignments.enumerated()), id: \.element.id) { index, assignment in
@@ -488,14 +488,14 @@ private struct CoachSupplementsEditorSheet: View {
                 supplementsCatalogSkeleton
             } else if catalog.isEmpty {
                 Text("Добавки не найдены для выбранного типа.")
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(AppColors.secondaryLabel)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     searchField
                     if filteredCatalog.isEmpty {
                         Text("По запросу ничего не найдено.")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     } else {
                         ForEach(Array(filteredCatalog.enumerated()), id: \.element.id) { index, item in
@@ -515,7 +515,7 @@ private struct CoachSupplementsEditorSheet: View {
         if let errorMessage, !errorMessage.isEmpty {
             SettingsCard {
                 Text(errorMessage)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(AppColors.destructive)
             }
         }
@@ -532,14 +532,14 @@ private struct CoachSupplementsEditorSheet: View {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Text(item.type.displayName)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     if !item.description.isEmpty {
                         Text(item.description)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.tertiaryLabel)
                     }
                 }
@@ -549,7 +549,7 @@ private struct CoachSupplementsEditorSheet: View {
                         .scaleEffect(0.8)
                 } else {
                     AppTablerIcon(alreadyAssigned ? "checkmark" : "plus")
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.label)
                 }
             }
@@ -684,7 +684,7 @@ private struct CoachSupplementsEditorSheet: View {
             TextField("Поиск добавки", text: $searchText)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
-                .font(.subheadline)
+                .appTypography(.secondary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 9)
@@ -765,7 +765,7 @@ private struct CoachSupplementsEditorSheet: View {
         Button(action: action) {
             let chipBackground = isSelected ? AppColors.accent : AppColors.secondarySystemGroupedBackground
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(isSelected ? AppColors.white : AppColors.label)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
@@ -777,15 +777,15 @@ private struct CoachSupplementsEditorSheet: View {
     private func emptyStateWideBlock(icon: String, title: String, message: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             AppTablerIcon(icon)
-                .font(.caption2.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.black)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.label)
                 Text(message)
-                    .font(.footnote)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Spacer(minLength: 0)
@@ -912,15 +912,15 @@ private struct SupplementAssignmentEditScreen: View {
                         SettingsCard(title: supplementName) {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Все поля необязательны. Заполняйте только то, что важно для назначения.")
-                                    .font(.footnote)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                                 HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Значение дозировки")
-                                            .font(.caption)
+                                            .appTypography(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         TextField("500", text: $form.dosageValue)
-                                            .font(.subheadline)
+                                            .appTypography(.secondary)
                                             .keyboardType(.decimalPad)
                                             .textFieldStyle(.plain)
                                             .formInputStyle()
@@ -934,7 +934,7 @@ private struct SupplementAssignmentEditScreen: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Единица")
-                                            .font(.caption)
+                                            .appTypography(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         Menu {
                                             Button("Не выбрано") { form.dosageUnit = nil }
@@ -944,7 +944,7 @@ private struct SupplementAssignmentEditScreen: View {
                                         } label: {
                                             HStack {
                                                 Text(form.dosageUnit?.displayName ?? "Не выбрано")
-                                                    .font(.subheadline)
+                                                    .appTypography(.secondary)
                                                     .foregroundStyle(AppColors.label)
                                                     .lineLimit(1)
                                                 Spacer(minLength: 8)
@@ -959,15 +959,15 @@ private struct SupplementAssignmentEditScreen: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 Text("Введите только число, например 500 или 2.5")
-                                    .font(.caption2)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                                 HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Время приема")
-                                            .font(.caption)
+                                            .appTypography(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         TextField("После завтрака", text: $form.timing)
-                                            .font(.subheadline)
+                                            .appTypography(.secondary)
                                             .textFieldStyle(.plain)
                                             .formInputStyle()
                                     }
@@ -976,10 +976,10 @@ private struct SupplementAssignmentEditScreen: View {
                                 HStack(alignment: .top, spacing: 10) {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Частота")
-                                            .font(.caption)
+                                            .appTypography(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         TextField("Ежедневно", text: $form.frequency)
-                                            .font(.subheadline)
+                                            .appTypography(.secondary)
                                             .textFieldStyle(.plain)
                                             .formInputStyle()
                                     }
@@ -988,10 +988,10 @@ private struct SupplementAssignmentEditScreen: View {
                                 }
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text("Заметка")
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                     TextEditor(text: $form.note)
-                                        .font(.subheadline)
+                                        .appTypography(.secondary)
                                         .frame(minHeight: 120)
                                         .scrollContentBackground(.hidden)
                                         .formInputStyle()
@@ -1001,7 +1001,7 @@ private struct SupplementAssignmentEditScreen: View {
                         if let errorMessage, !errorMessage.isEmpty {
                             SettingsCard {
                                 Text(errorMessage)
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.destructive)
                             }
                         }
@@ -1114,10 +1114,10 @@ private struct EditNutritionPlanSheet: View {
                         SettingsCard(title: "Расчёт") {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Нормы на кг веса (Б/Ж/У).")
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.secondaryLabel)
                                 Text("Значения считаются автоматически.")
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.secondaryLabel)
                                 
                                 if canEditWeight {
@@ -1125,10 +1125,10 @@ private struct EditNutritionPlanSheet: View {
                                 } else {
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text("Вес для расчёта")
-                                            .font(.caption)
+                                            .appTypography(.caption)
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         Text("\(lockedWeightKg.measurementFormatted) кг")
-                                            .font(.subheadline.weight(.semibold))
+                                            .appTypography(.bodyEmphasis)
                                             .foregroundStyle(AppColors.label)
                                     }
                                 }
@@ -1148,7 +1148,7 @@ private struct EditNutritionPlanSheet: View {
                         if let errorMessage, !errorMessage.isEmpty {
                             SettingsCard {
                                 Text(errorMessage)
-                                    .font(.subheadline)
+                                    .appTypography(.secondary)
                                     .foregroundStyle(AppColors.destructive)
                             }
                         }
@@ -1200,13 +1200,13 @@ private struct EditNutritionPlanSheet: View {
     private var weightKeyboardInput: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Вес, кг")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
 
             TextField("0.1", text: $weightText)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.plain)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .multilineTextAlignment(.leading)
                 .formInputStyle()
                 .onChange(of: weightText) { _, newValue in

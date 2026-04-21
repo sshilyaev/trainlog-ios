@@ -241,7 +241,7 @@ struct MeasurementField: View {
             HStack(spacing: 10) {
                 Text(title)
                 Text(unit)
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
@@ -250,7 +250,7 @@ struct MeasurementField: View {
             TextField(placeholder, text: $value)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.leading)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .textFieldStyle(.plain)
                 .formInputCompactStyle()
                 .onAppear {

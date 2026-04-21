@@ -69,7 +69,7 @@ struct LoadingBlockView: View {
             ProgressView()
                 .scaleEffect(AppDesign.loadingScale)
             Text(message)
-                .font(AppDesign.loadingMessageFont)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -90,7 +90,7 @@ struct LoadingOverlayView: View {
                         .scaleEffect(AppDesign.loadingScale)
                         .tint(AppColors.white)
                     Text(message)
-                        .font(AppDesign.loadingMessageFont)
+                        .appTypography(.secondary)
                         .foregroundStyle(AppColors.white)
                 }
             }
@@ -170,14 +170,14 @@ struct EmptyStateView<Actions: View>: View {
     var body: some View {
         VStack(spacing: AppDesign.emptyStateSpacing) {
             AppTablerIcon(icon)
-                .font(.system(size: AppDesign.emptyStateIconSize))
+                .fontSystemWithAppExtra(size: AppDesign.emptyStateIconSize)
                 .foregroundStyle(.secondary)
 
             Text(title)
-                .font(AppDesign.emptyStateTitleFont)
+                .appTypography(.screenTitle)
 
             Text(description)
-                .font(AppDesign.emptyStateDescriptionFont)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -272,9 +272,9 @@ extension AppDesign {
     static let emptyStateSpacing: CGFloat = 12
     /// Вертикальный отступ заглушки
     static let emptyStateVerticalPadding: CGFloat = 24
-    /// Шрифт заголовка заглушки
+    /// Deprecated: используйте AppTypographyRole.
     static let emptyStateTitleFont: Font = .title2
-    /// Шрифт описания заглушки
+    /// Deprecated: используйте AppTypographyRole.
     static let emptyStateDescriptionFont: Font = .subheadline
 }
 

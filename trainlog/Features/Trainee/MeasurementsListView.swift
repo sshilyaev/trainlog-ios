@@ -113,7 +113,7 @@ struct MeasurementsListView: View {
                 let (sectionTitle, items) = pair
                 VStack(alignment: .leading, spacing: 10) {
                     Text(sectionTitle)
-                        .font(.headline.weight(.semibold))
+                        .appTypography(.sectionTitle)
                         .foregroundStyle(AppColors.label)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     VStack(spacing: 10) {
@@ -133,9 +133,9 @@ struct MeasurementsListView: View {
                 .appIcon(.s56)
                 .foregroundStyle(AppColors.accent.opacity(0.85))
             Text("Пока нет замеров")
-                .font(.headline)
+                .appTypography(.sectionTitle)
             Text("Добавляйте замеры через вкладку «Прогресс», чтобы здесь появилась история.")
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .multilineTextAlignment(.center)
         }
@@ -152,17 +152,17 @@ struct MeasurementsListView: View {
                 .foregroundStyle(AppColors.accent.opacity(0.8))
                 .emptyStateIconPulse()
             Text("Пока нет замеров")
-                .font(.title2.weight(.semibold))
+                .appTypography(.screenTitle)
                 .foregroundStyle(.primary)
             Text("Добавьте первый замер — так вы сможете отслеживать прогресс и строить графики.")
-                .font(.body)
+                .appTypography(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             measurementGuideButton
             Button(action: onAddMeasurement) {
                 Label("Добавить замер", appIcon: "plus-circle")
-                    .font(.headline)
+                    .appTypography(.sectionTitle)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 14)
@@ -182,14 +182,14 @@ struct MeasurementsListView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 8) {
                         AppTablerIcon("award-medal")
-                            .font(.title3)
+                            .appTypography(.numericMetric)
                             .foregroundStyle(AppColors.accent)
                         Text("Последний замер")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                     Text(last.date.formattedRuDayMonth)
-                        .font(.title2.weight(.bold))
+                        .appTypography(.screenTitle)
                         .foregroundStyle(.primary)
                     measurementMetricsRow(measurement: last, maxItems: 5, expandedLines: false)
                 }
@@ -220,9 +220,9 @@ struct MeasurementsListView: View {
         Button(action: onAddMeasurement) {
             HStack(spacing: 10) {
                 AppTablerIcon("plus-circle")
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                 Text("Добавить замер")
-                    .font(.headline.weight(.semibold))
+                    .appTypography(.sectionTitle)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -254,7 +254,7 @@ struct MeasurementsListView: View {
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("История")
-                .font(.headline)
+                .appTypography(.sectionTitle)
                 .foregroundStyle(.primary)
                 .padding(.horizontal, AppDesign.cardPadding)
                 .padding(.top, 24)
@@ -262,7 +262,7 @@ struct MeasurementsListView: View {
                 let (sectionTitle, items) = pair
                 VStack(alignment: .leading, spacing: 8) {
                     Text(sectionTitle)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, AppDesign.cardPadding)
                     ForEach(items) { m in
@@ -292,13 +292,13 @@ struct MeasurementsListView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if showTime {
                     Text(m.date.formattedRuTime)
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
                 readOnlyMetricsTable(m)
                 if let note = m.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
                     Text(note)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.tertiaryLabel)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -330,13 +330,13 @@ struct MeasurementsListView: View {
             ForEach(Array(pairs.enumerated()), id: \.offset) { _, pair in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(pair.0)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .lineLimit(2)
                         .minimumScaleFactor(0.82)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(pair.1)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
@@ -357,7 +357,7 @@ struct MeasurementsListView: View {
                 measurementMetricsRow(measurement: m, maxItems: 4, expandedLines: false)
             } trailing: {
                 AppTablerIcon("chevron-right")
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -381,7 +381,7 @@ struct MeasurementsListView: View {
         let shown = Array(items.prefix(maxItems))
         let text = shown.joined(separator: "  ·  ")
         return Text(text)
-            .font(.caption)
+            .appTypography(.caption)
             .fontWeight(.medium)
             .foregroundStyle(.secondary)
             .lineLimit(expandedLines ? 12 : 2)
@@ -443,7 +443,7 @@ struct MeasurementDetailView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(dateFormatted)
-                    .font(.headline)
+                    .appTypography(.sectionTitle)
             }
             ToolbarItem(placement: .topBarLeading) {
                 Button {

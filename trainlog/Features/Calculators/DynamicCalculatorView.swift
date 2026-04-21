@@ -61,11 +61,11 @@ struct DynamicCalculatorView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("О калькуляторе")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
 
                     Text(definition.description)
-                        .font(.subheadline.weight(.medium))
+                        .appTypography(.secondary)
                         .foregroundStyle(AppColors.label)
                         .multilineTextAlignment(.leading)
                 }
@@ -73,13 +73,13 @@ struct DynamicCalculatorView: View {
 
             if let help = definition.helpText, !help.isEmpty {
                 Text(help)
-                    .font(.footnote)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.label)
                     .multilineTextAlignment(.leading)
             }
 
             Text("Результаты ориентировочные — используйте как подсказку для настройки привычек.")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .multilineTextAlignment(.leading)
         }
@@ -151,7 +151,7 @@ struct DynamicCalculatorView: View {
                         }
                     } label: {
                         AppTablerIcon("chevron-left")
-                            .font(.subheadline.weight(.bold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(clampedIndex > 0 ? AppColors.accent : AppColors.tertiaryLabel)
                             .frame(width: 28, height: 28)
                             .background(
@@ -163,7 +163,7 @@ struct DynamicCalculatorView: View {
                     .disabled(clampedIndex == 0)
 
                     Text("Шаг \(clampedIndex + 1) из \(flow.steps.count)")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
 
                     Spacer()
@@ -176,7 +176,7 @@ struct DynamicCalculatorView: View {
                                 .fill(idx <= clampedIndex ? AppColors.accent : AppColors.tertiarySystemFill)
                                 .frame(height: 6)
                             Text("\(idx + 1)")
-                                .font(.caption2.weight(.semibold))
+                                .appTypography(.caption)
                                 .foregroundStyle(idx == clampedIndex ? AppColors.accent : AppColors.secondaryLabel)
                         }
                         .frame(maxWidth: .infinity)
@@ -185,12 +185,12 @@ struct DynamicCalculatorView: View {
                 }
 
                 Text(step.title)
-                    .font(.headline)
+                    .appTypography(.sectionTitle)
                     .foregroundStyle(AppColors.label)
 
                 if let subtitle = step.subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
             }
@@ -212,20 +212,20 @@ struct DynamicCalculatorView: View {
                    let primaryValue = result.outputs[primary.key] {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Итог")
-                            .font(.caption.weight(.semibold))
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(formattedValue(primaryValue, decimals: primary.decimals))
-                                .font(.largeTitle.weight(.bold))
+                                .appTypography(.screenTitle)
                                 .foregroundStyle(AppColors.label)
                             if let unit = primary.unit, !unit.isEmpty {
                                 Text(unit)
-                                    .font(.headline)
+                                    .appTypography(.sectionTitle)
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                         }
                         Text(primary.title)
-                            .font(.footnote)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -256,10 +256,10 @@ struct DynamicCalculatorView: View {
                                             .foregroundStyle(AppColors.secondaryLabel)
                                         Spacer()
                                         Text(formattedValue(value, decimals: out.decimals))
-                                            .font(.subheadline.weight(.semibold))
+                                            .appTypography(.bodyEmphasis)
                                         if let unit = out.unit, !unit.isEmpty {
                                             Text(unit)
-                                                .font(.footnote)
+                                                .appTypography(.caption)
                                                 .foregroundStyle(AppColors.secondaryLabel)
                                                 .padding(.leading, 4)
                                         }
@@ -274,10 +274,10 @@ struct DynamicCalculatorView: View {
                     SettingsCard(title: "Интерпретация") {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(label)
-                                .font(.subheadline.weight(.semibold))
+                                .appTypography(.bodyEmphasis)
                             if let subtitle = result.interpretationSubtitle, !subtitle.isEmpty {
                                 Text(subtitle)
-                                    .font(.footnote)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                         }
@@ -292,7 +292,7 @@ struct DynamicCalculatorView: View {
                    let summary = result.summary, !summary.isEmpty {
                     SettingsCard {
                         Text(summary)
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                 }
@@ -303,10 +303,10 @@ struct DynamicCalculatorView: View {
                             ForEach(Array(result.resultDescriptions.enumerated()), id: \.offset) { _, item in
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.title)
-                                        .font(.subheadline.weight(.semibold))
+                                        .appTypography(.bodyEmphasis)
                                         .foregroundStyle(AppColors.label)
                                     Text(item.description)
-                                        .font(.footnote)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                 }
                             }
@@ -320,10 +320,10 @@ struct DynamicCalculatorView: View {
                             ForEach(Array(result.recommendations.enumerated()), id: \.offset) { _, item in
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.title)
-                                        .font(.subheadline.weight(.semibold))
+                                        .appTypography(.bodyEmphasis)
                                         .foregroundStyle(AppColors.label)
                                     Text(item.description)
-                                        .font(.footnote)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                 }
                             }
@@ -344,7 +344,7 @@ struct DynamicCalculatorView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     InterpretationScaleBarView(ranges: interpretation.ranges, value: value)
                     Text("Значение на шкале: \(formattedValue(value, decimals: nil))")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
             }
@@ -372,7 +372,7 @@ struct DynamicCalculatorView: View {
                     } label: {
                         HStack {
                             Text(showHowCalculated ? "Свернуть" : "Показать формулы")
-                                .font(.subheadline.weight(.medium))
+                                .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
                             Spacer()
                             AppTablerIcon(showHowCalculated ? "chevron.up" : "chevron.down")
@@ -386,10 +386,10 @@ struct DynamicCalculatorView: View {
                             ForEach(expressions, id: \.title) { item in
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.title)
-                                        .font(.footnote.weight(.semibold))
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                     Text(item.expr)
-                                        .font(.system(.footnote, design: .monospaced))
+                                        .font(.footnote.monospaced())
                                         .foregroundStyle(.primary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
@@ -550,12 +550,12 @@ struct DynamicCalculatorView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(input.title)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                 if let unit = input.unit, !unit.isEmpty {
                     Text(unit)
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.tertiaryLabel)
                 }
                 Spacer(minLength: 0)

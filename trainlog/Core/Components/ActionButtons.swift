@@ -71,7 +71,7 @@ struct CTAButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.button)
                 .foregroundStyle(AppColors.white)
                 .frame(minWidth: 200, maxWidth: 280)
                 .frame(height: 46)
@@ -136,7 +136,7 @@ struct ActionStatusChip: View {
 
     var body: some View {
         Text(title)
-            .font(.caption2.weight(.semibold))
+            .appTypography(.caption)
             .foregroundStyle(color)
             .lineLimit(1)
             .padding(.horizontal, 8)

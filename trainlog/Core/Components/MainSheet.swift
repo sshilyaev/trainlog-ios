@@ -103,7 +103,7 @@ struct MainSheet<Trailing: View, Content: View>: View {
             .frame(minWidth: sideMinWidth, alignment: .leading)
 
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)

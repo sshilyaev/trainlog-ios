@@ -121,12 +121,12 @@ struct VisitsCalendarView: View {
                         }
                     } label: {
                         AppTablerIcon("chevron-left")
-                            .font(.body.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Text(monthTitle)
-                        .font(.headline)
+                        .appTypography(.sectionTitle)
                     Spacer()
                     Button {
                         if let next = calendar.date(byAdding: .month, value: 1, to: selectedMonth) {
@@ -134,7 +134,7 @@ struct VisitsCalendarView: View {
                         }
                     } label: {
                         AppTablerIcon("chevron-right")
-                            .font(.body.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -143,7 +143,7 @@ struct VisitsCalendarView: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
                     ForEach(weekdays, id: \.self) { w in
                         Text(w)
-                            .font(.caption2)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                     ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, item in
@@ -199,7 +199,7 @@ struct VisitsCalendarView: View {
             VStack(alignment: .leading, spacing: AppDesign.rowSpacing) {
                 if !cardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(cardTitle)
-                        .font(.headline)
+                        .appTypography(.sectionTitle)
                 }
                 content()
             }
@@ -209,7 +209,7 @@ struct VisitsCalendarView: View {
             VStack(alignment: .leading, spacing: AppDesign.rowSpacing) {
                 if !cardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(cardTitle)
-                        .font(.headline)
+                        .appTypography(.sectionTitle)
                 }
                 content()
             }
@@ -263,7 +263,7 @@ private struct VisitsCalendarDayCell: View {
 
                 if visitsCount > 1 {
                     Text("\(min(visitsCount, 9))")
-                        .font(.caption2.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
@@ -285,7 +285,7 @@ private struct VisitsCalendarDayCell: View {
                     onShowDayDetail(date)
                 } label: {
                     Text("\(d)")
-                        .font(.caption2.weight(.medium))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.label)
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
@@ -299,42 +299,42 @@ private struct VisitsCalendarDayCell: View {
                             Button { onAddOneOff(date) } label: {
                                 Label("Разовое посещение", appIcon: "calendar-filled")
                             }
-                            .font(.caption)
+                            .appTypography(.caption)
                         }
                         if let memberships = addVisitMemberships, !memberships.isEmpty {
                             ForEach(memberships) { m in
                                 Button { onAddVisitWithMembership?(date, m) } label: {
                                     Label(m.displayCode.map { "Списать с аб. №\($0)" } ?? "Списать с аб", appIcon: "tag")
                                 }
-                                .font(.caption)
+                                .appTypography(.caption)
                             }
                         } else if addVisitMemberships != nil {
-                            Text("Нет активных абонементов").font(.caption).foregroundStyle(.secondary)
+                            Text("Нет активных абонементов").appTypography(.caption).foregroundStyle(.secondary)
                         }
                         if onAddEvent != nil {
                             Button { onAddEvent?(date) } label: {
                                 Label("Событие", appIcon: "award-medal")
                             }
-                            .font(.caption)
+                            .appTypography(.caption)
                         }
                         if let evts = eventsOnDay, !evts.isEmpty, let onEditEvent, let onCancelEvent {
                             ForEach(evts) { e in
                                 Menu {
                                     if let desc = e.eventDescription?.trimmingCharacters(in: .whitespacesAndNewlines), !desc.isEmpty {
-                                        Text(desc).font(.caption)
+                                        Text(desc).appTypography(.caption)
                                     }
                                     Button { onEditEvent(e) } label: {
                                         Label("Редактировать", appIcon: "pencil-edit")
                                     }
-                                    .font(.caption)
+                                    .appTypography(.caption)
                                     Button(role: .destructive) { onCancelEvent(e) } label: {
                                         Label("Удалить", appIcon: "delete-dustbin-01")
                                     }
-                                    .font(.caption)
+                                    .appTypography(.caption)
                                 } label: {
                                     Label(e.title, appIcon: "award-medal")
                                 }
-                                .font(.caption)
+                                .appTypography(.caption)
                             }
                         }
                     } label: { Label("Добавить", appIcon: "plus-circle") }
@@ -343,16 +343,16 @@ private struct VisitsCalendarDayCell: View {
                             Button { actions.onMarkAsPaid(firstVisit) } label: {
                                 Label("Пометить как оплачено", appIcon: "check-tick-circle")
                             }
-                            .font(.caption)
+                            .appTypography(.caption)
                         }
                         Button(role: .destructive) { actions.onCancelVisit(firstVisit) } label: {
                             Label("Отменить посещение", appIcon: "multiple-cross-cancel-circle")
                         }
-                        .font(.caption)
+                        .appTypography(.caption)
                     }
                 } label: {
                     Text("\(d)")
-                        .font(.caption2.weight(.medium))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.label)
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
@@ -364,10 +364,10 @@ private struct VisitsCalendarDayCell: View {
                 Button(role: .destructive) { onTap(date) } label: {
                     Label("Отменить посещение", appIcon: "multiple-cross-cancel-circle")
                 }
-                .font(.caption)
+                .appTypography(.caption)
             } label: {
                 Text("\(d)")
-                    .font(.caption2.weight(.medium))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.label)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
@@ -378,7 +378,7 @@ private struct VisitsCalendarDayCell: View {
                 onTap(date)
             } label: {
                 Text("\(d)")
-                    .font(.caption2.weight(.medium))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.label)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
@@ -387,7 +387,7 @@ private struct VisitsCalendarDayCell: View {
             .buttonStyle(PressableButtonStyle())
         } else {
             Text("\(d)")
-                .font(.caption2.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.label)
         }
     }
@@ -473,14 +473,14 @@ struct DayDetailSheet: View {
                         }
                     } header: {
                         Text("Добавить")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                 }
                 Section {
                     if dayItems.isEmpty {
                         Text("В этот день нет посещений и событий")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(.secondary)
                             .listRowBackground(AppColors.secondarySystemGroupedBackground)
                             .listRowSeparator(.hidden)
@@ -515,7 +515,7 @@ struct DayDetailSheet: View {
                     }
                 } header: {
                     Text("За день")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -571,7 +571,7 @@ struct CalendarUnifiedListBlockView: View {
         Group {
             if items.isEmpty {
                 Text("В выбранном месяце нет посещений и событий")
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, AppDesign.cardPadding)
@@ -637,28 +637,28 @@ private struct EventRowView: View {
                         .frame(width: 28, alignment: .center)
                     HStack(spacing: 4) {
                         Text(dateText)
-                            .font(.subheadline.weight(.medium))
+                            .appTypography(.secondary)
                             .foregroundStyle(.primary)
                         if !isExpanded && !event.isCancelled {
                             Text("·")
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
                             Text(event.title)
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         Spacer(minLength: 4)
                         if event.isCancelled {
                             Text("Событие отменено")
-                                .font(.caption.weight(.semibold))
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.destructive)
                         }
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
                         } label: {
                             AppTablerIcon(isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.accent)
                                 .frame(width: 44, height: 44)
                                 .contentShape(Rectangle())
@@ -684,18 +684,18 @@ private struct EventRowView: View {
                     }
                 } else if !event.isCancelled {
                     AppTablerIcon("chevron-right")
-                        .font(.footnote.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
             if isExpanded {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(event.title)
-                        .font(.subheadline.weight(.medium))
+                        .appTypography(.secondary)
                         .foregroundStyle(.primary)
                     if let desc = event.eventDescription?.trimmingCharacters(in: .whitespacesAndNewlines), !desc.isEmpty {
                         Text(desc)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -752,38 +752,38 @@ struct CoachMembershipRow: View {
                 HStack(spacing: 6) {
                     if let code = membership.displayCode, !code.isEmpty {
                         Text("№\(code)")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.primary)
                     }
                     if membership.kind == .byVisits {
                         Text("\(membership.usedSessions) из \(membership.totalSessions)")
-                            .font(.subheadline.weight(highlight ? .semibold : .regular))
+                            .appTypography(highlight ? .bodyEmphasis : .secondary)
                             .foregroundStyle(.primary)
                     } else if let end = endDateText {
                         Text("До \(end)")
-                            .font(.subheadline.weight(highlight ? .semibold : .regular))
+                            .appTypography(highlight ? .bodyEmphasis : .secondary)
                             .foregroundStyle(.primary)
                     }
                 }
                 HStack(spacing: 6) {
                     if membership.kind == .unlimited {
                         Text("Посещено \(membership.usedSessions)")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                         if membership.freezeDays > 0 {
                             Text("· заморозка \(membership.freezeDays) дн.")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 Text("Создан: \(createdDateText)")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(.tertiary)
             }
             Spacer()
             Text(statusText)
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(statusColor)
         }
         .padding(.vertical, 12)
@@ -1524,17 +1524,17 @@ struct ClientMembershipsNewView: View {
                         HStack(spacing: 20) {
                             Button { if createTotalSessionsCount > minSessions { createTotalSessionsCount -= 1 } } label: {
                                 AppTablerIcon("minus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(createTotalSessionsCount <= minSessions ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(createTotalSessionsCount <= minSessions)
                             Text("\(createTotalSessionsCount)")
-                                .font(.title.weight(.semibold))
+                                .appTypography(.screenTitle)
                                 .monospacedDigit()
                                 .frame(minWidth: 56, alignment: .center)
                             Button { if createTotalSessionsCount < maxSessions { createTotalSessionsCount += 1 } } label: {
                                 AppTablerIcon("plus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(createTotalSessionsCount >= maxSessions ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(createTotalSessionsCount >= maxSessions)
@@ -1557,17 +1557,17 @@ struct ClientMembershipsNewView: View {
                         HStack(spacing: 20) {
                             Button { if createDurationDays > minDays { createDurationDays -= 1 } } label: {
                                 AppTablerIcon("minus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(createDurationDays <= minDays ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(createDurationDays <= minDays)
                             Text("\(createDurationDays)")
-                                .font(.title.weight(.semibold))
+                                .appTypography(.screenTitle)
                                 .monospacedDigit()
                                 .frame(minWidth: 56, alignment: .center)
                             Button { if createDurationDays < maxDays { createDurationDays += 1 } } label: {
                                 AppTablerIcon("plus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(createDurationDays >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(createDurationDays >= maxDays)
@@ -1575,7 +1575,7 @@ struct ClientMembershipsNewView: View {
                         .frame(maxWidth: .infinity)
                     }
                     Text("Абонемент действует до \(createEndDate.formattedRuMedium)")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 6)
@@ -1640,13 +1640,13 @@ struct ClientMembershipsNewView: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(isSelected ? tint : AppColors.accent)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(description)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1774,7 +1774,7 @@ private struct AddVisitDateSheet: View {
                 Button("Добавить") {
                     onSelect(selectedDate)
                 }
-                .font(.body)
+                .appTypography(.body)
                 .fontWeight(.regular)
                 .foregroundStyle(.primary)
             },
@@ -1883,14 +1883,14 @@ struct MembershipVisitsSheet: View {
 
                             VStack(alignment: .leading, spacing: AppDesign.blockSpacing) {
                                 Text("Посещения за \(monthTitle)")
-                                    .font(.subheadline.weight(.semibold))
+                                    .appTypography(.bodyEmphasis)
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 4)
                                     .padding(.top, AppDesign.sectionSpacing)
 
                                 if visitsInSelectedMonth.isEmpty {
                                     Text("В этом месяце нет посещений")
-                                        .font(.subheadline)
+                                        .appTypography(.secondary)
                                         .foregroundStyle(.secondary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.vertical, 16)
@@ -2011,11 +2011,11 @@ private struct CoachVisitRow: View {
                     .frame(width: 28, alignment: .center)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(dateText)
-                        .font(.subheadline.weight(.medium))
+                        .appTypography(.secondary)
                         .foregroundStyle(.primary)
                     if !statusText.isEmpty {
                         Text(statusText)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -2026,7 +2026,7 @@ private struct CoachVisitRow: View {
             HStack(spacing: 6) {
                 if let paymentText, !paymentText.isEmpty {
                     Text(paymentText)
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(paymentColor)
                 }
                 if hasActions {
@@ -2198,7 +2198,7 @@ struct AddEditEventSheet: View {
                                 }
                             }
                             Text("По умолчанию — синий.")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 4)
                         }
@@ -2206,7 +2206,7 @@ struct AddEditEventSheet: View {
                             Toggle("Напомнить о событии", isOn: $remind)
                                 .disabled(true)
                             Text("Напоминания будут доступны в следующей версии.")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 4)
                         }
@@ -2305,14 +2305,14 @@ struct FreezeMembershipSheet: View {
                 SettingsCard(title: "Заморозить абонемент") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Окончание абонемента сдвинется на выбранное количество дней.")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                             .foregroundStyle(.secondary)
                         HStack(spacing: 16) {
                             Button {
                                 if days > minDays { days -= 1 }
                             } label: {
                                 AppTablerIcon("minus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(days <= minDays ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(days <= minDays)
@@ -2323,7 +2323,7 @@ struct FreezeMembershipSheet: View {
                                 if days < maxDays { days += 1 }
                             } label: {
                                 AppTablerIcon("plus-circle")
-                                    .font(.title2)
+                                    .appTypography(.screenTitle)
                                     .foregroundStyle(days >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
                             }
                             .disabled(days >= maxDays)
@@ -2383,7 +2383,7 @@ struct AddMembershipSheet: View {
                         VStack(spacing: 12) {
                             ProgressView()
                             Text("Создаю абонемент…")
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -2418,19 +2418,19 @@ struct AddMembershipSheet: View {
                                                     if totalSessionsCount > minSessions { totalSessionsCount -= 1 }
                                                 } label: {
                                                     AppTablerIcon("minus-circle")
-                                                        .font(.title2)
+                                                        .appTypography(.screenTitle)
                                                         .foregroundStyle(totalSessionsCount <= minSessions ? AppColors.secondaryLabel : AppColors.accent)
                                                 }
                                                 .disabled(totalSessionsCount <= minSessions)
                                                 Text("\(totalSessionsCount)")
-                                                    .font(.title.weight(.semibold))
+                                                    .appTypography(.screenTitle)
                                                     .monospacedDigit()
                                                     .frame(minWidth: 56, alignment: .center)
                                                 Button {
                                                     if totalSessionsCount < maxSessions { totalSessionsCount += 1 }
                                                 } label: {
                                                     AppTablerIcon("plus-circle")
-                                                        .font(.title2)
+                                                        .appTypography(.screenTitle)
                                                         .foregroundStyle(totalSessionsCount >= maxSessions ? AppColors.secondaryLabel : AppColors.accent)
                                                 }
                                                 .disabled(totalSessionsCount >= maxSessions)
@@ -2457,19 +2457,19 @@ struct AddMembershipSheet: View {
                                                         if durationDays > minDays { durationDays -= 1 }
                                                     } label: {
                                                         AppTablerIcon("minus-circle")
-                                                            .font(.title2)
+                                                            .appTypography(.screenTitle)
                                                             .foregroundStyle(durationDays <= minDays ? AppColors.secondaryLabel : AppColors.accent)
                                                     }
                                                     .disabled(durationDays <= minDays)
                                                     Text("\(durationDays)")
-                                                        .font(.title.weight(.semibold))
+                                                        .appTypography(.screenTitle)
                                                         .monospacedDigit()
                                                         .frame(minWidth: 56, alignment: .center)
                                                     Button {
                                                         if durationDays < maxDays { durationDays += 1 }
                                                     } label: {
                                                         AppTablerIcon("plus-circle")
-                                                            .font(.title2)
+                                                            .appTypography(.screenTitle)
                                                             .foregroundStyle(durationDays >= maxDays ? AppColors.secondaryLabel : AppColors.accent)
                                                     }
                                                     .disabled(durationDays >= maxDays)
@@ -2477,7 +2477,7 @@ struct AddMembershipSheet: View {
                                                 .frame(maxWidth: .infinity)
                                             }
                                             Text("Абонемент действует до \(endDate.formattedRuMedium)")
-                                                .font(.caption)
+                                                .appTypography(.caption)
                                                 .foregroundStyle(.secondary)
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                                 .padding(.top, 6)
@@ -2535,13 +2535,13 @@ struct AddMembershipSheet: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title2)
+                    .appTypography(.screenTitle)
                     .foregroundStyle(isSelected ? tint : AppColors.accent)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.primary)
                 Text(description)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

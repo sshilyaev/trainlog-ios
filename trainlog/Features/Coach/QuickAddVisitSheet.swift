@@ -199,13 +199,13 @@ struct QuickAddVisitSheet: View {
                         Toggle(oneOffPaid ? "Оплачено" : "В долг", isOn: $oneOffPaid)
                         if !oneOffPaid {
                             Text("Занятие будет помечено как долг. Позже можно списать с абонемента в календаре.")
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     } else {
                         if activeMemberships.isEmpty {
                             Text("Нет активных абонементов")
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
                         } else {
                             ForEach(activeMemberships) { m in
@@ -217,15 +217,15 @@ struct QuickAddVisitSheet: View {
                                             .foregroundStyle(selectedMembershipId == m.id ? Color.accentColor : .secondary)
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(m.displayCode.map { "Абонемент №\($0)" } ?? "Абонемент")
-                                                .font(.subheadline.weight(.medium))
+                                                .appTypography(.secondary)
                                                 .foregroundStyle(.primary)
                                             if m.kind == .byVisits {
                                                 Text("Осталось \(m.remainingSessions) занятий")
-                                                    .font(.caption)
+                                                    .appTypography(.caption)
                                                     .foregroundStyle(.secondary)
                                             } else if let end = m.effectiveEndDate {
                                                 Text("до \(end.formattedRuDayMonth)")
-                                                    .font(.caption)
+                                                    .appTypography(.caption)
                                                     .foregroundStyle(.secondary)
                                             }
                                         }
@@ -247,7 +247,7 @@ struct QuickAddVisitSheet: View {
                     Toggle(oneOffPaid ? "Оплачено" : "В долг", isOn: $oneOffPaid)
                     if !oneOffPaid {
                         Text("Занятие будет помечено как долг. Позже можно списать с абонемента в календаре.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }

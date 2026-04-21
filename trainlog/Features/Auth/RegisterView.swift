@@ -25,7 +25,7 @@ struct RegisterView: View {
 
                     VStack(spacing: AppDesign.sectionSpacing) {
                         Text("Регистрация")
-                            .font(.title.bold())
+                            .appTypography(.screenTitle)
 
                         profileTypePicker
 
@@ -54,7 +54,7 @@ struct RegisterView: View {
                         )
 
                         Button("Уже есть аккаунт? Войти", action: onBack)
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                     }
                     .padding(.horizontal, 24)
                     .frame(maxWidth: 400)
@@ -145,13 +145,13 @@ struct RegisterView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 AppTablerIcon(icon)
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                     .foregroundStyle(isSelected ? .white : AppColors.accent)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(isSelected ? .white : .primary)
                 Text(description)
-                    .font(.caption2)
+                    .appTypography(.caption)
                     .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

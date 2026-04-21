@@ -81,19 +81,19 @@ struct ProgressHubView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 AppTablerIcon(icon)
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.accent)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(title)
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Text(value)
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.label)
                 }
             }
             Text(hint)
-                .font(.caption2)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .lineLimit(2)
         }

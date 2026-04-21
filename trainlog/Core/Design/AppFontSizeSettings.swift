@@ -3,8 +3,8 @@ import SwiftUI
 enum AppFontSizeStepStorage {
     static let appStorageKey = "appFontSizeStep"
 
-    /// 0...2, значение сохраняется в UserDefaults.
-    static func clamp(_ raw: Int) -> Int { min(max(raw, 0), 2) }
+    /// 0...1, значение сохраняется в UserDefaults.
+    static func clamp(_ raw: Int) -> Int { min(max(raw, 0), 1) }
 }
 
 /// Дополнительные пункты к фиксированным размерам (иконки, кастомные system(size:)).
@@ -23,7 +23,7 @@ private struct AppFontExtraPointsKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// Доп. pt к фиксированным шрифтам и иконкам: 0 / 2 / 4
+    /// Доп. pt к фиксированным шрифтам и иконкам: 0 / 2
     var appFontExtraPoints: CGFloat {
         get { self[AppFontExtraPointsKey.self] }
         set { self[AppFontExtraPointsKey.self] = newValue }

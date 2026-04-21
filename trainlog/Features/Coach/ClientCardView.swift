@@ -253,7 +253,7 @@ struct ClientCardView: View {
                                             .foregroundStyle(.secondary)
                                             .frame(width: 28, alignment: .center)
                                         Text(notes)
-                                            .font(.subheadline)
+                                            .appTypography(.secondary)
                                             .foregroundStyle(.secondary)
                                             .multilineTextAlignment(.leading)
                                             .lineLimit(nil)
@@ -479,7 +479,7 @@ struct ClientCardView: View {
                                 .tint(AppColors.white)
                                 .scaleEffect(1.1)
                             Text("Обновляю…")
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(AppColors.white)
                         }
                     }
@@ -854,7 +854,7 @@ private struct MergeManagedTraineeSheet: View {
                                     AppTablerIcon("copy-default")
                                     Text("Вставить из буфера")
                                 }
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -862,7 +862,7 @@ private struct MergeManagedTraineeSheet: View {
 
                             if let msg = errorMessage, !msg.isEmpty {
                                 Text(msg)
-                                    .font(.footnote)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.destructive)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -1272,7 +1272,7 @@ private struct ClientCardVisitsBlock: View {
                                 .tint(AppColors.white)
                                 .scaleEffect(1.1)
                             Text(isSavingVisit ? "Сохраняю…" : "Обновляю…")
-                                .font(.subheadline)
+                                .appTypography(.secondary)
                                 .foregroundStyle(AppColors.white)
                         }
                     }
@@ -1302,7 +1302,7 @@ private struct ClientCardContactRow: View {
                         Text(value)
                             .foregroundStyle(.secondary)
                         AppTablerIcon("upload-up")
-                            .font(.footnote)
+                            .appTypography(.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding(.horizontal, AppDesign.cardPadding)

@@ -76,20 +76,20 @@ struct HeroCard<FooterContent: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                     .foregroundStyle(accent)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.secondary)
             }
 
             Text(headline)
-                .font(.title2.weight(.bold))
+                .appTypography(.screenTitle)
                 .foregroundStyle(.primary)
 
             if !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(description)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(.secondary)
             }
 
@@ -177,12 +177,12 @@ struct ContentCard<Content: View>: View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.headline.weight(.semibold))
+                    .appTypography(.sectionTitle)
                     .foregroundStyle(AppColors.label)
 
                 if !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(description)
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
             }

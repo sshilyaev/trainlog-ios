@@ -78,7 +78,7 @@ struct SupportProjectView: View {
     private var heroCard: some View {
         SupportMiniGameHeroIntro {
             Text("Это игровая механика поддержки проекта, а не медицинская рекомендация.")
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -101,7 +101,7 @@ struct SupportProjectView: View {
     private var interruptedLoadHint: some View {
         VStack(spacing: 14) {
             Text("Потяните экран вниз, чтобы обновить данные.")
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .multilineTextAlignment(.center)
             Button("Повторить загрузку") {
@@ -119,10 +119,10 @@ struct SupportProjectView: View {
                 .appIcon(.s44)
                 .foregroundStyle(AppColors.accent.opacity(0.9))
             Text("Не удалось загрузить кампанию")
-                .font(.headline.weight(.semibold))
+                .appTypography(.sectionTitle)
                 .multilineTextAlignment(.center)
             Text(message)
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .multilineTextAlignment(.center)
             Button("Повторить") {
@@ -140,14 +140,14 @@ struct SupportProjectView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Ваш виртуальный подопечный")
-                    .font(.caption2.weight(.bold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.accent)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(AppColors.accent.opacity(0.14), in: Capsule())
                 Spacer()
                 Text("#\(shortCampaignId(campaign.id))")
-                    .font(.caption2.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.tertiaryLabel)
             }
 
@@ -180,15 +180,15 @@ struct SupportProjectView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(questHeadline(campaign))
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     if campaign.status != .completed {
                         Text("До финиша: \(remainingToGoalLabel(campaign))")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     } else {
                         Text("Цель выполнена — можно взять новый квест.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                 }
@@ -198,7 +198,7 @@ struct SupportProjectView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Прогресс квеста")
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Spacer()
                     Text("\(Int(round(campaign.progressFraction * 100)))%")
@@ -254,12 +254,12 @@ struct SupportProjectView: View {
         HStack(alignment: .top, spacing: 10) {
             AppTablerIcon("circle-check")
                 .foregroundStyle(AppColors.accent)
-                .font(.title3)
+                .appTypography(.numericMetric)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Квест пройден")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                 Text("Подопечный дошёл до цели. Ниже выберите тип нового квеста.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
         }
@@ -271,10 +271,10 @@ struct SupportProjectView: View {
     private func weightChip(title: String, value: Double, isHighlight: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption2.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
             Text("\(value.formattedOneDecimal) кг")
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(isHighlight ? AppColors.accent : AppColors.label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -293,12 +293,12 @@ struct SupportProjectView: View {
             VStack(spacing: 5) {
                 HStack(spacing: 10) {
                     AppTablerIcon("sparkles")
-                        .font(.title3)
+                        .appTypography(.numericMetric)
                     Text(isClaimingReward ? "Проверяем…" : "Следующий ход")
-                        .font(.headline.weight(.bold))
+                        .appTypography(.sectionTitle)
                 }
                 Text("Короткий ролик — только по вашему выбору")
-                    .font(.caption.weight(.medium))
+                    .appTypography(.caption)
                     .foregroundStyle(Color.white.opacity(0.92))
             }
             .foregroundStyle(Color.white)
@@ -322,7 +322,7 @@ struct SupportProjectView: View {
     private var newQuestControls: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Новый квест")
-                .font(.caption.weight(.semibold))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .padding(.horizontal, AppDesign.cardPadding)
 
@@ -343,7 +343,7 @@ struct SupportProjectView: View {
                                 .scaleEffect(0.9)
                         }
                         Text(isCreatingCampaign ? "Создаём квест…" : "Начать новый квест")
-                            .font(.headline.weight(.semibold))
+                            .appTypography(.sectionTitle)
                     }
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -381,11 +381,11 @@ struct SupportProjectView: View {
     private func statBlock(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption2)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
                 .fixedSize(horizontal: false, vertical: true)
             Text(value)
-                .font(.subheadline.weight(.bold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
@@ -403,10 +403,10 @@ struct SupportProjectView: View {
                     .frame(width: 28, alignment: .center)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Архив квестов")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Text(historySubtitle(for: items))
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -515,19 +515,19 @@ private struct SupportMiniGameHeroIntro<Footer: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 AppTablerIcon("currency-rubel")
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                     .foregroundStyle(accent)
                 Text("Поддержка TrainLog")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(.secondary)
             }
 
             Text("Мини-игра с пользой")
-                .font(.title2.weight(.bold))
+                .appTypography(.screenTitle)
                 .foregroundStyle(.primary)
 
             Text("Смотрите рекламу только по желанию и помогайте виртуальным клиентам достигать цели.")
-                .font(.subheadline)
+                .appTypography(.secondary)
                 .foregroundStyle(.secondary)
 
             footer()

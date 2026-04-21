@@ -50,7 +50,7 @@ struct AddMeasurementOrGoalSheet: View {
                         ProgressView().scaleEffect(0.9)
                     } else {
                         Text("Сохранить")
-                            .font(.body)
+                            .appTypography(.body)
                             .fontWeight(.regular)
                     }
                 }

@@ -106,7 +106,7 @@ struct AddEditPersonalRecordSheet: View {
                         goPreviousStep()
                     } label: {
                         AppTablerIcon("chevron-left")
-                            .font(.subheadline.weight(.bold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(canGoBack ? AppColors.accent : AppColors.tertiaryLabel)
                             .frame(width: 28, height: 28)
                             .background(
@@ -117,7 +117,7 @@ struct AddEditPersonalRecordSheet: View {
                     .disabled(!canGoBack)
 
                     Text("Шаг \(currentStep.index + 1) из \(RecordFormStep.allCases.count)")
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Spacer()
                 }
@@ -129,7 +129,7 @@ struct AddEditPersonalRecordSheet: View {
                                 .fill(step.index <= currentStep.index ? AppColors.accent : AppColors.tertiarySystemFill)
                                 .frame(height: 6)
                             Text("\(step.index + 1)")
-                                .font(.caption2.weight(.semibold))
+                                .appTypography(.caption)
                                 .foregroundStyle(step == currentStep ? AppColors.accent : AppColors.secondaryLabel)
                         }
                         .frame(maxWidth: .infinity)
@@ -137,10 +137,10 @@ struct AddEditPersonalRecordSheet: View {
                 }
 
                 Text(currentStep.title)
-                    .font(.headline)
+                    .appTypography(.sectionTitle)
                     .foregroundStyle(AppColors.label)
                 Text(currentStep.subtitle)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
         }
@@ -163,12 +163,12 @@ struct AddEditPersonalRecordSheet: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(selectedExerciseTitle)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                         .lineLimit(1)
                     Spacer()
                     Text(sourceType == .catalog ? "Каталог" : "Свое")
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -180,7 +180,7 @@ struct AddEditPersonalRecordSheet: View {
                         AppTablerIcon("calendar-default")
                             .foregroundStyle(AppColors.secondaryLabel)
                         Text(recordDate.formattedRuShort)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
 
@@ -188,7 +188,7 @@ struct AddEditPersonalRecordSheet: View {
                         Text("·")
                             .foregroundStyle(AppColors.tertiaryLabel)
                         Text(metricsSummary)
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                             .lineLimit(1)
                     }
@@ -255,7 +255,7 @@ struct AddEditPersonalRecordSheet: View {
         SettingsCard(title: "1. Упражнение") {
             VStack(spacing: 0) {
                 Text("Сначала выберите упражнение. Показатели подставятся автоматически, их можно поменять ниже.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 10)
@@ -276,7 +276,7 @@ struct AddEditPersonalRecordSheet: View {
                                 ProgressView()
                                     .scaleEffect(0.85)
                                 Text("Загружаю…")
-                                    .font(.caption)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -311,7 +311,7 @@ struct AddEditPersonalRecordSheet: View {
         SettingsCard(title: "Дополнительно") {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Необязательно: уточнение вида нагрузки или подхода.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 10)
@@ -331,7 +331,7 @@ struct AddEditPersonalRecordSheet: View {
         SettingsCard(title: "2. Показатели") {
             VStack(spacing: 0) {
                 Text("Укажите, что именно хотите зафиксировать. Для каждого показателя есть значение и единица измерения.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 10)
@@ -380,7 +380,7 @@ struct AddEditPersonalRecordSheet: View {
         SettingsCard(title: "3. Комментарий") {
             VStack(spacing: 0) {
                 Text("Опционально: контекст попытки, техника, самочувствие.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 10)

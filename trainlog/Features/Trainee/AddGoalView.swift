@@ -208,13 +208,13 @@ struct AddGoalView: View {
     private func topInfoBlock(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             AppTablerIcon(icon)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.accent)
                 .frame(width: 22, height: 22)
                 .background(AppColors.accent.opacity(0.16), in: Circle())
 
             Text(text)
-                .font(.footnote.weight(.medium))
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.label)
                 .multilineTextAlignment(.leading)
 

@@ -37,17 +37,17 @@ struct MeasurementGuideView: View {
         SettingsCard(title: nil) {
             HStack(alignment: .top, spacing: 12) {
                 AppTablerIcon(icon)
-                    .font(.body.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(AppColors.accent)
                     .frame(width: 28, height: 28)
                     .background(AppColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.subheadline.weight(.semibold))
+                        .appTypography(.bodyEmphasis)
                         .foregroundStyle(AppColors.label)
                     Text(subtitle)
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                 }
                 Spacer(minLength: 0)

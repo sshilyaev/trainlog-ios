@@ -24,7 +24,7 @@ struct HealthMetricsView: View {
                 if isDemoMode {
                     SettingsCard(title: "Режим данных") {
                         Text("Включён демо-режим. Кнопка «Обновить» каждый раз подгружает новый набор выдуманных данных.")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                 }
@@ -57,9 +57,9 @@ struct HealthMetricsView: View {
         } label: {
             HStack(spacing: 10) {
                 AppTablerIcon("arrow-refresh-horizontal")
-                    .font(.title3)
+                    .appTypography(.numericMetric)
                 Text("Обновить")
-                    .font(.headline.weight(.semibold))
+                    .appTypography(.sectionTitle)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -168,12 +168,12 @@ struct HealthMetricsView: View {
                     )
                     VStack(spacing: 3) {
                         Text("Сегодня")
-                            .font(.caption)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                         Text("\(stepsToday)")
-                            .font(.title3.weight(.bold))
+                            .appTypography(.numericMetric)
                         Text("шагов")
-                            .font(.caption2)
+                            .appTypography(.caption)
                             .foregroundStyle(AppColors.secondaryLabel)
                     }
                 }
@@ -240,13 +240,13 @@ struct HealthMetricsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 AppTablerIcon(icon)
-                    .font(.caption.weight(.bold))
+                    .appTypography(.caption)
                 Text(title)
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.secondaryLabel)
             }
             Text(value)
-                .font(.headline.weight(.semibold))
+                .appTypography(.sectionTitle)
                 .foregroundStyle(AppColors.label)
         }
         .padding(12)
@@ -272,11 +272,11 @@ struct HealthMetricsView: View {
                 }
                 HStack {
                     Text("Среднее шагов: \(avgSteps)")
-                        .font(.caption)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.secondaryLabel)
                     Spacer()
                     Text("Активных дней: \(activeDays)/7")
-                        .font(.caption.weight(.semibold))
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.label)
                 }
 
@@ -288,10 +288,10 @@ struct HealthMetricsView: View {
                                 .fill(AppColors.genderMale.opacity(0.9))
                                 .frame(height: 8 + (38 * normalized * ringReveal))
                             Text(day.steps >= 10000 ? "\(day.steps / 1000)k" : "\(day.steps / 1000).\(max((day.steps % 1000) / 100, 0))k")
-                                .font(.caption2.weight(.semibold))
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.secondaryLabel)
                             Text(shortDayLabel(day.date))
-                                .font(.caption2.weight(.medium))
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.tertiaryLabel)
                         }
                         .frame(maxWidth: .infinity)
@@ -338,16 +338,16 @@ struct HealthMetricsView: View {
         return VStack(spacing: 6) {
             HStack(spacing: 8) {
                 AppTablerIcon(icon)
-                    .font(.caption.weight(.bold))
+                    .appTypography(.caption)
                     .foregroundStyle(tint)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                 Spacer()
                 AppTablerIcon(trend > 0 ? "arrow.up.right" : (trend < 0 ? "arrow.down.right" : "minus"))
-                    .font(.caption.weight(.bold))
+                    .appTypography(.caption)
                     .foregroundStyle(trendColor)
                 Text("\(sign)\(Int(trend.rounded()))%")
-                    .font(.subheadline.weight(.semibold))
+                    .appTypography(.bodyEmphasis)
                     .foregroundStyle(trendColor)
             }
             GeometryReader { proxy in
@@ -388,11 +388,11 @@ struct HealthMetricsView: View {
                     .fill(color)
                     .frame(width: 8, height: 8)
                 Text(title)
-                    .font(.caption.weight(.semibold))
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.label)
             }
             Text(subtitle)
-                .font(.caption2)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -401,10 +401,10 @@ struct HealthMetricsView: View {
     private func miniKpi(title: String, value: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption)
+                .appTypography(.caption)
                 .foregroundStyle(AppColors.secondaryLabel)
             Text(value)
-                .font(.subheadline.weight(.semibold))
+                .appTypography(.bodyEmphasis)
                 .foregroundStyle(AppColors.label)
         }
         .padding(.horizontal, 10)
@@ -431,13 +431,13 @@ struct HealthMetricsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
                     AppTablerIcon(icon)
-                        .font(.headline.weight(.semibold))
+                        .appTypography(.sectionTitle)
                         .foregroundStyle(AppColors.accent)
                     Text(title)
-                        .font(.headline)
+                        .appTypography(.sectionTitle)
                 }
                 Text(description)
-                    .font(.subheadline)
+                    .appTypography(.secondary)
                     .foregroundStyle(AppColors.secondaryLabel)
                 if let actionTitle, let action {
                     MainActionButton(title: actionTitle, action: action)

@@ -23,12 +23,12 @@ struct SupportCampaignHistoryView: View {
                                     .frame(width: 24, alignment: .center)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.goalType == .loseWeight ? "Снижение веса" : "Набор веса")
-                                        .font(.subheadline.weight(.semibold))
+                                        .appTypography(.bodyEmphasis)
                                     Text("\(item.startWeightKg.formattedOneDecimal) → \(item.targetWeightKg.formattedOneDecimal) кг")
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.secondaryLabel)
                                     Text(item.createdAt.formattedRuDayMonth)
-                                        .font(.caption2)
+                                        .appTypography(.caption)
                                         .foregroundStyle(AppColors.tertiaryLabel)
                                 }
                                 Spacer(minLength: 0)

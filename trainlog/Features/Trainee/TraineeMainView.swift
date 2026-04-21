@@ -127,7 +127,7 @@ struct TraineeMainView: View {
                             ProgressView().scaleEffect(0.9)
                         } else {
                             Text("Сохранить")
-                                .font(.body)
+                                .appTypography(.body)
                                 .fontWeight(.regular)
                         }
                     }
@@ -165,7 +165,7 @@ struct TraineeMainView: View {
                             ProgressView().scaleEffect(0.9)
                         } else {
                             Text("Сохранить")
-                                .font(.body)
+                                .appTypography(.body)
                                 .fontWeight(.regular)
                         }
                     }
@@ -377,7 +377,7 @@ struct TraineeMainView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: onSwitchProfile) {
                         AppTablerIcon("replace-user")
-                            .font(.subheadline)
+                            .appTypography(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
                     .frame(minWidth: AppDesign.minTouchTarget, minHeight: AppDesign.minTouchTarget)
@@ -387,7 +387,7 @@ struct TraineeMainView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showEditProfile = true } label: {
                         AppTablerIcon("pencil-edit")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(PressableButtonStyle())
@@ -435,14 +435,14 @@ struct TraineeMainView: View {
                     showEditProfile = true
                 } label: {
                     Text(profile.name)
-                        .font(.title3.weight(.semibold))
+                        .appTypography(.numericMetric)
                         .foregroundStyle(.primary)
                 }
                 .buttonStyle(PressableButtonStyle())
 
                 if let age = profile.ageFormatted, !age.isEmpty {
                     Text(age)
-                        .font(.subheadline)
+                        .appTypography(.secondary)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -477,11 +477,11 @@ struct TraineeMainView: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Занятия с тренером")
-                            .font(.subheadline.weight(.semibold))
+                            .appTypography(.bodyEmphasis)
                             .foregroundStyle(.primary)
                         if coachProfiles.isEmpty {
                             Text(profileCoachSubtitle)
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
                         } else {
@@ -489,13 +489,13 @@ struct TraineeMainView: View {
                                 ForEach(Array(coachProfiles.prefix(2).enumerated()), id: \.offset) { _, coach in
                                     let gym = coach.gymName?.trimmingCharacters(in: .whitespacesAndNewlines)
                                     Text([coach.name, (gym?.isEmpty == false ? gym : nil)].compactMap { $0 }.joined(separator: " · "))
-                                        .font(.caption)
+                                        .appTypography(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
                                 if coachLinks.count > 2 {
                                     Text("И ещё \(coachLinks.count - 2) тренера(ов)")
-                                        .font(.caption2)
+                                        .appTypography(.caption)
                                         .foregroundStyle(.tertiary)
                                 }
                             }
@@ -504,7 +504,7 @@ struct TraineeMainView: View {
                     Spacer()
                     if coachLinks.count > 1 {
                         Text("+\(coachLinks.count - 1)")
-                            .font(.caption2.weight(.semibold))
+                            .appTypography(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 6)
@@ -575,13 +575,13 @@ struct TraineeMainView: View {
                             MembershipProgressInlineView(membership: m, tint: AppColors.accent)
                             if activeMembershipsCount > 1 {
                                 Text("и ещё \(activeMembershipsCount - 1)")
-                                    .font(.caption2)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.tertiaryLabel)
                                     .lineLimit(1)
                             }
                         } else if let s = membershipsSummary, !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             Text(s)
-                                .font(.caption)
+                                .appTypography(.caption)
                                 .foregroundStyle(AppColors.secondaryLabel)
                                 .lineLimit(1)
                         }

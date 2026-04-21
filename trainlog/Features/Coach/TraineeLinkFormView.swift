@@ -29,7 +29,7 @@ struct TraineeLinkFormView: View {
 
                 if let msg = errorMessage, !msg.isEmpty {
                     Text(msg)
-                        .font(.footnote)
+                        .appTypography(.caption)
                         .foregroundStyle(AppColors.destructive)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, AppDesign.cardPadding)

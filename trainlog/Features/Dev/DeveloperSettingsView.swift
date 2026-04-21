@@ -20,10 +20,10 @@ struct DeveloperSettingsView: View {
                         Toggle(isOn: $healthDemoModeEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Демо-данные Apple Health")
-                                    .font(.subheadline.weight(.medium))
+                                    .appTypography(.secondary)
                                     .foregroundStyle(.primary)
                                 Text("На экране «Мои замеры» блок Apple Health покажет выдуманные данные вместо реальных.")
-                                    .font(.caption)
+                                    .appTypography(.caption)
                                     .foregroundStyle(AppColors.secondaryLabel)
                             }
                         }
@@ -51,7 +51,7 @@ struct DeveloperSettingsView: View {
                 .padding(.top, AppDesign.blockSpacing)
 
                 Text("В будущем здесь появятся другие переключатели и функции для разработки.")
-                    .font(.caption)
+                    .appTypography(.caption)
                     .foregroundStyle(AppColors.tertiaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, AppDesign.cardPadding)

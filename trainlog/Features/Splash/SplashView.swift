@@ -165,18 +165,18 @@ struct SplashView: View {
             Spacer(minLength: 0)
             VStack(spacing: 10) {
                 Text("TrainLog")
-                    .font(.largeTitle.weight(.bold))
+                    .appTypography(.screenTitle)
                     .foregroundStyle(Color.white)
                     .opacity(titleOpacity)
                     .offset(y: titleOffset)
 
                 Text("Дневник тренировок")
-                    .font(.subheadline.weight(.medium))
+                    .appTypography(.secondary)
                     .foregroundStyle(Color.white.opacity(0.9))
                     .opacity(taglineOpacity)
 
                 Text(Self.phraseForThisLaunch)
-                    .font(.caption.weight(.medium))
+                    .appTypography(.caption)
                     .foregroundStyle(Color.white.opacity(0.78))
                     .opacity(phraseOpacity)
                     .multilineTextAlignment(.center)
