@@ -140,12 +140,30 @@ struct SegmentedPicker<T: Hashable, Label: StringProtocol>: View {
                     .foregroundStyle(.secondary)
             }
 
-            Picker(title, selection: $selection) {
+            HStack(spacing: 6) {
                 ForEach(0..<options.count, id: \.self) { i in
-                    Text(String(options[i].1)).tag(options[i].0)
+                    let option = options[i]
+                    Button {
+                        selection = option.0
+                    } label: {
+                        Text(String(option.1))
+                            .appTypography(.secondary)
+                            .foregroundStyle(selection == option.0 ? AppColors.white : AppColors.label)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.9)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 34)
+                            .padding(.horizontal, 8)
+                            .background(
+                                selection == option.0 ? AppColors.accent : AppColors.tertiarySystemFill,
+                                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .pickerStyle(.segmented)
+            .padding(4)
+            .background(AppColors.tertiarySystemFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 }

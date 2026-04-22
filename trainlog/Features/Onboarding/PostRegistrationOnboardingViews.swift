@@ -17,30 +17,11 @@ struct CoachPostRegistrationOnboardingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(
-                                LinearGradient(
-                                    colors: [AppColors.accent.opacity(0.22), AppColors.accent.opacity(0.06)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(height: 120)
-                        HStack(spacing: 20) {
-                            coachVisualPillar(icon: "user-default", caption: "Клиент")
-                            coachVisualPillar(icon: "calendar-filled", caption: "График")
-                            coachVisualPillar(icon: "tag", caption: "Абонемент")
-                        }
-                    }
-                    .padding(.horizontal, AppDesign.cardPadding)
-                    .padding(.top, 8)
-
-                    AppTablerIcon("user-default")
-                        .appIcon(.s56)
-                        .foregroundStyle(AppColors.accent)
-                        .symbolRenderingMode(.hierarchical)
-                        .padding(.top, 4)
+                    Image("CoachWelcomeIllustration")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 320)
+                        .padding(.top, 8)
 
                     Text("Первый шаг — клиент в списке")
                         .appTypography(.numericMetric)
@@ -56,15 +37,15 @@ struct CoachPostRegistrationOnboardingView: View {
                         .lineSpacing(3)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        featureRow(icon: "token", title: "По коду", subtitle: "Клиент открывает дневник → «Подключить по коду» → вы вводите код — готово.")
-                        featureRow(icon: "plus-square", title: "Вручную", subtitle: "Клиент без приложения — создайте профиль и ведите учёт сами, потом можно объединить.")
-                        featureRow(icon: "chart-area-line", title: "Дальше", subtitle: "Сразу после добавления настроим абонемент — так удобнее отмечать занятия.")
+                        featureRow(icon: "users-group", title: "Добавлять подопечных", subtitle: "Подключайте клиентов по коду или создавайте профиль вручную.")
+                        featureRow(icon: "calendar-check", title: "Вести посещения и абонементы", subtitle: "Отмечайте тренировки, контролируйте остатки и сроки абонементов.")
+                        featureRow(icon: "chart-line", title: "Отслеживать прогресс", subtitle: "Смотрите динамику замеров и активности по каждому подопечному.")
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
 
                     Spacer(minLength: 16)
 
-                    CTAButton(title: "Добавить подопечного", action: onAddTrainee)
+                    OfferCTAButton(title: "Добавить подопечного", action: onAddTrainee)
 
                     Button(action: onSkip) {
                         Text("Сначала осмотрю приложение")
@@ -78,19 +59,6 @@ struct CoachPostRegistrationOnboardingView: View {
             .background(AdaptiveScreenBackground())
             .navigationTitle("Добро пожаловать, \(userName)")
             .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private func coachVisualPillar(icon: String, caption: String) -> some View {
-        VStack(spacing: 8) {
-            AppTablerIcon(icon)
-                .appIcon(.s28)
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 52, height: 52)
-                .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: Circle())
-            Text(caption)
-                .appTypography(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
         }
     }
 
@@ -128,16 +96,11 @@ struct TraineePostRegistrationOnboardingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    traineeProgressVisualStrip
-                        .padding(.horizontal, AppDesign.cardPadding)
+                    Image("TraineeWelcomeIllustration")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 300)
                         .padding(.top, 8)
-
-                    AppTablerIcon("note.text")
-                        .appIcon(.s56)
-                        .foregroundStyle(AppColors.accent)
-                        .symbolRenderingMode(.hierarchical)
-                        .frame(width: 88, height: 88)
-                        .background(AppColors.secondarySystemGroupedBackground, in: Circle())
 
                     Text("Заполните дневник за 2 минуты")
                         .appTypography(.numericMetric)
@@ -155,15 +118,15 @@ struct TraineePostRegistrationOnboardingView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         featureRow(icon: "pencil-scale", title: "Замеры и цели", subtitle: "Один шаг — графики и прогресс сразу осмысленные.")
                         featureRow(icon: "award-medal", title: "Достижения", subtitle: "Личные рекорды по упражнениям — видно, куда вы растёте.")
-                        featureRow(icon: "chart-area-line", title: "Всё на вкладке «Прогресс»", subtitle: "Потом можно дополнять в любой момент.")
+                        featureRow(icon: "calendar-event", title: "График тренировок", subtitle: "Отслеживайте расписание и отмечайте выполненные тренировки в календаре.")
                     }
                     .padding(.horizontal, AppDesign.cardPadding)
 
                     Spacer(minLength: 16)
 
                     VStack(spacing: 10) {
-                        CTAButton(title: "Замеры и цели", action: onAddMeasurementsGoals)
-                        CTAButton(title: "Добавить достижение", action: onAddAchievement)
+                        OfferCTAButton(title: "Замеры и цели", action: onAddMeasurementsGoals)
+                        OfferCTAButton(title: "Добавить достижение", action: onAddAchievement)
                     }
 
                     Button(action: onSkip) {
@@ -179,54 +142,6 @@ struct TraineePostRegistrationOnboardingView: View {
             .navigationTitle("Добро пожаловать, \(userName)")
             .navigationBarTitleDisplayMode(.inline)
         }
-    }
-
-    private var traineeProgressVisualStrip: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                AppTablerIcon("chart-area-line")
-                    .appTypography(.caption)
-                    .foregroundStyle(AppColors.accent)
-                Text("Как будет считаться прогресс")
-                    .appTypography(.caption)
-                    .foregroundStyle(AppColors.secondaryLabel)
-            }
-
-            HStack(spacing: 0) {
-                stripSegment(
-                    color: AppColors.accent.opacity(0.85),
-                    height: 44,
-                    title: "Старт"
-                )
-                stripSegment(
-                    color: AppColors.visitsOneTimePaid.opacity(0.9),
-                    height: 30,
-                    title: "Цель"
-                )
-                stripSegment(
-                    color: AppColors.visitsBySubscription.opacity(0.85),
-                    height: 36,
-                    title: "Результат"
-                )
-            }
-            .frame(height: 48)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 10)
-        .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func stripSegment(color: Color, height: CGFloat, title: String) -> some View {
-        VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(color)
-                .frame(maxWidth: .infinity)
-                .frame(height: height)
-            Text(title)
-                .appTypography(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-        }
-        .padding(.horizontal, 3)
     }
 
     private func featureRow(icon: String, title: String, subtitle: String) -> some View {
@@ -293,7 +208,7 @@ struct GoalCreatedMeasurementOfferView: View {
 
                     Spacer(minLength: 12)
 
-                    CTAButton(title: "Открыть замеры и цели", action: onAddMeasurement)
+                    OfferCTAButton(title: "Открыть замеры и цели", action: onAddMeasurement)
 
                     Button(action: onSkip) {
                         Text("Позже")

@@ -50,6 +50,7 @@ struct TraineeMainView: View {
     @State private var membershipsSummary: String?
     @State private var primaryActiveMembership: Membership?
     @State private var activeMembershipsCount: Int = 0
+    @State private var totalTrainingsCount: Int = 0
     /// Пока true — блоки «Занятия с тренером» и «Мои абонементы» не показываем, чтобы не было прыжка контента.
     @State private var isProfileBlockDataLoading = true
     @State private var showHealthDetails = false
@@ -309,6 +310,7 @@ struct TraineeMainView: View {
                 coachProfiles: coachProfiles,
                 membershipsCount: membershipsCount,
                 activeMembershipsCount: activeMembershipsCount,
+                totalTrainingsCount: totalTrainingsCount,
                 isLoading: isProfileBlockDataLoading,
                 onOpenProgress: { selectedTab = 1 },
                 onShareWithCoach: { showConnectionTokenSheet = true },
@@ -639,6 +641,7 @@ struct TraineeMainView: View {
         async let links = fetchCoachLinksForProfileBlock()
         async let membershipsInfo = fetchMembershipsInfoForProfileBlock()
         let (loadedLinks, loadedMembershipsInfo) = await (links, membershipsInfo)
+        let loadedTotalTrainings = await fetchTotalTrainingsCountForProfileBlock(links: loadedLinks)
         var loadedProfiles: [Profile] = []
         for link in loadedLinks {
             if let p = try? await profileService.fetchProfile(id: link.coachProfileId) {
@@ -652,8 +655,23 @@ struct TraineeMainView: View {
             membershipsSummary = loadedMembershipsInfo.summary
             primaryActiveMembership = loadedMembershipsInfo.primaryActive
             activeMembershipsCount = loadedMembershipsInfo.activeCount
+            totalTrainingsCount = loadedTotalTrainings
             isProfileBlockDataLoading = false
         }
+    }
+
+    private func fetchTotalTrainingsCountForProfileBlock(links: [CoachTraineeLink]) async -> Int {
+        guard !links.isEmpty else { return 0 }
+        var total = 0
+        for link in links {
+            if let visits = try? await visitService.fetchVisits(
+                coachProfileId: link.coachProfileId,
+                traineeProfileId: profile.id
+            ) {
+                total += visits.filter { $0.status != .cancelled }.count
+            }
+        }
+        return total
     }
 
     private func fetchCoachLinksForProfileBlock() async -> [CoachTraineeLink] {

@@ -49,6 +49,11 @@ final class APIClient {
         self.getIDToken = getIDToken
     }
 
+    /// Очищает runtime-кэш ответов API (вызывать при смене аккаунта).
+    func clearRuntimeCache() async {
+        await responseCache.clearAll()
+    }
+
     private var decoder: JSONDecoder {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .custom { decoder in

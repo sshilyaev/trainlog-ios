@@ -35,6 +35,7 @@ struct RootView: View {
     let coachOverviewService: CoachOverviewServiceProtocol
     let supportCampaignService: SupportCampaignServiceProtocol
     let rewardedAdService: RewardedAdServiceProtocol
+    let onSessionReset: () async -> Void
     private let startupTimeoutSeconds: Double = 15
 
     var body: some View {
@@ -121,7 +122,13 @@ struct RootView: View {
             onCreate: { appState.showCreateProfile() },
             onSignOut: {
                 try? authService.signOut()
-                appState.showAuth()
+                Task {
+                    await onSessionReset()
+                    await MainActor.run {
+                        offlineMode.isOffline = false
+                        appState.showAuth()
+                    }
+                }
             },
             onQuickCreate: { type, gender, name in
                 guard let uid = appState.userId else { return }
@@ -422,6 +429,8 @@ struct RootView: View {
         let startedAt = Date()
         do {
             let list = try await profileService.fetchProfiles(userId: userId)
+            let isStillSameUser = await MainActor.run { appState.userId == userId }
+            guard isStillSameUser else { return }
             if shouldHoldSplash {
                 let elapsed = Date().timeIntervalSince(startedAt)
                 if elapsed < minSplashSeconds {
@@ -433,6 +442,8 @@ struct RootView: View {
                 appState.didLoadProfiles(list)
             }
         } catch {
+            let isStillSameUser = await MainActor.run { appState.userId == userId }
+            guard isStillSameUser else { return }
             if shouldHoldSplash {
                 let elapsed = Date().timeIntervalSince(startedAt)
                 if elapsed < minSplashSeconds {

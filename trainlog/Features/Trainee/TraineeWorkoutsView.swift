@@ -55,6 +55,18 @@ struct TraineeWorkoutsView: View {
             .sorted { $0.date > $1.date }
     }
 
+    private var monthSummaryTotalVisits: Int {
+        visitsInSelectedMonth.filter { $0.status != .cancelled }.count
+    }
+
+    private var monthSummaryEvents: Int {
+        eventsInSelectedMonth.filter { !$0.isCancelled }.count
+    }
+
+    private var monthSummaryRangeCaption: String {
+        selectedMonth.formattedRuMonthYear
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -63,6 +75,7 @@ struct TraineeWorkoutsView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
+                            monthSummarySection
                             calendarBlock
                             CalendarUnifiedListBlockView(
                                         items: calendarItemsInSelectedMonth,
@@ -170,6 +183,58 @@ struct TraineeWorkoutsView: View {
                 .mainSheetPresentation(.half)
             }
         }
+    }
+
+    @ViewBuilder
+    private var monthSummarySection: some View {
+        HeroCard(
+            icon: "calendar.badge.checkmark",
+            title: "Сводка за месяц",
+            headline: monthSummaryRangeCaption,
+            description: "Краткая активность в вашем дневнике за выбранный месяц.",
+            accent: AppColors.profileAccent,
+            decoration: .glow
+        ) {
+            MetricRowLarge(
+                items: [
+                    InfoValueItem(
+                        title: "Посещений",
+                        value: "\(monthSummaryTotalVisits)",
+                        accentColor: AppColors.visitsBySubscription
+                    ),
+                    InfoValueItem(
+                        title: "Событий",
+                        value: "\(monthSummaryEvents)",
+                        accentColor: EventColor.defaultColor
+                    ),
+                    InfoValueItem(
+                        title: "Всего",
+                        value: "\(monthSummaryTotalVisits + monthSummaryEvents)",
+                        accentColor: AppColors.accent
+                    ),
+                ],
+                backgroundColor: AppColors.profileAccent,
+                textColor: AppColors.label
+            )
+            .padding(.top, 4)
+
+            if let primaryCoachProfileId {
+                Button {
+                    pendingEventDate = Date()
+                } label: {
+                    Text("Добавить событие на сегодня")
+                        .appTypography(.button)
+                        .foregroundStyle(AppColors.white)
+                        .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                        .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+                .accessibilityHint("Создать событие в дневнике на текущую дату")
+                .id(primaryCoachProfileId)
+            }
+        }
+        .actionBlockStyle()
     }
 
     @ViewBuilder

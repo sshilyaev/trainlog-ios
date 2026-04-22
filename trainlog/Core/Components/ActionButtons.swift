@@ -81,6 +81,44 @@ struct CTAButton: View {
     }
 }
 
+/// Продающая CTA для welcome/offer экранов: яркий градиент, большая зона нажатия.
+struct OfferCTAButton: View {
+    let title: String
+    var isLoading: Bool = false
+    var minWidth: CGFloat = 220
+    var maxWidth: CGFloat = 320
+    let action: () -> Void
+
+    private let start = Color(red: 74/255, green: 172/255, blue: 144/255)
+    private let end = Color(red: 79/255, green: 84/255, blue: 171/255)
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(0.9)
+                }
+                Text(title)
+                    .appTypography(.button)
+                    .foregroundStyle(AppColors.white)
+            }
+            .frame(minWidth: minWidth, maxWidth: maxWidth)
+            .frame(minHeight: 48)
+            .background(
+                LinearGradient(colors: [start, end], startPoint: .leading, endPoint: .trailing),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PressableButtonStyle(cornerRadius: 12))
+    }
+}
+
 /// Основная кнопка для действий с сервером: Войти, Сохранить, Создать, Обновить.
 struct MainActionButton: View {
     let title: String

@@ -118,5 +118,13 @@ final class OfflineStore {
         snapshot.visitsByTrainee[traineeProfileId] = visits
         saveSnapshot(snapshot)
     }
+
+    /// Полная очистка офлайн-данных (при выходе из аккаунта).
+    func clearAll() {
+        queue.async {
+            try? FileManager.default.removeItem(at: self.operationsURL)
+            try? FileManager.default.removeItem(at: self.snapshotURL)
+        }
+    }
 }
 

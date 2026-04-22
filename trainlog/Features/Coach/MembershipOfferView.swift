@@ -55,7 +55,7 @@ struct MembershipOfferView: View {
 
                     Spacer(minLength: 12)
 
-                    CTAButton(title: "Создать абонемент", action: onCreateMembership)
+                    OfferCTAButton(title: "Создать абонемент", action: onCreateMembership)
 
                     Button(action: onSkip) {
                         Text("Настрою позже")

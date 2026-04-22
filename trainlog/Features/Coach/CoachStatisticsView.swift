@@ -541,30 +541,34 @@ struct CoachStatisticsView: View {
     }
 
     private func metricsGrid(_ s: CoachStatisticsDTO) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Показатели за \(metricsPeriodLabel)")
-                .appTypography(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-            HStack(alignment: .top, spacing: AppDesign.blockSpacing) {
-                StatMetricCard(
-                    icon: "user-default",
-                    title: "Подопечных",
-                    value: "\(metricsTraineesValue(s))",
-                    hintTitle: "Подопечные",
-                    hintMessage: "Количество уникальных подопечных с хотя бы одним завершённым посещением за выбранный период."
-                )
-                .frame(maxWidth: .infinity)
-                .id("trainees-\(monthParameter)-\(periodMonths)-\(metricsTraineesValue(s))")
-                StatMetricCard(
-                    icon: "tag",
-                    title: "Абонементов",
-                    value: "\(metricsMembershipsValue(s))",
-                    hintTitle: "Абонементы",
-                    hintMessage: "Количество абонементов, созданных в выбранный период."
-                )
-                .frame(maxWidth: .infinity)
-                .id("memberships-\(monthParameter)-\(periodMonths)-\(metricsMembershipsValue(s))")
-            }
+        HeroCard(
+            icon: "layout-dashboard",
+            title: "Показатели",
+            headline: "Период: \(metricsPeriodLabel)",
+            description: "Ключевые цифры по подопечным и абонементам за выбранный интервал.",
+            accent: AppColors.profileAccent
+        ) {
+            MetricRowLarge(
+                items: [
+                    InfoValueItem(
+                        title: "Подопечных",
+                        value: "\(metricsTraineesValue(s))",
+                        infoFootnote: "Количество уникальных подопечных с хотя бы одним завершённым посещением за выбранный период.",
+                        infoHintTitle: "Подопечные",
+                        infoFootnoteCompactIcon: true
+                    ),
+                    InfoValueItem(
+                        title: "Абонементов",
+                        value: "\(metricsMembershipsValue(s))",
+                        infoFootnote: "Количество абонементов, созданных в выбранный период.",
+                        infoHintTitle: "Абонементы",
+                        infoFootnoteCompactIcon: true
+                    )
+                ],
+                backgroundColor: AppColors.profileAccent,
+                textColor: AppColors.label
+            )
+            .id("metrics-\(monthParameter)-\(periodMonths)-\(metricsTraineesValue(s))-\(metricsMembershipsValue(s))")
         }
         .padding(.top, AppDesign.blockSpacing)
     }

@@ -5,6 +5,9 @@
 
 import SwiftUI
 
+private let authBorderStart = Color(red: 74/255, green: 172/255, blue: 144/255)
+private let authBorderEnd = Color(red: 79/255, green: 84/255, blue: 171/255)
+
 struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
@@ -16,47 +19,67 @@ struct LoginView: View {
     var body: some View {
         GeometryReader { geo in
             ScrollView {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                        .frame(minHeight: 40)
+                VStack(spacing: AppDesign.sectionSpacing) {
+                    Image("AuthTopIllustration")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 230)
+                        .padding(.top, 8)
+                        .padding(.bottom, 2)
 
-                    VStack(spacing: AppDesign.sectionSpacing) {
-                        Text("Вход")
-                            .appTypography(.screenTitle)
+                    Text("Вход")
+                        .appTypography(.screenTitle)
 
-                        TextField("Email", text: $email)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .autocorrectionDisabled()
-                            .textFieldStyle(.roundedBorder)
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .authInputStyle()
 
-                        PasswordField(title: "Пароль", text: $password, textContentType: .password)
+                    PasswordField(title: "Пароль", text: $password, textContentType: .password)
 
-                        MainActionButton(
-                            title: "Войти",
-                            isLoading: isLoading,
-                            isDisabled: email.isEmpty || password.isEmpty,
-                            action: { Task { await signIn() } }
-                        )
-
-                        if let msg = errorMessage {
-                            Text(msg)
-                                .appTypography(.caption)
-                                .foregroundStyle(AppColors.destructive)
-                                .multilineTextAlignment(.center)
+                    Button {
+                        Task { await signIn() }
+                    } label: {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            Text("Войти")
+                                .appTypography(.button)
                         }
-
-                        Button("Нет аккаунта? Регистрация", action: onSignUp)
-                            .appTypography(.secondary)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                        .background(
+                            LinearGradient(
+                                colors: [authBorderStart, authBorderEnd],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
                     }
-                    .padding(.horizontal, 24)
-                    .frame(maxWidth: 400)
+                    .buttonStyle(PressableButtonStyle(cornerRadius: 12))
+                    .disabled(isLoading || email.isEmpty || password.isEmpty)
 
-                    Spacer(minLength: 0)
-                        .frame(minHeight: 40)
+                    if let msg = errorMessage {
+                        Text(msg)
+                            .appTypography(.caption)
+                            .foregroundStyle(AppColors.destructive)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    Button("Нет аккаунта? Регистрация", action: onSignUp)
+                        .appTypography(.secondary)
                 }
-                .frame(minHeight: geo.size.height)
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 400)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+                .padding(.bottom, 40)
+                .frame(minHeight: geo.size.height, alignment: .top)
             }
             .scrollDismissesKeyboard(.interactively)
             .dismissKeyboardOnTap()
@@ -79,6 +102,26 @@ struct LoginView: View {
                 if let msg = AppErrors.userMessageIfNeeded(for: error) { errorMessage = msg }
             }
         }
+    }
+}
+
+private extension View {
+    func authInputStyle() -> some View {
+        self
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [authBorderStart, authBorderEnd],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        lineWidth: 1.4
+                    )
+            )
     }
 }
 

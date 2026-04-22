@@ -304,30 +304,50 @@ struct ProfileSelectionView: View {
 
     private func quickTypeTile(type: ProfileType, icon: String, title: String, description: String) -> some View {
         let isSelected = quickType == type
-        let tileTint = type == .trainee ? AppColors.logoTeal : AppColors.logoViolet
+        let authBorderStart = Color(red: 74/255, green: 172/255, blue: 144/255)
+        let authBorderEnd = Color(red: 79/255, green: 84/255, blue: 171/255)
         return Button {
             quickType = type
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 AppTablerIcon(icon)
-                    .appTypography(.screenTitle)
-                    .foregroundStyle(isSelected ? tileTint : AppColors.accent)
+                    .appTypography(.numericMetric)
+                    .foregroundStyle(isSelected ? .white : AppColors.accent)
                 Text(title)
                     .appTypography(.bodyEmphasis)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(isSelected ? .white : .primary)
                 Text(description)
                     .appTypography(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(AppDesign.cardPadding)
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.secondarySystemGroupedBackground)
-            .overlay(
-                RoundedRectangle(cornerRadius: AppDesign.cornerRadius)
-                    .stroke(isSelected ? tileTint.opacity(0.95) : AppColors.separator.opacity(0.35), lineWidth: isSelected ? 1.2 : 0.8)
+            .background(
+                isSelected
+                ? AnyView(
+                    LinearGradient(
+                        colors: [authBorderStart, authBorderEnd],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                : AnyView(AppColors.secondarySystemGroupedBackground)
             )
-            .clipShape(RoundedRectangle(cornerRadius: AppDesign.cornerRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(
+                        isSelected
+                        ? LinearGradient(
+                            colors: [authBorderStart, authBorderEnd],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        : LinearGradient(colors: [AppColors.clear, AppColors.clear], startPoint: .leading, endPoint: .trailing),
+                        lineWidth: 1.2
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
     }
@@ -402,8 +422,8 @@ private struct ChangePasswordSheet: View {
                         HeroCard(
                             icon: "lock-close",
                             title: "Безопасность",
-                            headline: "Минимум 6 символов",
-                            description: "",
+                            headline: "Сменить пароль",
+                            description: "Минимум 6 символов",
                             accent: AppColors.visitsOneTimeDebt
                         )
                         .padding(.horizontal, AppDesign.cardPadding)

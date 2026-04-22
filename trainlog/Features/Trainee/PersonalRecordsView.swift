@@ -221,13 +221,20 @@ struct PersonalRecordsView: View {
             accent: AppColors.visitsOneTimeDebt
         )
         {
-            InfoValueTripleRow(
+            MetricRowLarge(
                 items: [
                     InfoValueItem(title: "Записей", value: "\(filteredRecords.count)"),
-                    InfoValueItem(title: "PR", value: "\(filteredRecords.filter(isPersonalBest).count)"),
+                    InfoValueItem(
+                        title: "PR",
+                        value: "\(filteredRecords.filter(isPersonalBest).count)",
+                        infoFootnote: "PR (Personal Record) — ваш лучший результат в упражнении: по весу, повторам, времени или дистанции.",
+                        infoHintTitle: "Что такое PR",
+                        infoFootnoteCompactIcon: true
+                    ),
                     InfoValueItem(title: "Упражнений", value: "\(exercisesSummary.count)"),
                 ],
-                chipSize: .standard
+                backgroundColor: AppColors.visitsOneTimeDebt,
+                textColor: AppColors.label
             )
         }
         .overlay(alignment: .topTrailing) {

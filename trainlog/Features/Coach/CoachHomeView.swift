@@ -50,59 +50,66 @@ struct CoachHomeView: View {
     }
 
     private var summarySection: some View {
-        ContentCard(
+        HeroCard(
+            icon: "chart-bar",
             title: "Сводка за неделю",
-            description: weekSummaryRangeCaption.isEmpty ? "—" : weekSummaryRangeCaption
+            headline: weekSummaryRangeCaption.isEmpty ? "Текущая неделя" : weekSummaryRangeCaption,
+            description: isWeekSummaryEmpty
+                ? "Данные появятся после внесения посещений и событий."
+                : "Ключевые показатели по вашей активной неделе.",
+            accent: AppColors.profileAccent,
+            decoration: .glow
         ) {
-            InfoValueTripleRow(
-                items: [
-                    InfoValueItem(
-                        title: "Клиенты",
-                        value: "\(weekSummaryClients)",
-                        accentColor: AppColors.genderMale,
-                        infoFootnote: "Уникальные клиенты, у которых за текущую неделю есть хотя бы одно проведённое посещение.",
-                        infoHintTitle: "Клиенты",
-                        infoFootnoteCompactIcon: true
-                    ),
-                    InfoValueItem(
-                        title: "Разовые визиты",
-                        value: "\(weekSummaryOneOffVisits)",
-                        accentColor: AppColors.visitsOneTimeDebt
-                    ),
-                    InfoValueItem(
-                        title: "По абонементу",
-                        value: "\(weekSummarySubscriptionVisits)",
-                        accentColor: AppColors.visitsBySubscription
+            if !isWeekSummaryEmpty {
+                MetricRowLarge(
+                    items: [
+                        InfoValueItem(
+                            title: "Клиенты",
+                            value: "\(weekSummaryClients)",
+                            accentColor: AppColors.genderMale,
+                            infoFootnote: "Уникальные клиенты, у которых за текущую неделю есть хотя бы одно проведённое посещение.",
+                            infoHintTitle: "Клиенты",
+                            infoFootnoteCompactIcon: true
+                        ),
+                        InfoValueItem(
+                            title: "Разовые",
+                            value: "\(weekSummaryOneOffVisits)",
+                            accentColor: AppColors.visitsOneTimeDebt
+                        ),
+                        InfoValueItem(
+                            title: "По абонементу",
+                            value: "\(weekSummarySubscriptionVisits)",
+                            accentColor: AppColors.visitsBySubscription
+                        )
+                    ],
+                    backgroundColor: AppColors.profileAccent,
+                    textColor: AppColors.label
+                )
+                .padding(.top, 4)
+            }
+
+            HStack(spacing: 10) {
+                NavigationLink {
+                    CoachStatisticsView(
+                        coachProfileId: coachProfileId,
+                        statisticsService: coachStatisticsService
                     )
-                ],
-                style: .colored,
-                chipSize: .coachSummary
-            )
-            .padding(.vertical, 4)
-
-            if isWeekSummaryEmpty {
-                Text("Данные появятся после внесения посещений и событий за эту неделю.")
-                    .appTypography(.caption)
-                    .foregroundStyle(AppColors.secondaryLabel)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 6)
+                } label: {
+                    Text("Вся статистика")
+                        .appTypography(.button)
+                        .foregroundStyle(AppColors.label)
+                        .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                        .background(AppColors.secondarySystemGroupedBackground.opacity(0.92), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(AppColors.separator.opacity(0.45), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-
-            NavigationLink {
-                CoachStatisticsView(
-                    coachProfileId: coachProfileId,
-                    statisticsService: coachStatisticsService
-                )
-            } label: {
-                HomeActionRow(
-                    icon: "grid-dashboard-circle",
-                    title: "Полная статистика",
-                    subtitle: "Сводка за период"
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
             .padding(.top, 8)
         }
+        .actionBlockStyle()
     }
 
     private var quickActionsSection: some View {

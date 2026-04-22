@@ -26,12 +26,14 @@ private enum SplashScreenAssets {
 }
 #endif
 
-/// Сплеш при запуске. Случайный вертикальный фон (если есть в ассетах) или градиент; текст на тёмной подложке, без логотипа.
+/// Сплеш при запуске. Случайный вертикальный фон (если есть в ассетах) или градиент.
 struct SplashView: View {
     @State private var titleOpacity: Double = 0
-    @State private var titleOffset: CGFloat = 10
-    @State private var taglineOpacity: Double = 0
+    @State private var titleScale: CGFloat = 0.5
+    @State private var subtitleOpacity: Double = 0
+    @State private var subtitleScale: CGFloat = 0.8
     @State private var phraseOpacity: Double = 0
+    @State private var phraseScale: CGFloat = 0.5
     @State private var topGlowIntensity: Double = 0
 
     private static let motivationalPhrases: [String] = [
@@ -75,6 +77,7 @@ struct SplashView: View {
                 legacyTopGlow
             }
 
+            readabilityOverlay
             textChrome
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -159,38 +162,67 @@ struct SplashView: View {
         .ignoresSafeArea()
     }
 
-    /// Нижняя панель: тёмная подложка + светлый текст (и на фото-сплеше, и на градиенте).
+    /// Единый слой читаемости на обеих сплеш-картинках.
+    private var readabilityOverlay: some View {
+        LinearGradient(
+            colors: [
+                Color.black.opacity(0.26),
+                Color.black.opacity(0.18),
+                Color.black.opacity(0.40),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+
+    /// Название/перевод по центру, цитата отдельно внизу.
     private var textChrome: some View {
         VStack {
+            Spacer(minLength: 48)
+            VStack(spacing: 8) {
+                VStack(spacing: 6) {
+                    Text("TrainLog")
+                        .fontSystemWithAppExtra(size: 40, weight: .bold, design: .rounded)
+                        .foregroundStyle(Color.white)
+                        .opacity(titleOpacity)
+                        .scaleEffect(titleScale)
+
+                    Text("Дневник тренировок")
+                        .fontSystemWithAppExtra(size: 20, weight: .semibold, design: .rounded)
+                        .foregroundStyle(Color.white.opacity(0.96))
+                        .opacity(subtitleOpacity)
+                        .scaleEffect(subtitleScale)
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .background {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.black.opacity(0.44))
+                }
+            }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 20)
+            .shadow(color: Color.black.opacity(0.45), radius: 6, y: 2)
+
             Spacer(minLength: 0)
-            VStack(spacing: 10) {
-                Text("TrainLog")
-                    .appTypography(.screenTitle)
-                    .foregroundStyle(Color.white)
-                    .opacity(titleOpacity)
-                    .offset(y: titleOffset)
 
-                Text("Дневник тренировок")
-                    .appTypography(.secondary)
-                    .foregroundStyle(Color.white.opacity(0.9))
-                    .opacity(taglineOpacity)
-
-                Text(Self.phraseForThisLaunch)
-                    .appTypography(.caption)
-                    .foregroundStyle(Color.white.opacity(0.78))
-                    .opacity(phraseOpacity)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 26)
-            .frame(maxWidth: .infinity)
-            .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(0.62))
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 34)
+            Text("«\(Self.phraseForThisLaunch)»")
+                .appTypography(.caption)
+                .foregroundStyle(Color.white.opacity(0.92))
+                .opacity(phraseOpacity)
+                .scaleEffect(phraseScale)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(15)
+                .background {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.black.opacity(0.44))
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 22)
+                .padding(.bottom, 34)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaPadding(.bottom, 6)
@@ -202,15 +234,23 @@ struct SplashView: View {
                 topGlowIntensity = 0.8
             }
         }
+
         withAnimation(.easeOut(duration: 1.2).delay(0.35)) {
             titleOpacity = 1
-            titleOffset = 0
+            titleScale = 0.8
         }
-        withAnimation(.easeOut(duration: 1.4).delay(0.35)) {
+        withAnimation(.easeOut(duration: 0.28).delay(1.55)) {
+            titleScale = 1.0
+        }
+
+        withAnimation(.easeOut(duration: 1.2).delay(0.7)) {
+            subtitleOpacity = 1
+            subtitleScale = 1.0
+        }
+
+        withAnimation(.easeOut(duration: 1.2).delay(1.05)) {
             phraseOpacity = 1
-        }
-        withAnimation(.easeOut(duration: 1.5).delay(0.55)) {
-            taglineOpacity = 1
+            phraseScale = 1.0
         }
     }
 }

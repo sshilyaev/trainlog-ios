@@ -58,51 +58,29 @@ struct ProgressHubView: View {
             accent: AppColors.accent,
             decoration: .glow
         ) {
-            HStack(spacing: 10) {
-                kpiPill(
-                    title: "Замеры",
-                    value: measurementsCountText,
-                    icon: "pencil-scale",
-                    hint: "Вводи замеры регулярно - пойдет прогресс."
-                )
-                kpiPill(
-                    title: "Цели",
-                    value: goalsCountText,
-                    icon: "map-pin",
-                    hint: "Добавляй цели - фокус и мотивация выше."
-                )
-            }
+            MetricRowCompactExtended(
+                items: [
+                    InfoValueItem(
+                        title: "Замеры",
+                        value: measurementsCountText,
+                        icon: "pencil-scale",
+                        description: "Вводите замеры регулярно, чтобы видеть динамику."
+                    ),
+                    InfoValueItem(
+                        title: "Цели",
+                        value: goalsCountText,
+                        icon: "map-pin",
+                        description: "Добавляйте цели, чтобы удерживать фокус."
+                    )
+                ],
+                style: .standard,
+                backgroundColor: AppColors.accent,
+                valueWeight: .bold,
+                descriptionLineLimit: 3
+            )
         }
         .padding(.horizontal, AppDesign.cardPadding)
         .padding(.bottom, AppDesign.blockSpacing)
-    }
-
-    private func kpiPill(title: String, value: String, icon: String, hint: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                AppTablerIcon(icon)
-                    .appTypography(.caption)
-                    .foregroundStyle(AppColors.accent)
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(title)
-                        .appTypography(.caption)
-                        .foregroundStyle(AppColors.secondaryLabel)
-                    Text(value)
-                        .appTypography(.caption)
-                        .foregroundStyle(AppColors.label)
-                }
-            }
-            Text(hint)
-                .appTypography(.caption)
-                .foregroundStyle(AppColors.secondaryLabel)
-                .lineLimit(2)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(value). \(hint)")
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(AppColors.secondarySystemGroupedBackground.opacity(0.9), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var quickActionsBlock: some View {

@@ -169,10 +169,14 @@ struct MeasurementsAndChartsScreen: View {
             title: "Замеры и графики",
             headline: "Сводка и динамика",
             description: "Здесь сводка по целям и весу, полная история и динамика по каждому показателю.",
-            accent: AppColors.profileAccent,
+            accent: AppColors.visitsOneTimeDebt,
             decoration: .glow
         ) {
-            InfoValueTripleRow(items: weightSummaryItems, chipSize: .standard)
+            MetricRowLarge(
+                items: weightSummaryItems,
+                backgroundColor: AppColors.visitsOneTimeDebt,
+                textColor: AppColors.label
+            )
         }
         .overlay(alignment: .topTrailing) {
             Button {

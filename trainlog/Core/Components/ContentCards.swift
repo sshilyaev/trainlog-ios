@@ -61,7 +61,7 @@ struct HeroCard<FooterContent: View>: View {
         description: String,
         accent: Color = AppColors.accent,
         decoration: Decoration = .none,
-        @ViewBuilder footerContent: @escaping () -> FooterContent = { EmptyView() }
+        @ViewBuilder footerContent: @escaping () -> FooterContent
     ) {
         self.icon = icon
         self.title = title
@@ -132,6 +132,27 @@ struct HeroCard<FooterContent: View>: View {
         } else {
             base
         }
+    }
+}
+
+extension HeroCard where FooterContent == EmptyView {
+    init(
+        icon: String,
+        title: String,
+        headline: String,
+        description: String,
+        accent: Color = AppColors.accent,
+        decoration: Decoration = .none
+    ) {
+        self.init(
+            icon: icon,
+            title: title,
+            headline: headline,
+            description: description,
+            accent: accent,
+            decoration: decoration,
+            footerContent: { EmptyView() }
+        )
     }
 }
 

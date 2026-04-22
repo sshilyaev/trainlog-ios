@@ -5,6 +5,9 @@
 
 import SwiftUI
 
+private let authBorderStart = Color(red: 74/255, green: 172/255, blue: 144/255)
+private let authBorderEnd = Color(red: 79/255, green: 84/255, blue: 171/255)
+
 struct RegisterView: View {
     @State private var email = ""
     @State private var password = ""
@@ -19,50 +22,73 @@ struct RegisterView: View {
     var body: some View {
         GeometryReader { geo in
             ScrollView {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                        .frame(minHeight: 40)
+                VStack(spacing: AppDesign.sectionSpacing) {
+                    Image("AuthTopIllustration")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 230)
+                        .padding(.top, 8)
+                        .padding(.bottom, 2)
 
-                    VStack(spacing: AppDesign.sectionSpacing) {
-                        Text("Регистрация")
-                            .appTypography(.screenTitle)
+                    Text("Регистрация")
+                        .appTypography(.screenTitle)
 
-                        profileTypePicker
+                    profileTypePicker
 
-                        genderPicker
+                    genderPicker
 
-                        TextField("Имя", text: $displayName)
-                            .textContentType(.name)
-                            .textFieldStyle(.roundedBorder)
+                    TextField("Имя", text: $displayName)
+                        .textContentType(.name)
+                        .authInputStyle()
 
-                        TextField("Email", text: $email)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .autocorrectionDisabled()
-                            .textFieldStyle(.roundedBorder)
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .authInputStyle()
 
-                        PasswordField(title: "Пароль", text: $password, textContentType: .newPassword)
+                    PasswordField(title: "Пароль", text: $password, textContentType: .newPassword)
 
-                        MainActionButton(
-                            title: "Создать аккаунт",
-                            isLoading: isLoading,
-                            isDisabled: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                || password.isEmpty
-                                || displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                            action: { Task { await signUp() } }
+                    Button {
+                        Task { await signUp() }
+                    } label: {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            Text("Создать аккаунт")
+                                .appTypography(.button)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                        .background(
+                            LinearGradient(
+                                colors: [authBorderStart, authBorderEnd],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                         )
-
-                        Button("Уже есть аккаунт? Войти", action: onBack)
-                            .appTypography(.secondary)
                     }
-                    .padding(.horizontal, 24)
-                    .frame(maxWidth: 400)
+                    .buttonStyle(PressableButtonStyle(cornerRadius: 12))
+                    .disabled(
+                        isLoading
+                        || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || password.isEmpty
+                        || displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    )
 
-                    Spacer(minLength: 0)
-                        .frame(minHeight: 40)
+                    Button("Уже есть аккаунт? Войти", action: onBack)
+                        .appTypography(.secondary)
                 }
-                .frame(minHeight: geo.size.height)
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 400)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+                .padding(.bottom, 40)
+                .frame(minHeight: geo.size.height, alignment: .top)
             }
             .scrollDismissesKeyboard(.interactively)
             .dismissKeyboardOnTap()
@@ -161,16 +187,25 @@ struct RegisterView: View {
                 isSelected
                 ? AnyView(
                     LinearGradient(
-                        colors: [AppColors.accent, AppColors.accent.opacity(0.8)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        colors: [authBorderStart, authBorderEnd],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
                 )
                 : AnyView(AppColors.secondarySystemGroupedBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? AppColors.accent.opacity(0.9) : AppColors.clear, lineWidth: 1)
+                    .stroke(
+                        isSelected
+                        ? LinearGradient(
+                            colors: [authBorderStart, authBorderEnd],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        : LinearGradient(colors: [AppColors.clear, AppColors.clear], startPoint: .leading, endPoint: .trailing),
+                        lineWidth: 1.2
+                    )
             )
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
@@ -186,6 +221,26 @@ struct RegisterView: View {
             Text("Женщина").tag(ProfileGender.female)
         }
         .pickerStyle(.segmented)
+    }
+}
+
+private extension View {
+    func authInputStyle() -> some View {
+        self
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [authBorderStart, authBorderEnd],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        lineWidth: 1.4
+                    )
+            )
     }
 }
 

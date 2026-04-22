@@ -466,7 +466,7 @@ struct ClientCardView: View {
             displayedTrainee = nil
         }
         .onChange(of: selectedMonthForVisits) { _, _ in
-            guard let coachId = coachProfileId, let calSvc = calendarSummaryService else { return }
+            guard let coachId = coachProfileId, calendarSummaryService != nil else { return }
             Task { await loadCalendarOnly(coachProfileId: coachId) }
         }
         .overlay {

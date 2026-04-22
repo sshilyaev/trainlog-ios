@@ -201,12 +201,14 @@ struct NutritionPreviewCard: View {
                 percentStatItem(title: "Углеводы", color: AppColors.visitsBySubscription, percent: preview.carbsPercent)
             }
 
-            HStack(spacing: 10) {
-                previewTile(title: "Белки", value: "\(preview.proteinGrams.measurementFormatted) г", color: AppColors.genderMale)
-                previewTile(title: "Жиры", value: "\(preview.fatGrams.measurementFormatted) г", color: AppColors.visitsOneTimeDebt)
-                previewTile(title: "Углеводы", value: "\(preview.carbsGrams.measurementFormatted) г", color: AppColors.visitsBySubscription)
-            }
-            .frame(maxWidth: .infinity)
+            MetricRowCompact(
+                items: [
+                    InfoValueItem(title: "Белки", value: "\(preview.proteinGrams.measurementFormatted) г", accentColor: AppColors.genderMale),
+                    InfoValueItem(title: "Жиры", value: "\(preview.fatGrams.measurementFormatted) г", accentColor: AppColors.visitsOneTimeDebt),
+                    InfoValueItem(title: "Углеводы", value: "\(preview.carbsGrams.measurementFormatted) г", accentColor: AppColors.visitsBySubscription),
+                ],
+                style: .colored
+            )
         }
     }
 
@@ -227,19 +229,6 @@ struct NutritionPreviewCard: View {
         .background(AppColors.secondarySystemGroupedBackground, in: RoundedRectangle(cornerRadius: 10))
     }
 
-    private func previewTile(title: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .appTypography(.caption)
-                .foregroundStyle(color)
-            Text(value)
-                .appTypography(.bodyEmphasis)
-                .foregroundStyle(AppColors.label)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-    }
 }
 
 private struct CircleSegment: View {

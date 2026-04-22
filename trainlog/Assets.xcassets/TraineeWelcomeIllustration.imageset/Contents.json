@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "TraineeWelcomeIllustration.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "TraineeWelcomeIllustration@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "TraineeWelcomeIllustration@3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

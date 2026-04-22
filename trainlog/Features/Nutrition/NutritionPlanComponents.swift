@@ -44,7 +44,7 @@ struct NutritionPlanCard: View {
                 }
 
                 // One-line macros with colored labels/blocks.
-                InfoValueTripleRow(
+                MetricRowCompact(
                     items: [
                         InfoValueItem(
                             title: "Белки",
@@ -318,6 +318,8 @@ struct InfoValueItem: Identifiable, Equatable {
     let id = UUID()
     let title: String
     let value: String
+    var icon: String? = nil
+    var description: String? = nil
     var accentColor: Color? = nil
     /// Подсказка у заголовка (кнопка «i», тот же `InfoHintPopup`, что у спортивных добавок).
     var infoFootnote: String? = nil
@@ -339,40 +341,75 @@ enum InfoValueTripleChipSize {
     case large
     /// Компактная сводка тренера: по центру, одинаковая высота блоков, заголовок до 2 строк.
     case coachSummary
+    /// Сводка дневника: та же фиксированная высота, но более спокойные значения.
+    case diarySummary
 }
 
 struct InfoValueTripleRow: View {
     let items: [InfoValueItem]
     var style: InfoValueTripleStyle = .standard
     var chipSize: InfoValueTripleChipSize = .standard
+    var customBackgroundColor: Color? = nil
+    var customTextColor: Color? = nil
+    /// Для кастомного цвета подложки используем фиксированную прозрачность.
+    var customBackgroundOpacity: Double = 0.14
+    var compactDescriptionLineLimit: Int = 2
+    var compactValueWeight: Font.Weight = .semibold
+    var compactFixedMinHeight: CGFloat? = nil
+    var compactCenterContent: Bool = false
+    var alignCompactValueToTitle: Bool = false
+
+    private var maxColumns: Int {
+        items.count <= 2 ? 2 : 3
+    }
 
     private var rowSpacing: CGFloat {
         switch chipSize {
         case .standard: 8
         case .large: 10
-        case .coachSummary: 6
+        case .coachSummary, .diarySummary: 6
         }
     }
 
     private var rowAlignment: VerticalAlignment {
-        chipSize == .coachSummary ? .center : .top
+        (chipSize == .coachSummary || chipSize == .diarySummary) ? .center : .top
     }
 
     private var rowFrameAlignment: Alignment {
-        chipSize == .coachSummary ? .center : .leading
+        (chipSize == .coachSummary || chipSize == .diarySummary) ? .center : .leading
     }
 
     var body: some View {
         HStack(alignment: rowAlignment, spacing: rowSpacing) {
-            ForEach(Array(items.prefix(3).enumerated()), id: \.offset) { _, item in
-                InfoValueChip(item: item, style: style, chipSize: chipSize)
+            ForEach(Array(items.prefix(maxColumns).enumerated()), id: \.offset) { _, item in
+                InfoValueChip(
+                    item: item,
+                    style: style,
+                    chipSize: chipSize,
+                    customBackgroundColor: customBackgroundColor,
+                    customTextColor: customTextColor,
+                    customBackgroundOpacity: customBackgroundOpacity,
+                    compactDescriptionLineLimit: compactDescriptionLineLimit,
+                    compactValueWeight: compactValueWeight,
+                    compactFixedMinHeight: compactFixedMinHeight,
+                    compactCenterContent: compactCenterContent,
+                    alignCompactValueToTitle: alignCompactValueToTitle
+                )
             }
-            if items.count < 3 {
-                ForEach(0..<(3 - items.count), id: \.self) { _ in
+            if items.count < maxColumns {
+                ForEach(0..<(maxColumns - items.count), id: \.self) { _ in
                     InfoValueChip(
                         item: InfoValueItem(title: "", value: ""),
                         style: style,
                         chipSize: chipSize,
+                        customBackgroundColor: customBackgroundColor,
+                        customTextColor: customTextColor,
+                        customBackgroundOpacity: customBackgroundOpacity,
+                        compactDescriptionLineLimit: compactDescriptionLineLimit,
+                        compactValueWeight: compactValueWeight,
+                        compactFixedMinHeight: compactFixedMinHeight,
+                        compactCenterContent: compactCenterContent,
+                        alignCompactValueToTitle: alignCompactValueToTitle,
                         isHiddenPlaceholder: true
                     )
                 }
@@ -382,10 +419,78 @@ struct InfoValueTripleRow: View {
     }
 }
 
+/// Унифицированный крупный ряд метрик: центр, 2 или 3 колонки.
+struct MetricRowLarge: View {
+    let items: [InfoValueItem]
+    var backgroundColor: Color? = nil
+    var textColor: Color? = nil
+
+    var body: some View {
+        InfoValueTripleRow(
+            items: items,
+            style: .standard,
+            chipSize: .coachSummary,
+            customBackgroundColor: backgroundColor,
+            customTextColor: textColor
+        )
+    }
+}
+
+/// Базовый компактный ряд метрик.
+struct MetricRowCompact: View {
+    let items: [InfoValueItem]
+    var style: InfoValueTripleStyle = .standard
+    var backgroundColor: Color? = nil
+    var textColor: Color? = nil
+
+    var body: some View {
+        InfoValueTripleRow(
+            items: items,
+            style: style,
+            chipSize: .standard,
+            customBackgroundColor: backgroundColor,
+            customTextColor: textColor
+        )
+    }
+}
+
+/// Расширенный компактный ряд метрик: иконка, описание, настраиваемая жирность значения.
+struct MetricRowCompactExtended: View {
+    let items: [InfoValueItem]
+    var style: InfoValueTripleStyle = .standard
+    var backgroundColor: Color? = nil
+    var textColor: Color? = nil
+    var valueWeight: Font.Weight = .bold
+    var descriptionLineLimit: Int = 3
+
+    var body: some View {
+        InfoValueTripleRow(
+            items: items,
+            style: style,
+            chipSize: .standard,
+            customBackgroundColor: backgroundColor,
+            customTextColor: textColor,
+            compactDescriptionLineLimit: descriptionLineLimit,
+            compactValueWeight: valueWeight,
+            compactFixedMinHeight: 96,
+            compactCenterContent: true,
+            alignCompactValueToTitle: true
+        )
+    }
+}
+
 private struct InfoValueChip: View {
     let item: InfoValueItem
     let style: InfoValueTripleStyle
     var chipSize: InfoValueTripleChipSize = .standard
+    var customBackgroundColor: Color? = nil
+    var customTextColor: Color? = nil
+    var customBackgroundOpacity: Double = 0.14
+    var compactDescriptionLineLimit: Int = 2
+    var compactValueWeight: Font.Weight = .semibold
+    var compactFixedMinHeight: CGFloat? = nil
+    var compactCenterContent: Bool = false
+    var alignCompactValueToTitle: Bool = false
     var isHiddenPlaceholder = false
 
     @State private var infoButtonFrame: CGRect = .zero
@@ -402,60 +507,63 @@ private struct InfoValueChip: View {
         Group {
             switch chipSize {
             case .coachSummary:
-                VStack(alignment: .center, spacing: 4) {
-                    Text(item.title)
-                        .appTypography(.caption)
-                        .foregroundStyle(titleColor)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.trailing, infoFootnote == nil ? 0 : 12)
-                        .frame(minHeight: coachSummaryTitleMinHeight, alignment: .top)
-                    Text(item.value)
-                        .appTypography(.sectionTitle)
-                        .foregroundStyle(AppColors.label)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-                .frame(maxWidth: .infinity, minHeight: 72, alignment: .center)
-                .overlay(alignment: .topTrailing) {
-                    if let hint = infoFootnote {
-                        infoFootnoteButton(hint)
-                            .padding(.top, 1)
-                            .padding(.trailing, 1)
-                    }
-                }
+                metricLargeContent
+            case .diarySummary:
+                metricLargeContent
             case .standard, .large:
                 Group {
                     if let hint = infoFootnote, item.infoFootnoteCompactIcon {
                         ZStack(alignment: .topTrailing) {
                             VStack(alignment: .leading, spacing: chipSize == .large ? 4 : 2) {
-                                Text(item.title)
-                                    .font(titleFont)
-                                    .foregroundStyle(titleColor)
-                                    .lineLimit(2)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                titleWithOptionalIcon
                                     .padding(.trailing, 22)
-                                Text(item.value)
-                                    .font(valueFont)
-                                    .foregroundStyle(AppColors.label)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.85)
+                                if !item.value.isEmpty {
+                                    Text(item.value)
+                                        .font(valueFont)
+                                        .foregroundStyle(AppColors.label)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.85)
+                                        .padding(.leading, compactValueLeadingInset)
+                                }
+                                if let description = item.description, !description.isEmpty {
+                                    Text(description)
+                                        .appTypography(.caption)
+                                        .foregroundStyle(AppColors.secondaryLabel)
+                                        .lineLimit(compactDescriptionLineLimit)
+                                        .padding(.leading, compactValueLeadingInset)
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(
+                                minHeight: compactFixedMinHeight,
+                                alignment: compactCenterContent ? .center : .topLeading
+                            )
                             infoFootnoteButton(hint)
                         }
                     } else {
                         VStack(alignment: .leading, spacing: chipSize == .large ? 4 : 2) {
                             titleRowStandardOrLarge
-                            Text(item.value)
-                                .font(valueFont)
-                                .foregroundStyle(AppColors.label)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.85)
+                            if !item.value.isEmpty {
+                                Text(item.value)
+                                    .font(valueFont)
+                                    .foregroundStyle(AppColors.label)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.85)
+                                    .padding(.leading, compactValueLeadingInset)
+                            }
+                            if let description = item.description, !description.isEmpty {
+                                Text(description)
+                                    .appTypography(.caption)
+                                    .foregroundStyle(AppColors.secondaryLabel)
+                                    .lineLimit(compactDescriptionLineLimit)
+                                    .padding(.leading, compactValueLeadingInset)
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(
+                            minHeight: compactFixedMinHeight,
+                            alignment: compactCenterContent ? .center : .topLeading
+                        )
                     }
                 }
             }
@@ -474,12 +582,26 @@ private struct InfoValueChip: View {
     private var titleRowStandardOrLarge: some View {
         if let hint = infoFootnote {
             HStack(alignment: item.infoFootnoteCompactIcon ? .center : .firstTextBaseline, spacing: item.infoFootnoteCompactIcon ? 3 : 4) {
+                titleWithOptionalIcon
+                infoFootnoteButton(hint)
+            }
+        } else {
+            titleWithOptionalIcon
+        }
+    }
+
+    @ViewBuilder
+    private var titleWithOptionalIcon: some View {
+        if let icon = item.icon, !icon.isEmpty {
+            HStack(spacing: 4) {
+                AppTablerIcon(icon)
+                    .appTypography(.caption)
+                    .foregroundStyle(titleColor)
                 Text(item.title)
                     .font(titleFont)
                     .foregroundStyle(titleColor)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                infoFootnoteButton(hint)
             }
         } else {
             Text(item.title)
@@ -526,7 +648,7 @@ private struct InfoValueChip: View {
         switch chipSize {
         case .standard: 8
         case .large: 12
-        case .coachSummary: 6
+        case .coachSummary, .diarySummary: 6
         }
     }
 
@@ -534,7 +656,7 @@ private struct InfoValueChip: View {
         switch chipSize {
         case .standard: 6
         case .large: 10
-        case .coachSummary: 7
+        case .coachSummary, .diarySummary: 4
         }
     }
 
@@ -542,7 +664,7 @@ private struct InfoValueChip: View {
         switch chipSize {
         case .standard: 8
         case .large: 12
-        case .coachSummary: 8
+        case .coachSummary, .diarySummary: 8
         }
     }
 
@@ -554,35 +676,80 @@ private struct InfoValueChip: View {
             return .caption.weight(.semibold)
         case .coachSummary:
             return .caption
+        case .diarySummary:
+            return .caption
         }
     }
 
     private var valueFont: Font {
         switch chipSize {
         case .standard:
-            return .caption.weight(.semibold)
+            return .caption.weight(compactValueWeight)
         case .large:
             return .system(size: 26, weight: .bold, design: .rounded)
         case .coachSummary:
-            return .system(size: 17, weight: .bold, design: .rounded)
+            return .system(size: 14, weight: .semibold, design: .rounded)
+        case .diarySummary:
+            return .system(size: 14, weight: .semibold, design: .rounded)
         }
     }
 
     private var titleColor: Color {
+        if let customTextColor {
+            return customTextColor
+        }
         switch style {
         case .standard:
             return AppColors.tertiaryLabel
         case .colored:
-            return item.accentColor ?? AppColors.tertiaryLabel
+            return (chipSize == .coachSummary || chipSize == .diarySummary)
+                ? AppColors.tertiaryLabel
+                : (item.accentColor ?? AppColors.tertiaryLabel)
         }
     }
 
     private var backgroundColor: Color {
+        if let customBackgroundColor {
+            return customBackgroundColor.opacity(customBackgroundOpacity)
+        }
         switch style {
         case .standard:
             return AppColors.tertiarySystemFill
         case .colored:
-            return (item.accentColor ?? AppColors.tertiarySystemFill).opacity(0.12)
+            return (chipSize == .coachSummary || chipSize == .diarySummary)
+                ? AppColors.tertiarySystemFill
+                : (item.accentColor ?? AppColors.tertiarySystemFill).opacity(0.12)
         }
+    }
+
+    private var metricLargeContent: some View {
+        VStack(alignment: .center, spacing: 2) {
+            Text(item.title)
+                .fontSystemWithAppExtra(size: 12, weight: .regular)
+                .foregroundStyle(AppColors.tertiaryLabel)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.trailing, infoFootnote == nil ? 0 : 12)
+                .frame(minHeight: coachSummaryTitleMinHeight, alignment: .top)
+            Text(item.value)
+                .fontSystemWithAppExtra(size: 14, weight: .semibold, design: .rounded)
+                .foregroundStyle(customTextColor ?? AppColors.label)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 66, alignment: .center)
+        .overlay(alignment: .topTrailing) {
+            if let hint = infoFootnote {
+                infoFootnoteButton(hint)
+                    .padding(.top, 1)
+                    .padding(.trailing, 1)
+            }
+        }
+    }
+
+    private var compactValueLeadingInset: CGFloat {
+        guard alignCompactValueToTitle else { return 0 }
+        guard let icon = item.icon, !icon.isEmpty else { return 0 }
+        return 16
     }
 }

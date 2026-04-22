@@ -9,6 +9,7 @@ import FirebaseAuth
 
 @main
 struct TrainLogApp: App {
+    private let apiClient: APIClient
     private let appState: AppState
     private let authService: AuthServiceProtocol
     private let profileService: ProfileServiceProtocol
@@ -46,6 +47,7 @@ struct TrainLogApp: App {
         }
 
         let client = APIClient(baseURL: ApiConfig.baseURL, getIDToken: getIDToken)
+        apiClient = client
         profileService = APIProfileService(client: client)
         measurementService = APIMeasurementService(client: client)
         goalService = APIGoalService(client: client)
@@ -99,7 +101,11 @@ struct TrainLogApp: App {
                 calculatorsService: calculatorsService,
                 coachOverviewService: coachOverviewService,
                 supportCampaignService: supportCampaignService,
-                rewardedAdService: rewardedAdService
+                rewardedAdService: rewardedAdService,
+                onSessionReset: {
+                    await apiClient.clearRuntimeCache()
+                    OfflineStore.shared.clearAll()
+                }
             )
         }
     }
