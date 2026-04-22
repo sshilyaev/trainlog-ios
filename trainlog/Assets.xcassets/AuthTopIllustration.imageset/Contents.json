@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "VerticalSplashBackground6_2x.png",
+      "filename" : "hd_9655666b5cb1cc2cd5b9e4459855c5f9-no-bg-HD (carve.photos).png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "hd_9655666b5cb1cc2cd5b9e4459855c5f9-no-bg-HD (carve.photos) 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "hd_9655666b5cb1cc2cd5b9e4459855c5f9-no-bg-HD (carve.photos) 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

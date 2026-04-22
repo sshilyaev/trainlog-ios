@@ -11,20 +11,38 @@ final class MockEventService: EventServiceProtocol {
     func fetchEvents(coachProfileId: String, traineeProfileId: String) async throws -> [Event] {
         store
             .filter { $0.coachProfileId == coachProfileId && $0.traineeProfileId == traineeProfileId }
-            .sorted { $0.date > $1.date }
+            .sorted { $0.periodStart > $1.periodStart }
     }
 
-    func createEvent(coachProfileId: String, traineeProfileId: String, title: String, date: Date, eventDescription: String?, remind: Bool, colorHex: String?, eventType: EventType, idempotencyKey: String? = nil) async throws -> Event {
+    func createEvent(
+        coachProfileId: String,
+        traineeProfileId: String,
+        title: String,
+        date: Date,
+        mode: EventMode,
+        periodStart: Date?,
+        periodEnd: Date?,
+        eventDescription: String?,
+        remind: Bool,
+        colorHex: String?,
+        eventType: EventType,
+        freezeMembership: Bool,
+        idempotencyKey: String? = nil
+    ) async throws -> Event {
         let e = Event(
             id: UUID().uuidString,
             coachProfileId: coachProfileId,
             traineeProfileId: traineeProfileId,
             title: title,
             date: date,
+            mode: mode,
+            periodStart: periodStart,
+            periodEnd: periodEnd,
             eventDescription: eventDescription,
             remind: remind,
             colorHex: colorHex,
             eventType: eventType,
+            freezeMembership: freezeMembership,
             isCancelled: false
         )
         store.append(e)

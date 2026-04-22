@@ -62,10 +62,18 @@ struct VisitsCalendarView: View {
             grouping: visits.filter { $0.status != .cancelled },
             by: { calendar.startOfDay(for: $0.date) }
         )
-        cachedActiveEventsByDay = Dictionary(
-            grouping: events.filter { !$0.isCancelled },
-            by: { calendar.startOfDay(for: $0.date) }
-        )
+        var map: [Date: [Event]] = [:]
+        for event in events where !event.isCancelled {
+            let start = calendar.startOfDay(for: event.periodStart)
+            let end = calendar.startOfDay(for: event.periodEnd)
+            var cursor = start
+            while cursor <= end {
+                map[cursor, default: []].append(event)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+                cursor = next
+            }
+        }
+        cachedActiveEventsByDay = map
     }
 
     private struct DayItem {
@@ -616,7 +624,12 @@ private struct EventRowView: View {
     var onCancel: (() -> Void)? = nil
     @State private var isExpanded = false
 
-    private var dateText: String { event.date.formattedRuList }
+    private var dateText: String {
+        if event.mode == .period {
+            return "\(event.periodStart.formattedRuList) - \(event.periodEnd.formattedRuList)"
+        }
+        return event.date.formattedRuList
+    }
     private var hasDescription: Bool {
         guard let d = event.eventDescription else { return false }
         return !d.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -695,6 +708,11 @@ private struct EventRowView: View {
                         .foregroundStyle(.primary)
                     if let desc = event.eventDescription?.trimmingCharacters(in: .whitespacesAndNewlines), !desc.isEmpty {
                         Text(desc)
+                            .appTypography(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if event.mode == .period {
+                        Text("Тип: \(event.eventType.title)\(event.freezeMembership ? " • Заморозка абонемента" : "")")
                             .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -837,7 +855,7 @@ enum CalendarListItem: Identifiable {
     var date: Date {
         switch self {
         case .visit(let v): return v.date
-        case .event(let e): return e.date
+        case .event(let e): return e.periodStart
         }
     }
 }
@@ -881,8 +899,12 @@ struct ClientVisitsManageView: View {
 
     private var eventsInSelectedMonth: [Event] {
         guard let interval = calendar.dateInterval(of: .month, for: selectedMonth) else { return [] }
-        return events.filter { $0.date >= interval.start && $0.date < interval.end }
-            .sorted { $0.date > $1.date }
+        return events.filter { event in
+            let start = calendar.startOfDay(for: event.periodStart)
+            let end = calendar.startOfDay(for: event.periodEnd)
+            return start < interval.end && end >= interval.start
+        }
+        .sorted { $0.periodStart > $1.periodStart }
     }
 
     /// Объединённый список посещений и событий за выбранный месяц, по убыванию даты.
@@ -2086,6 +2108,11 @@ struct AddEditEventSheet: View {
 
     @State private var title: String = ""
     @State private var date: Date = Date()
+    @State private var modeSelection: EventMode = .date
+    @State private var periodStart: Date = Date()
+    @State private var periodEnd: Date = Date()
+    @State private var periodType: EventType = .vacation
+    @State private var freezeMembership = false
     @State private var eventDescription: String = ""
     @State private var remind: Bool = false
     @State private var selectedEventType: EventType = .general
@@ -2115,13 +2142,20 @@ struct AddEditEventSheet: View {
         switch mode {
         case .create(let initialDate):
             _date = State(initialValue: initialDate)
+            _periodStart = State(initialValue: initialDate)
+            _periodEnd = State(initialValue: initialDate)
             _selectedColorHex = State(initialValue: EventColor.defaultHex(for: .general))
         case .edit(let event):
             _title = State(initialValue: event.title)
             _date = State(initialValue: event.date)
+            _modeSelection = State(initialValue: event.mode)
+            _periodStart = State(initialValue: event.periodStart)
+            _periodEnd = State(initialValue: event.periodEnd)
+            _periodType = State(initialValue: (event.eventType == .vacation || event.eventType == .sick) ? event.eventType : .vacation)
+            _freezeMembership = State(initialValue: event.freezeMembership)
             _eventDescription = State(initialValue: event.eventDescription ?? "")
             _remind = State(initialValue: event.remind)
-            _selectedEventType = State(initialValue: event.eventType)
+            _selectedEventType = State(initialValue: (event.eventType == .vacation || event.eventType == .sick) ? .general : event.eventType)
             _selectedColorHex = State(initialValue: event.colorHex ?? EventColor.defaultHex(for: event.eventType))
         }
     }
@@ -2132,7 +2166,7 @@ struct AddEditEventSheet: View {
             onBack: onCancel,
             trailing: {
                 Button(isSaving ? "Сохранение…" : (isEdit ? "Сохранить" : "Добавить")) { save() }
-                    .disabled(isSaving || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(isSaving || !isValidTitle)
                     .foregroundStyle(.primary)
             },
             content: {
@@ -2140,17 +2174,47 @@ struct AddEditEventSheet: View {
                     VStack(spacing: 0) {
                         SettingsCard(title: "Основное") {
                             VStack(spacing: 0) {
+                                Picker("Режим", selection: $modeSelection) {
+                                    Text("Дата").tag(EventMode.date)
+                                    Text("Период").tag(EventMode.period)
+                                }
+                                .pickerStyle(.segmented)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                FormSectionDivider()
                                 FormRowTextField(icon: "pencil-edit", title: "Название", placeholder: "Сдать анализы, взвешивание", text: $title, textContentType: .none, autocapitalization: .sentences)
                                 FormSectionDivider()
-                                FormRowDateSelection(
-                                    title: "Дата события",
-                                    selection: Binding<Date?>(
-                                        get: { date },
-                                        set: { if let value = $0 { date = value } }
-                                    ),
-                                    allowsClear: false,
-                                    onTap: { showDatePicker = true }
-                                )
+                                if modeSelection == .date {
+                                    FormRowDateSelection(
+                                        title: "Дата события",
+                                        selection: Binding<Date?>(
+                                            get: { date },
+                                            set: { if let value = $0 { date = value } }
+                                        ),
+                                        allowsClear: false,
+                                        onTap: { showDatePicker = true }
+                                    )
+                                } else {
+                                    FormRowDateSelection(
+                                        title: "Начало периода",
+                                        selection: Binding<Date?>(
+                                            get: { periodStart },
+                                            set: { if let value = $0 { periodStart = value } }
+                                        ),
+                                        allowsClear: false,
+                                        onTap: { showDatePicker = true }
+                                    )
+                                    FormSectionDivider()
+                                    FormRowDateSelection(
+                                        title: "Конец периода",
+                                        selection: Binding<Date?>(
+                                            get: { periodEnd },
+                                            set: { if let value = $0 { periodEnd = value } }
+                                        ),
+                                        allowsClear: false,
+                                        onTap: { showDatePicker = true }
+                                    )
+                                }
                             }
                         }
 
@@ -2166,41 +2230,55 @@ struct AddEditEventSheet: View {
                         }
 
                         SettingsCard(title: "Тип события") {
-                            Picker("Тип события", selection: $selectedEventType) {
-                                ForEach(EventType.allCases, id: \.rawValue) { type in
-                                    Text(type.title).tag(type)
+                            if modeSelection == .period {
+                                Picker("Тип периода", selection: $periodType) {
+                                    Text(EventType.vacation.title).tag(EventType.vacation)
+                                    Text(EventType.sick.title).tag(EventType.sick)
                                 }
-                            }
-                            .pickerStyle(.segmented)
-                            .onChange(of: selectedEventType) { _, newValue in
-                                selectedColorHex = EventColor.defaultHex(for: newValue)
+                                .pickerStyle(.segmented)
+                            } else {
+                                Picker("Тип события", selection: $selectedEventType) {
+                                    ForEach(EventType.allCases.filter { $0 != .vacation && $0 != .sick }, id: \.rawValue) { type in
+                                        Text(type.title).tag(type)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .onChange(of: selectedEventType) { _, newValue in
+                                    selectedColorHex = EventColor.defaultHex(for: newValue)
+                                }
                             }
                         }
 
-                        SettingsCard(title: "Цвет в календаре") {
-                            HStack(spacing: 8) {
-                                ForEach(EventColor.palette, id: \.hex) { pair in
-                                    let isSelected = selectedColorHex == pair.hex
-                                    Button {
-                                        selectedColorHex = isSelected ? nil : pair.hex
-                                    } label: {
-                                        Circle()
-                                            .fill(pair.color)
-                                            .frame(width: 22, height: 22)
-                                            .overlay {
-                                                if isSelected {
-                                                    Circle()
-                                                        .strokeBorder(Color.primary, lineWidth: 2)
-                                                }
-                                            }
-                                    }
-                                    .buttonStyle(PressableButtonStyle())
-                                }
+                        if modeSelection == .period {
+                            SettingsCard(title: "Параметры периода") {
+                                Toggle("Заморозка абонемента (если есть)", isOn: $freezeMembership)
                             }
-                            Text("По умолчанию — синий.")
-                                .appTypography(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 4)
+                        } else {
+                            SettingsCard(title: "Цвет в календаре") {
+                                HStack(spacing: 8) {
+                                    ForEach(EventColor.palette, id: \.hex) { pair in
+                                        let isSelected = selectedColorHex == pair.hex
+                                        Button {
+                                            selectedColorHex = isSelected ? nil : pair.hex
+                                        } label: {
+                                            Circle()
+                                                .fill(pair.color)
+                                                .frame(width: 22, height: 22)
+                                                .overlay {
+                                                    if isSelected {
+                                                        Circle()
+                                                            .strokeBorder(Color.primary, lineWidth: 2)
+                                                    }
+                                                }
+                                        }
+                                        .buttonStyle(PressableButtonStyle())
+                                    }
+                                }
+                                Text("Цвет по умолчанию зависит от типа события.")
+                                    .appTypography(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+                            }
                         }
                         SettingsCard(title: "Напомнить") {
                             Toggle("Напомнить о событии", isOn: $remind)
@@ -2218,18 +2296,27 @@ struct AddEditEventSheet: View {
                 .background(AppColors.systemGroupedBackground)
                 .sheet(isPresented: $showDatePicker) {
                     MainSheet(
-                        title: "Дата события",
+                        title: modeSelection == .date ? "Дата события" : "Период события",
                         onBack: { showDatePicker = false },
                         trailing: {
                             Button("Готово") { showDatePicker = false }
                                 .foregroundStyle(.primary)
                         },
                         content: {
-                            DatePicker("Дата", selection: $date, displayedComponents: .date)
-                                .datePickerStyle(.wheel)
-                                .labelsHidden()
-                                .padding()
-                                .environment(\.locale, .ru)
+                            VStack(spacing: 12) {
+                                if modeSelection == .date {
+                                    DatePicker("Дата", selection: $date, displayedComponents: .date)
+                                        .datePickerStyle(.wheel)
+                                        .labelsHidden()
+                                } else {
+                                    DatePicker("Начало", selection: $periodStart, displayedComponents: .date)
+                                        .datePickerStyle(.compact)
+                                    DatePicker("Конец", selection: $periodEnd, in: periodStart..., displayedComponents: .date)
+                                        .datePickerStyle(.compact)
+                                }
+                            }
+                            .padding()
+                            .environment(\.locale, .ru)
                         }
                     )
                     .mainSheetPresentation(.detents([.height(320)]))
@@ -2240,32 +2327,43 @@ struct AddEditEventSheet: View {
 
     private func save() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTitle.isEmpty else { return }
+        guard isValidTitle else { return }
         isSaving = true
         let desc = eventDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
             do {
+                let selectedType = modeSelection == .period ? periodType : selectedEventType
+                let resolvedTitle = modeSelection == .period && trimmedTitle.isEmpty ? periodType.title : trimmedTitle
+                let resolvedDate = modeSelection == .period ? periodStart : date
                 switch mode {
                 case .create:
                     _ = try await eventService.createEvent(
                         coachProfileId: coachProfileId,
                         traineeProfileId: traineeProfileId,
-                        title: trimmedTitle,
-                        date: date,
+                        title: resolvedTitle,
+                        date: resolvedDate,
+                        mode: modeSelection,
+                        periodStart: modeSelection == .period ? periodStart : nil,
+                        periodEnd: modeSelection == .period ? periodEnd : nil,
                         eventDescription: desc.isEmpty ? nil : desc,
                         remind: remind,
-                        colorHex: selectedColorHex,
-                        eventType: selectedEventType,
+                        colorHex: modeSelection == .period ? EventColor.defaultHex(for: selectedType) : selectedColorHex,
+                        eventType: selectedType,
+                        freezeMembership: modeSelection == .period ? freezeMembership : false,
                         idempotencyKey: UUID().uuidString
                     )
                 case .edit(let event):
                     var updated = event
-                    updated.title = trimmedTitle
-                    updated.date = date
+                    updated.title = resolvedTitle
+                    updated.date = resolvedDate
+                    updated.mode = modeSelection
+                    updated.periodStart = modeSelection == .period ? periodStart : resolvedDate
+                    updated.periodEnd = modeSelection == .period ? periodEnd : resolvedDate
                     updated.eventDescription = desc.isEmpty ? nil : desc
                     updated.remind = remind
-                    updated.colorHex = selectedColorHex
-                    updated.eventType = selectedEventType
+                    updated.colorHex = modeSelection == .period ? EventColor.defaultHex(for: selectedType) : selectedColorHex
+                    updated.eventType = selectedType
+                    updated.freezeMembership = modeSelection == .period ? freezeMembership : false
                     try await eventService.updateEvent(updated)
                 }
                 await MainActor.run {
@@ -2280,6 +2378,11 @@ struct AddEditEventSheet: View {
                 }
             }
         }
+    }
+
+    private var isValidTitle: Bool {
+        if modeSelection == .period { return true }
+        return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 

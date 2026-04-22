@@ -26,6 +26,8 @@ protocol CoachTraineeLinkServiceProtocol {
     func removeLink(coachProfileId: String, traineeProfileId: String) async throws
     /// Архивировать или вернуть из архива. Архивированные отображаются внизу списка.
     func setArchived(coachProfileId: String, traineeProfileId: String, isArchived: Bool) async throws
+    /// Добавить/убрать подопечного в избранное.
+    func setFavorite(coachProfileId: String, traineeProfileId: String, isFavorite: Bool) async throws
     /// Обновить имя для списка в связи.
     func updateLink(coachProfileId: String, traineeProfileId: String, displayName: String?) async throws
 }

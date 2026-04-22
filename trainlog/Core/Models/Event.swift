@@ -11,6 +11,8 @@ enum EventType: String, Codable, CaseIterable {
     case measurement
     case nutrition
     case reminder
+    case vacation
+    case sick
 
     var title: String {
         switch self {
@@ -19,8 +21,15 @@ enum EventType: String, Codable, CaseIterable {
         case .measurement: return "Замеры"
         case .nutrition: return "Питание"
         case .reminder: return "Напоминание"
+        case .vacation: return "Отпуск"
+        case .sick: return "Болезнь"
         }
     }
+}
+
+enum EventMode: String, Codable, CaseIterable {
+    case date
+    case period
 }
 
 /// Событие в календаре: анализы, взвешивание, планы и т.д. Привязано к паре тренер–подопечный.
@@ -38,6 +47,10 @@ struct Event: Identifiable, Codable, Equatable {
     var colorHex: String?
     /// Тип события для сценариев типизации и дефолтной цветовой семантики.
     var eventType: EventType
+    var mode: EventMode
+    var periodStart: Date
+    var periodEnd: Date
+    var freezeMembership: Bool
     /// Событие отменено (скрыто из календаря, в списке показывается как отменённое). Удалять нельзя.
     var isCancelled: Bool
 
@@ -52,6 +65,10 @@ struct Event: Identifiable, Codable, Equatable {
         remind: Bool = false,
         colorHex: String? = nil,
         eventType: EventType = .general,
+        mode: EventMode = .date,
+        periodStart: Date? = nil,
+        periodEnd: Date? = nil,
+        freezeMembership: Bool = false,
         isCancelled: Bool = false
     ) {
         self.id = id
@@ -64,6 +81,10 @@ struct Event: Identifiable, Codable, Equatable {
         self.remind = remind
         self.colorHex = colorHex
         self.eventType = eventType
+        self.mode = mode
+        self.periodStart = periodStart ?? date
+        self.periodEnd = periodEnd ?? date
+        self.freezeMembership = freezeMembership
         self.isCancelled = isCancelled
     }
 
@@ -78,6 +99,10 @@ struct Event: Identifiable, Codable, Equatable {
         case remind
         case colorHex
         case eventType
+        case mode
+        case periodStart
+        case periodEnd
+        case freezeMembership
         case isCancelled
     }
 
@@ -93,6 +118,11 @@ struct Event: Identifiable, Codable, Equatable {
         remind = try container.decode(Bool.self, forKey: .remind)
         colorHex = try container.decodeIfPresent(String.self, forKey: .colorHex)
         eventType = try container.decodeIfPresent(EventType.self, forKey: .eventType) ?? .general
+        mode = try container.decodeIfPresent(EventMode.self, forKey: .mode) ?? .date
+        let fallbackDate = date
+        periodStart = try container.decodeIfPresent(Date.self, forKey: .periodStart) ?? fallbackDate
+        periodEnd = try container.decodeIfPresent(Date.self, forKey: .periodEnd) ?? fallbackDate
+        freezeMembership = try container.decodeIfPresent(Bool.self, forKey: .freezeMembership) ?? false
         isCancelled = try container.decode(Bool.self, forKey: .isCancelled)
     }
 }

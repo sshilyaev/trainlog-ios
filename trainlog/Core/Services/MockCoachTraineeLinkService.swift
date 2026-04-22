@@ -43,7 +43,8 @@ final class MockCoachTraineeLinkService: CoachTraineeLinkServiceProtocol {
             traineeProfileId: traineeProfileId,
             createdAt: Date(),
             displayName: displayName,
-            isArchived: false
+            isArchived: false,
+            isFavorite: false
         ))
     }
 
@@ -59,6 +60,15 @@ final class MockCoachTraineeLinkService: CoachTraineeLinkServiceProtocol {
         if let idx = storage.firstIndex(where: { $0.coachProfileId == coachProfileId && $0.traineeProfileId == traineeProfileId }) {
             var link = storage[idx]
             link.isArchived = isArchived
+            storage[idx] = link
+        }
+    }
+
+    func setFavorite(coachProfileId: String, traineeProfileId: String, isFavorite: Bool) async throws {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        if let idx = storage.firstIndex(where: { $0.coachProfileId == coachProfileId && $0.traineeProfileId == traineeProfileId }) {
+            var link = storage[idx]
+            link.isFavorite = isFavorite
             storage[idx] = link
         }
     }

@@ -12,6 +12,7 @@ private struct CoachTraineeLinkDTO: Decodable {
     let displayName: String?
     let note: String?
     let archived: Bool?
+    let favorite: Bool?
     let createdAt: Date
 }
 
@@ -54,7 +55,8 @@ final class APICoachTraineeLinkService: CoachTraineeLinkServiceProtocol {
                 traineeProfileId: dto.traineeProfileId,
                 createdAt: dto.createdAt,
                 displayName: dto.displayName,
-                isArchived: dto.archived ?? false
+                isArchived: dto.archived ?? false,
+                isFavorite: dto.favorite ?? false
             )
         }
         let profiles = res.profiles ?? []
@@ -82,7 +84,8 @@ final class APICoachTraineeLinkService: CoachTraineeLinkServiceProtocol {
                 traineeProfileId: dto.traineeProfileId,
                 createdAt: dto.createdAt,
                 displayName: dto.displayName,
-                isArchived: dto.archived ?? false
+                isArchived: dto.archived ?? false,
+                isFavorite: dto.favorite ?? false
             )
         }
         linksCache[key] = (links, Date().addingTimeInterval(linksCacheTTL), nil)
@@ -146,6 +149,22 @@ final class APICoachTraineeLinkService: CoachTraineeLinkServiceProtocol {
             path: "api/v1/coach-trainee-links/\(link.id)",
             method: "PATCH",
             body: PatchBody(archived: isArchived)
+        )
+        invalidateLinksCache()
+    }
+
+    func setFavorite(coachProfileId: String, traineeProfileId: String, isFavorite: Bool) async throws {
+        let links = try await fetchLinks(coachProfileId: coachProfileId)
+        guard let link = links.first(where: { $0.traineeProfileId == traineeProfileId }) else {
+            throw APIResponseError(statusCode: 404, errorMessage: "Связь не найдена", backendMessage: nil, validationMessages: [], backendCode: nil)
+        }
+        struct PatchBody: Encodable {
+            let favorite: Bool
+        }
+        try await client.requestNoContent(
+            path: "api/v1/coach-trainee-links/\(link.id)",
+            method: "PATCH",
+            body: PatchBody(favorite: isFavorite)
         )
         invalidateLinksCache()
     }

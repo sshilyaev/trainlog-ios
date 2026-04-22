@@ -91,6 +91,7 @@ struct CoachMainView: View {
         }
         base.sort { a, b in
             if a.link.isArchived != b.link.isArchived { return !a.link.isArchived && b.link.isArchived }
+            if a.link.isFavorite != b.link.isFavorite { return a.link.isFavorite && !b.link.isFavorite }
             switch traineeSortOrder {
             case .byDisplayNameAsc:
                 return displayNameForSort(a).localizedCaseInsensitiveCompare(displayNameForSort(b)) == .orderedAscending
@@ -249,6 +250,8 @@ struct CoachMainView: View {
                     } : nil,
                     onQuickEvent: nil,
                     onEdit: { editTraineeItem = item },
+                    isFavorite: item.link.isFavorite,
+                    onFavorite: { Task { await setFavorite(item, !item.link.isFavorite) } },
                     onArchive: isArchived ? nil : { archiveTarget = (item: item, archived: true); showArchiveConfirmation = true },
                     onUnarchive: isArchived ? { archiveTarget = (item: item, archived: false); showArchiveConfirmation = true } : nil
                 )
@@ -977,6 +980,20 @@ struct CoachMainView: View {
             }
         }
     }
+
+    private func setFavorite(_ item: TraineeItem, _ favorite: Bool) async {
+        do {
+            try await linkService.setFavorite(coachProfileId: profile.id, traineeProfileId: item.profile.id, isFavorite: favorite)
+            await loadTrainees(forceNetwork: true)
+            await MainActor.run {
+                ToastCenter.shared.success(favorite ? "Подопечный добавлен в избранное" : "Подопечный удален из избранного")
+            }
+        } catch {
+            await MainActor.run {
+                ToastCenter.shared.error(from: error, fallback: "Не удалось обновить избранное")
+            }
+        }
+    }
 }
 
 // MARK: - Новый экран списка подопечных
@@ -1101,8 +1118,10 @@ private struct TraineeCardRow: View {
     var onQuickVisit: (() -> Void)? = nil
     var onQuickEvent: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
+    var onFavorite: (() -> Void)? = nil
     var onArchive: (() -> Void)? = nil
     var onUnarchive: (() -> Void)? = nil
+    var isFavorite: Bool = false
 
     private var title: String { displayName ?? profile.name }
     private var initial: String {
@@ -1115,7 +1134,7 @@ private struct TraineeCardRow: View {
     }
 
     var body: some View {
-        let hasMenu = onQuickVisit != nil || onQuickEvent != nil || onEdit != nil || onArchive != nil || onUnarchive != nil
+        let hasMenu = onQuickVisit != nil || onQuickEvent != nil || onEdit != nil || onFavorite != nil || onArchive != nil || onUnarchive != nil
 
         ListActionRow(
             verticalPadding: 10,
@@ -1139,6 +1158,11 @@ private struct TraineeCardRow: View {
                             .appTypography(.bodyEmphasis)
                             .foregroundStyle(isArchived ? .secondary : .primary)
                             .lineLimit(1)
+                        if isFavorite && !isArchived {
+                            AppTablerIcon("rosette")
+                                .appTypography(.caption)
+                                .foregroundStyle(AppColors.accent)
+                        }
                         if isArchived {
                             AppTablerIcon("folder-default")
                                 .appTypography(.caption)
@@ -1187,6 +1211,11 @@ private struct TraineeCardRow: View {
                 }
                 if let onEdit {
                     EditMenuAction(action: onEdit)
+                }
+                if let onFavorite {
+                    Button(action: onFavorite) {
+                        Label(isFavorite ? "Убрать из избранного" : "В избранное", appIcon: "rosette")
+                    }
                 }
                 if let onUnarchive {
                     Button(action: onUnarchive) {

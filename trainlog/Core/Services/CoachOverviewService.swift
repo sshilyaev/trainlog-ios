@@ -61,7 +61,8 @@ final class APICoachOverviewService: CoachOverviewServiceProtocol {
                         traineeProfileId: item.link.traineeProfileId,
                         createdAt: item.link.createdAt,
                         displayName: item.link.displayName,
-                        isArchived: item.link.archived
+                        isArchived: item.link.archived,
+                        isFavorite: item.link.favorite ?? false
                     ),
                     profile: profile,
                     membershipSummary: item.activeMembershipSummary?.displayText
@@ -107,6 +108,7 @@ private extension APICoachOverviewService {
         let traineeProfileId: String
         let displayName: String?
         let archived: Bool
+        let favorite: Bool?
         let createdAt: Date
     }
 

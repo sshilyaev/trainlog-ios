@@ -123,6 +123,8 @@ enum EventColor {
         case .measurement: return "538CB4"
         case .nutrition: return "B4AC53"
         case .reminder: return "AA4865"
+        case .vacation: return "8D48AA"
+        case .sick: return "AA4865"
         }
     }
 

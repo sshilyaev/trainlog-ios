@@ -14,6 +14,8 @@ struct CoachTraineeLink: Identifiable, Equatable, Codable {
     var displayName: String?
     /// В архиве — отображаются внизу списка подопечных.
     var isArchived: Bool
+    /// Избранный подопечный — отображается выше остальных.
+    var isFavorite: Bool
 
     init(
         id: String,
@@ -21,7 +23,8 @@ struct CoachTraineeLink: Identifiable, Equatable, Codable {
         traineeProfileId: String,
         createdAt: Date = Date(),
         displayName: String? = nil,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        isFavorite: Bool = false
     ) {
         self.id = id
         self.coachProfileId = coachProfileId
@@ -29,5 +32,6 @@ struct CoachTraineeLink: Identifiable, Equatable, Codable {
         self.createdAt = createdAt
         self.displayName = displayName
         self.isArchived = isArchived
+        self.isFavorite = isFavorite
     }
 }
