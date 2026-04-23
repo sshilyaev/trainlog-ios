@@ -32,6 +32,18 @@ enum EventMode: String, Codable, CaseIterable {
     case period
 }
 
+enum EventPeriodType: String, Codable, CaseIterable {
+    case vacation
+    case sick
+
+    var title: String {
+        switch self {
+        case .vacation: return "Отпуск"
+        case .sick: return "Болезнь"
+        }
+    }
+}
+
 /// Событие в календаре: анализы, взвешивание, планы и т.д. Привязано к паре тренер–подопечный.
 struct Event: Identifiable, Codable, Equatable {
     let id: String
@@ -50,6 +62,7 @@ struct Event: Identifiable, Codable, Equatable {
     var mode: EventMode
     var periodStart: Date
     var periodEnd: Date
+    var periodType: EventPeriodType?
     var freezeMembership: Bool
     /// Событие отменено (скрыто из календаря, в списке показывается как отменённое). Удалять нельзя.
     var isCancelled: Bool
@@ -68,6 +81,7 @@ struct Event: Identifiable, Codable, Equatable {
         mode: EventMode = .date,
         periodStart: Date? = nil,
         periodEnd: Date? = nil,
+        periodType: EventPeriodType? = nil,
         freezeMembership: Bool = false,
         isCancelled: Bool = false
     ) {
@@ -84,6 +98,7 @@ struct Event: Identifiable, Codable, Equatable {
         self.mode = mode
         self.periodStart = periodStart ?? date
         self.periodEnd = periodEnd ?? date
+        self.periodType = periodType
         self.freezeMembership = freezeMembership
         self.isCancelled = isCancelled
     }
@@ -102,6 +117,7 @@ struct Event: Identifiable, Codable, Equatable {
         case mode
         case periodStart
         case periodEnd
+        case periodType
         case freezeMembership
         case isCancelled
     }
@@ -122,6 +138,7 @@ struct Event: Identifiable, Codable, Equatable {
         let fallbackDate = date
         periodStart = try container.decodeIfPresent(Date.self, forKey: .periodStart) ?? fallbackDate
         periodEnd = try container.decodeIfPresent(Date.self, forKey: .periodEnd) ?? fallbackDate
+        periodType = try container.decodeIfPresent(EventPeriodType.self, forKey: .periodType)
         freezeMembership = try container.decodeIfPresent(Bool.self, forKey: .freezeMembership) ?? false
         isCancelled = try container.decode(Bool.self, forKey: .isCancelled)
     }

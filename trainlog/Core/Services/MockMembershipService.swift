@@ -35,7 +35,7 @@ final class MockMembershipService: MembershipServiceProtocol {
         let m: Membership
         switch kind {
         case .byVisits:
-            let total = max(1, totalSessions ?? 10)
+            let total = max(1, totalSessions ?? 12)
             m = Membership(
                 id: UUID().uuidString,
                 coachProfileId: coachProfileId,

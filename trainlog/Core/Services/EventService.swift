@@ -15,6 +15,7 @@ protocol EventServiceProtocol {
         mode: EventMode,
         periodStart: Date?,
         periodEnd: Date?,
+        periodType: EventPeriodType?,
         eventDescription: String?,
         remind: Bool,
         colorHex: String?,

@@ -52,6 +52,7 @@ final class APIEventService: EventServiceProtocol {
         mode: EventMode,
         periodStart: Date?,
         periodEnd: Date?,
+        periodType: EventPeriodType?,
         eventDescription: String?,
         remind: Bool,
         colorHex: String?,
@@ -70,6 +71,7 @@ final class APIEventService: EventServiceProtocol {
             let date: String
             let periodStart: String?
             let periodEnd: String?
+            let periodType: String?
             let description: String?
             let remind: Bool
             let colorHex: String?
@@ -85,6 +87,7 @@ final class APIEventService: EventServiceProtocol {
             date: fmt.string(from: date),
             periodStart: periodStart.map { fmt.string(from: $0) },
             periodEnd: periodEnd.map { fmt.string(from: $0) },
+            periodType: periodType?.rawValue,
             description: eventDescription,
             remind: remind,
             colorHex: colorHex,
@@ -107,6 +110,7 @@ final class APIEventService: EventServiceProtocol {
             let date: String?
             let periodStart: String?
             let periodEnd: String?
+            let periodType: String?
             let description: String?
             let remind: Bool?
             let colorHex: String?
@@ -120,6 +124,7 @@ final class APIEventService: EventServiceProtocol {
             date: fmt.string(from: event.date),
             periodStart: fmt.string(from: event.periodStart),
             periodEnd: fmt.string(from: event.periodEnd),
+            periodType: event.periodType?.rawValue,
             description: event.eventDescription,
             remind: event.remind,
             colorHex: event.colorHex,

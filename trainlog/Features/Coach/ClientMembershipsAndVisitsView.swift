@@ -53,6 +53,7 @@ struct VisitsCalendarView: View {
     // Кешируем агрегации по дням, чтобы не пересчитывать их на каждый scroll-driven re-render.
     @State private var cachedActiveVisitsByDay: [Date: [Visit]] = [:]
     @State private var cachedActiveEventsByDay: [Date: [Event]] = [:]
+    @State private var cachedPeriodSegmentByDay: [Date: (color: Color, isStart: Bool, isEnd: Bool)] = [:]
 
     private var visitsKey: Int { visits.reduce(0) { $0 ^ $1.id.hashValue } }
     private var eventsKey: Int { events.reduce(0) { $0 ^ $1.id.hashValue } }
@@ -63,17 +64,28 @@ struct VisitsCalendarView: View {
             by: { calendar.startOfDay(for: $0.date) }
         )
         var map: [Date: [Event]] = [:]
+        var periodSegments: [Date: (color: Color, isStart: Bool, isEnd: Bool)] = [:]
         for event in events where !event.isCancelled {
             let start = calendar.startOfDay(for: event.periodStart)
             let end = calendar.startOfDay(for: event.periodEnd)
+            let isPeriod = event.mode == .period && start < end
+            let eventColor = EventColor.color(eventType: event.eventType, overrideHex: event.colorHex)
             var cursor = start
             while cursor <= end {
                 map[cursor, default: []].append(event)
+                if isPeriod, periodSegments[cursor] == nil {
+                    periodSegments[cursor] = (
+                        color: eventColor,
+                        isStart: calendar.isDate(cursor, inSameDayAs: start),
+                        isEnd: calendar.isDate(cursor, inSameDayAs: end)
+                    )
+                }
                 guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
                 cursor = next
             }
         }
         cachedActiveEventsByDay = map
+        cachedPeriodSegmentByDay = periodSegments
     }
 
     private struct DayItem {
@@ -84,6 +96,7 @@ struct VisitsCalendarView: View {
         let count: Int
         let eventColor: Color?
         let hasOnlyEvents: Bool
+        let periodSegment: (color: Color, isStart: Bool, isEnd: Bool)?
     }
 
     private var daysInMonth: [DayItem] {
@@ -97,7 +110,7 @@ struct VisitsCalendarView: View {
         let leadingBlanks = (firstWeekday - 2 + 7) % 7
         var result: [DayItem] = []
         for _ in 0..<leadingBlanks {
-            result.append(DayItem(day: nil, hasVisit: false, absent: false, debt: false, count: 0, eventColor: nil, hasOnlyEvents: false))
+            result.append(DayItem(day: nil, hasVisit: false, absent: false, debt: false, count: 0, eventColor: nil, hasOnlyEvents: false, periodSegment: nil))
         }
         for day in 1...numberOfDays {
             guard let date = calendar.date(bySetting: .day, value: day, of: first) else { continue }
@@ -110,11 +123,12 @@ struct VisitsCalendarView: View {
             let debt = activeVisits.contains { $0.paymentStatus == .debt }
             let hasOnlyEvents = activeVisits.isEmpty && !activeEventsOnDay.isEmpty
             let eventColor: Color? = activeEventsOnDay.first.map { EventColor.color(eventType: $0.eventType, overrideHex: $0.colorHex) }
-            result.append(DayItem(day: day, hasVisit: hasVisit, absent: absent, debt: debt, count: count, eventColor: eventColor, hasOnlyEvents: hasOnlyEvents))
+            let periodSegment = cachedPeriodSegmentByDay[startOfDay]
+            result.append(DayItem(day: day, hasVisit: hasVisit, absent: absent, debt: debt, count: count, eventColor: eventColor, hasOnlyEvents: hasOnlyEvents, periodSegment: periodSegment))
         }
         let totalCells = 42
         while result.count < totalCells {
-            result.append(DayItem(day: nil, hasVisit: false, absent: false, debt: false, count: 0, eventColor: nil, hasOnlyEvents: false))
+            result.append(DayItem(day: nil, hasVisit: false, absent: false, debt: false, count: 0, eventColor: nil, hasOnlyEvents: false, periodSegment: nil))
         }
         return Array(result.prefix(totalCells))
     }
@@ -154,7 +168,7 @@ struct VisitsCalendarView: View {
                             .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    ForEach(Array(daysInMonth.enumerated()), id: \.offset) { _, item in
+                    ForEach(Array(daysInMonth.enumerated()), id: \.offset) { index, item in
                         let dayDate: Date? = item.day.flatMap { d in
                             guard let first = firstOfMonth,
                                   let date = calendar.date(bySetting: .day, value: d, of: first) else { return nil }
@@ -170,6 +184,9 @@ struct VisitsCalendarView: View {
                             visitsCount: item.count,
                             eventColor: item.eventColor,
                             hasOnlyEvents: item.hasOnlyEvents,
+                            periodSegment: item.periodSegment,
+                            isWeekStart: index % 7 == 0,
+                            isWeekEnd: index % 7 == 6,
                             dateForTap: dayDate,
                             visitsOnDay: item.hasVisit ? visitsOnDay : nil,
                             eventsOnDay: eventsOnDay,
@@ -233,6 +250,9 @@ private struct VisitsCalendarDayCell: View {
     let visitsCount: Int
     var eventColor: Color? = nil
     var hasOnlyEvents: Bool = false
+    var periodSegment: (color: Color, isStart: Bool, isEnd: Bool)? = nil
+    var isWeekStart: Bool = false
+    var isWeekEnd: Bool = false
     var dateForTap: Date? = nil
     var visitsOnDay: [Visit]? = nil
     var eventsOnDay: [Event]? = nil
@@ -254,6 +274,17 @@ private struct VisitsCalendarDayCell: View {
     var body: some View {
         ZStack {
             if let d = day {
+                if let periodSegment {
+                    let roundLeft = periodSegment.isStart || isWeekStart
+                    let roundRight = periodSegment.isEnd || isWeekEnd
+                    PeriodSegmentShape(roundLeft: roundLeft, roundRight: roundRight, radius: 8)
+                        .fill(periodSegment.color.opacity(0.58))
+                        .frame(height: 24)
+                        // Закрываем межколоночный gap непрерывно:
+                        // у крайних сегментов расширяем только к соседнему дню.
+                        .padding(.leading, roundLeft ? 0 : -2)
+                        .padding(.trailing, roundRight ? 0 : -2)
+                }
                 if absent {
                     Circle()
                         .fill(AppColors.visitsCancelled)
@@ -262,7 +293,7 @@ private struct VisitsCalendarDayCell: View {
                     Circle()
                         .fill(AppColors.visitsOneTimeDebt)
                         .frame(width: 28, height: 28)
-                } else if hasVisit {
+                } else if hasVisit && !(periodSegment != nil && hasOnlyEvents) {
                     Circle()
                         .fill(hasOnlyEvents ? (eventColor ?? EventColor.defaultColor) : AppColors.visitsBySubscription)
                         .frame(width: 28, height: 28)
@@ -400,6 +431,70 @@ private struct VisitsCalendarDayCell: View {
         }
     }
 
+}
+
+private struct PeriodSegmentShape: Shape {
+    let roundLeft: Bool
+    let roundRight: Bool
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let r = min(radius, rect.height / 2, rect.width / 2)
+        var path = Path()
+
+        let leftRadius = roundLeft ? r : 0
+        let rightRadius = roundRight ? r : 0
+
+        path.move(to: CGPoint(x: rect.minX + leftRadius, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - rightRadius, y: rect.minY))
+
+        if roundRight {
+            path.addArc(
+                center: CGPoint(x: rect.maxX - rightRadius, y: rect.minY + rightRadius),
+                radius: rightRadius,
+                startAngle: .degrees(-90),
+                endAngle: .degrees(0),
+                clockwise: false
+            )
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - rightRadius))
+            path.addArc(
+                center: CGPoint(x: rect.maxX - rightRadius, y: rect.maxY - rightRadius),
+                radius: rightRadius,
+                startAngle: .degrees(0),
+                endAngle: .degrees(90),
+                clockwise: false
+            )
+        } else {
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        }
+
+        path.addLine(to: CGPoint(x: rect.minX + leftRadius, y: rect.maxY))
+
+        if roundLeft {
+            path.addArc(
+                center: CGPoint(x: rect.minX + leftRadius, y: rect.maxY - leftRadius),
+                radius: leftRadius,
+                startAngle: .degrees(90),
+                endAngle: .degrees(180),
+                clockwise: false
+            )
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + leftRadius))
+            path.addArc(
+                center: CGPoint(x: rect.minX + leftRadius, y: rect.minY + leftRadius),
+                radius: leftRadius,
+                startAngle: .degrees(180),
+                endAngle: .degrees(270),
+                clockwise: false
+            )
+        } else {
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        }
+
+        path.closeSubpath()
+        return path
+    }
 }
 
 // MARK: - Шит «За день»: Добавить (разовое / с абонемента / событие) + список посещений и событий за дату
@@ -652,7 +747,7 @@ private struct EventRowView: View {
                         Text(dateText)
                             .appTypography(.secondary)
                             .foregroundStyle(.primary)
-                        if !isExpanded && !event.isCancelled {
+                        if !isExpanded && !event.isCancelled && event.mode != .period {
                             Text("·")
                                 .appTypography(.secondary)
                                 .foregroundStyle(.secondary)
@@ -712,7 +807,7 @@ private struct EventRowView: View {
                             .foregroundStyle(.secondary)
                     }
                     if event.mode == .period {
-                        Text("Тип: \(event.eventType.title)\(event.freezeMembership ? " • Заморозка абонемента" : "")")
+                        Text("Тип: \((event.periodType?.title ?? "Период"))\(event.freezeMembership ? " • Заморозка обонемента" : "")")
                             .appTypography(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1196,6 +1291,8 @@ struct ClientVisitsManageView: View {
                     mode: .create(initialDate: date),
                     coachProfileId: coachProfileId,
                     traineeProfileId: trainee.id,
+                    memberships: memberships,
+                    canManageMembershipFreeze: true,
                     eventService: eventService,
                     onSaved: { Task { await load(); await MainActor.run { pendingEventDate = nil } } },
                     onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
@@ -1209,6 +1306,8 @@ struct ClientVisitsManageView: View {
                 mode: .edit(event),
                 coachProfileId: coachProfileId,
                 traineeProfileId: trainee.id,
+                memberships: memberships,
+                canManageMembershipFreeze: true,
                 eventService: eventService,
                 onSaved: { Task { await load(); await MainActor.run { eventToEdit = nil } } },
                 onError: { msg in Task { await MainActor.run { errorMessage = msg } } },
@@ -1278,7 +1377,7 @@ struct ClientMembershipsNewView: View {
     @State private var allVisits: [Visit] = []
     @State private var showVisitsForMembership: Membership? = nil
     @State private var createKind: MembershipKind = .byVisits
-    @State private var createTotalSessionsCount: Int = 10
+    @State private var createTotalSessionsCount: Int = 12
     @State private var createStartDate: Date = Date()
     @State private var createDurationDays: Int = 30
     @State private var createPriceText: String = ""
@@ -1536,13 +1635,13 @@ struct ClientMembershipsNewView: View {
         SettingsCard(title: "Создать абонемент") {
             VStack(spacing: 0) {
                 HStack(spacing: AppDesign.rectangularBlockSpacing) {
-                    createKindTile(kind: .byVisits, icon: "tag", title: "По посещению", description: "Фиксированное число занятий")
+                    createKindTile(kind: .byVisits, icon: "tag", title: "По посещениям", description: "Фиксированное число посещений")
                     createKindTile(kind: .unlimited, icon: "calendar-default", title: "Безлимитный", description: "На период по датам")
                 }
 
                 if createKind == .byVisits {
                     FormSectionDivider()
-                    FormRow(icon: "tag", title: "Количество") {
+                    FormRow(icon: "tag", title: "Посещения") {
                         HStack(spacing: 20) {
                             Button { if createTotalSessionsCount > minSessions { createTotalSessionsCount -= 1 } } label: {
                                 AppTablerIcon("minus-circle")
@@ -1604,7 +1703,7 @@ struct ClientMembershipsNewView: View {
                 }
 
                 FormSectionDivider()
-                FormRow(icon: "wallet-default", title: "Стоимость (₽)") {
+                FormRow(icon: "currency-rubel", title: "Стоимость (₽)") {
                     TextField("5000", text: $createPriceText)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.plain)
@@ -2101,24 +2200,33 @@ struct AddEditEventSheet: View {
     let mode: Mode
     let coachProfileId: String
     let traineeProfileId: String
+    let memberships: [Membership]
+    let canManageMembershipFreeze: Bool
     let eventService: EventServiceProtocol
     let onSaved: () -> Void
     let onError: (String) -> Void
     let onCancel: () -> Void
+
+    private enum DatePickerField: String, Identifiable {
+        case date
+        case periodStart
+        case periodEnd
+        var id: String { rawValue }
+    }
 
     @State private var title: String = ""
     @State private var date: Date = Date()
     @State private var modeSelection: EventMode = .date
     @State private var periodStart: Date = Date()
     @State private var periodEnd: Date = Date()
-    @State private var periodType: EventType = .vacation
+    @State private var periodType: EventPeriodType = .vacation
     @State private var freezeMembership = false
     @State private var eventDescription: String = ""
     @State private var remind: Bool = false
     @State private var selectedEventType: EventType = .general
     @State private var selectedColorHex: String?
     @State private var isSaving = false
-    @State private var showDatePicker = false
+    @State private var datePickerField: DatePickerField?
 
     private var isEdit: Bool { if case .edit = mode { return true }; return false }
     private var navigationTitle: String { isEdit ? "Редактировать событие" : "Новое событие" }
@@ -2127,6 +2235,8 @@ struct AddEditEventSheet: View {
         mode: Mode,
         coachProfileId: String,
         traineeProfileId: String,
+        memberships: [Membership] = [],
+        canManageMembershipFreeze: Bool = false,
         eventService: EventServiceProtocol,
         onSaved: @escaping () -> Void,
         onError: @escaping (String) -> Void,
@@ -2135,6 +2245,8 @@ struct AddEditEventSheet: View {
         self.mode = mode
         self.coachProfileId = coachProfileId
         self.traineeProfileId = traineeProfileId
+        self.memberships = memberships
+        self.canManageMembershipFreeze = canManageMembershipFreeze
         self.eventService = eventService
         self.onSaved = onSaved
         self.onError = onError
@@ -2151,11 +2263,11 @@ struct AddEditEventSheet: View {
             _modeSelection = State(initialValue: event.mode)
             _periodStart = State(initialValue: event.periodStart)
             _periodEnd = State(initialValue: event.periodEnd)
-            _periodType = State(initialValue: (event.eventType == .vacation || event.eventType == .sick) ? event.eventType : .vacation)
+            _periodType = State(initialValue: event.periodType ?? (event.eventType == .sick ? .sick : .vacation))
             _freezeMembership = State(initialValue: event.freezeMembership)
             _eventDescription = State(initialValue: event.eventDescription ?? "")
             _remind = State(initialValue: event.remind)
-            _selectedEventType = State(initialValue: (event.eventType == .vacation || event.eventType == .sick) ? .general : event.eventType)
+            _selectedEventType = State(initialValue: event.eventType)
             _selectedColorHex = State(initialValue: event.colorHex ?? EventColor.defaultHex(for: event.eventType))
         }
     }
@@ -2182,8 +2294,6 @@ struct AddEditEventSheet: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 6)
                                 FormSectionDivider()
-                                FormRowTextField(icon: "pencil-edit", title: "Название", placeholder: "Сдать анализы, взвешивание", text: $title, textContentType: .none, autocapitalization: .sentences)
-                                FormSectionDivider()
                                 if modeSelection == .date {
                                     FormRowDateSelection(
                                         title: "Дата события",
@@ -2192,7 +2302,7 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { date = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { showDatePicker = true }
+                                        onTap: { datePickerField = .date }
                                     )
                                 } else {
                                     FormRowDateSelection(
@@ -2202,7 +2312,7 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { periodStart = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { showDatePicker = true }
+                                        onTap: { datePickerField = .periodStart }
                                     )
                                     FormSectionDivider()
                                     FormRowDateSelection(
@@ -2212,72 +2322,92 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { periodEnd = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { showDatePicker = true }
+                                        onTap: { datePickerField = .periodEnd }
                                     )
                                 }
-                            }
-                        }
-
-                        SettingsCard(title: "Описание") {
-                            FormRow(icon: "file-default", title: "Описание") {
-                                TextField("Необязательно", text: $eventDescription, axis: .vertical)
-                                    .textFieldStyle(.plain)
-                                    .lineLimit(2...5)
-                                    .textInputAutocapitalization(.sentences)
-                                    .multilineTextAlignment(.trailing)
-                                    .formInputStyle()
+                                FormSectionDivider()
+                                FormRowTextField(
+                                    icon: "pencil-edit",
+                                    title: "Название",
+                                    placeholder: modeSelection == .period ? "Параметры периода" : "Сдать анализы, взвешивание",
+                                    text: $title,
+                                    textContentType: .none,
+                                    autocapitalization: .sentences
+                                )
                             }
                         }
 
                         SettingsCard(title: "Тип события") {
                             if modeSelection == .period {
-                                Picker("Тип периода", selection: $periodType) {
-                                    Text(EventType.vacation.title).tag(EventType.vacation)
-                                    Text(EventType.sick.title).tag(EventType.sick)
-                                }
-                                .pickerStyle(.segmented)
-                            } else {
-                                Picker("Тип события", selection: $selectedEventType) {
-                                    ForEach(EventType.allCases.filter { $0 != .vacation && $0 != .sick }, id: \.rawValue) { type in
-                                        Text(type.title).tag(type)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(EventPeriodType.allCases, id: \.rawValue) { type in
+                                            eventTypeChip(
+                                                title: type.title,
+                                                isSelected: periodType == type
+                                            ) {
+                                                periodType = type
+                                                if selectedColorHex == nil || selectedColorHex == EventColor.defaultHex(for: mappedPeriodEventType) {
+                                                    selectedColorHex = EventColor.defaultHex(for: type == .vacation ? .vacation : .sick)
+                                                }
+                                            }
+                                        }
                                     }
+                                    .padding(.horizontal, 8)
                                 }
-                                .pickerStyle(.menu)
-                                .onChange(of: selectedEventType) { _, newValue in
-                                    selectedColorHex = EventColor.defaultHex(for: newValue)
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(EventType.allCases.filter { $0 != .vacation && $0 != .sick }, id: \.rawValue) { type in
+                                            eventTypeChip(
+                                                title: type.title,
+                                                isSelected: selectedEventType == type
+                                            ) {
+                                                selectedEventType = type
+                                                selectedColorHex = EventColor.defaultHex(for: type)
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 8)
                                 }
                             }
+                            FormSectionDivider()
+                            HStack(spacing: 8) {
+                                ForEach(EventColor.palette, id: \.hex) { pair in
+                                    let isSelected = selectedColorHex == pair.hex
+                                    Button {
+                                        selectedColorHex = isSelected ? nil : pair.hex
+                                    } label: {
+                                        Circle()
+                                            .fill(pair.color)
+                                            .frame(width: 22, height: 22)
+                                            .overlay {
+                                                if isSelected {
+                                                    Circle()
+                                                        .strokeBorder(Color.primary, lineWidth: 2)
+                                                }
+                                            }
+                                    }
+                                    .buttonStyle(PressableButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.top, 2)
+                            Text("Цвет по умолчанию зависит от типа события. Можно выбрать вручную.")
+                                .appTypography(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.top, 4)
                         }
 
-                        if modeSelection == .period {
+                        if modeSelection == .period && canManageMembershipFreeze {
                             SettingsCard(title: "Параметры периода") {
-                                Toggle("Заморозка абонемента (если есть)", isOn: $freezeMembership)
-                            }
-                        } else {
-                            SettingsCard(title: "Цвет в календаре") {
-                                HStack(spacing: 8) {
-                                    ForEach(EventColor.palette, id: \.hex) { pair in
-                                        let isSelected = selectedColorHex == pair.hex
-                                        Button {
-                                            selectedColorHex = isSelected ? nil : pair.hex
-                                        } label: {
-                                            Circle()
-                                                .fill(pair.color)
-                                                .frame(width: 22, height: 22)
-                                                .overlay {
-                                                    if isSelected {
-                                                        Circle()
-                                                            .strokeBorder(Color.primary, lineWidth: 2)
-                                                    }
-                                                }
-                                        }
-                                        .buttonStyle(PressableButtonStyle())
-                                    }
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Toggle("Заморозка обонемента", isOn: freezeToggleBinding)
+                                    Text(freezeDescriptionText)
+                                        .appTypography(.caption)
+                                        .foregroundStyle(activeUnlimitedMembership == nil ? AppColors.visitsOneTimeDebt : .secondary)
                                 }
-                                Text("Цвет по умолчанию зависит от типа события.")
-                                    .appTypography(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.top, 4)
                             }
                         }
                         SettingsCard(title: "Напомнить") {
@@ -2294,35 +2424,38 @@ struct AddEditEventSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .background(AppColors.systemGroupedBackground)
-                .sheet(isPresented: $showDatePicker) {
+                .sheet(item: $datePickerField) { field in
                     MainSheet(
-                        title: modeSelection == .date ? "Дата события" : "Период события",
-                        onBack: { showDatePicker = false },
+                        title: datePickerTitle(for: field),
+                        onBack: { datePickerField = nil },
                         trailing: {
-                            Button("Готово") { showDatePicker = false }
+                            Button("Готово") { datePickerField = nil }
                                 .foregroundStyle(.primary)
                         },
                         content: {
-                            VStack(spacing: 12) {
-                                if modeSelection == .date {
-                                    DatePicker("Дата", selection: $date, displayedComponents: .date)
-                                        .datePickerStyle(.wheel)
-                                        .labelsHidden()
-                                } else {
-                                    DatePicker("Начало", selection: $periodStart, displayedComponents: .date)
-                                        .datePickerStyle(.compact)
-                                    DatePicker("Конец", selection: $periodEnd, in: periodStart..., displayedComponents: .date)
-                                        .datePickerStyle(.compact)
-                                }
-                            }
-                            .padding()
-                            .environment(\.locale, .ru)
+                            DatePicker("", selection: dateBinding(for: field), in: dateRange(for: field), displayedComponents: .date)
+                                .datePickerStyle(.wheel)
+                                .labelsHidden()
+                                .padding()
+                                .environment(\.locale, .ru)
                         }
                     )
                     .mainSheetPresentation(.detents([.height(320)]))
                 }
             }
         )
+        .onAppear {
+            if modeSelection == .period && canManageMembershipFreeze {
+                applyPeriodFreezeDefaults()
+            }
+        }
+        .onChange(of: modeSelection) { _, newMode in
+            if newMode == .period && canManageMembershipFreeze {
+                applyPeriodFreezeDefaults()
+            } else {
+                freezeMembership = false
+            }
+        }
     }
 
     private func save() {
@@ -2332,7 +2465,6 @@ struct AddEditEventSheet: View {
         let desc = eventDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
             do {
-                let selectedType = modeSelection == .period ? periodType : selectedEventType
                 let resolvedTitle = modeSelection == .period && trimmedTitle.isEmpty ? periodType.title : trimmedTitle
                 let resolvedDate = modeSelection == .period ? periodStart : date
                 switch mode {
@@ -2345,10 +2477,11 @@ struct AddEditEventSheet: View {
                         mode: modeSelection,
                         periodStart: modeSelection == .period ? periodStart : nil,
                         periodEnd: modeSelection == .period ? periodEnd : nil,
+                        periodType: modeSelection == .period ? periodType : nil,
                         eventDescription: desc.isEmpty ? nil : desc,
                         remind: remind,
-                        colorHex: modeSelection == .period ? EventColor.defaultHex(for: selectedType) : selectedColorHex,
-                        eventType: selectedType,
+                        colorHex: selectedColorHex ?? (modeSelection == .period ? EventColor.defaultHex(for: mappedPeriodEventType) : EventColor.defaultHex(for: selectedEventType)),
+                        eventType: modeSelection == .period ? .general : selectedEventType,
                         freezeMembership: modeSelection == .period ? freezeMembership : false,
                         idempotencyKey: UUID().uuidString
                     )
@@ -2359,10 +2492,11 @@ struct AddEditEventSheet: View {
                     updated.mode = modeSelection
                     updated.periodStart = modeSelection == .period ? periodStart : resolvedDate
                     updated.periodEnd = modeSelection == .period ? periodEnd : resolvedDate
+                    updated.periodType = modeSelection == .period ? periodType : nil
                     updated.eventDescription = desc.isEmpty ? nil : desc
                     updated.remind = remind
-                    updated.colorHex = modeSelection == .period ? EventColor.defaultHex(for: selectedType) : selectedColorHex
-                    updated.eventType = selectedType
+                    updated.colorHex = selectedColorHex ?? (modeSelection == .period ? EventColor.defaultHex(for: mappedPeriodEventType) : EventColor.defaultHex(for: selectedEventType))
+                    updated.eventType = modeSelection == .period ? .general : selectedEventType
                     updated.freezeMembership = modeSelection == .period ? freezeMembership : false
                     try await eventService.updateEvent(updated)
                 }
@@ -2383,6 +2517,110 @@ struct AddEditEventSheet: View {
     private var isValidTitle: Bool {
         if modeSelection == .period { return true }
         return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var periodDaysCount: Int {
+        let start = Calendar.current.startOfDay(for: periodStart)
+        let end = Calendar.current.startOfDay(for: periodEnd)
+        let diff = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
+        return max(1, diff + 1)
+    }
+
+    private var mappedPeriodEventType: EventType {
+        switch periodType {
+        case .vacation: return .vacation
+        case .sick: return .sick
+        }
+    }
+
+    private func datePickerTitle(for field: DatePickerField) -> String {
+        switch field {
+        case .date: return "Дата события"
+        case .periodStart: return "Начало периода"
+        case .periodEnd: return "Конец периода"
+        }
+    }
+
+    private func dateBinding(for field: DatePickerField) -> Binding<Date> {
+        switch field {
+        case .date:
+            return $date
+        case .periodStart:
+            return $periodStart
+        case .periodEnd:
+            return $periodEnd
+        }
+    }
+
+    private func dateRange(for field: DatePickerField) -> ClosedRange<Date> {
+        switch field {
+        case .periodEnd:
+            return periodStart...Date.distantFuture
+        default:
+            return Date.distantPast...Date.distantFuture
+        }
+    }
+
+    private var activeUnlimitedMembership: Membership? {
+        memberships
+            .filter { $0.kind == .unlimited && $0.status == .active }
+            .sorted { $0.createdAt > $1.createdAt }
+            .first
+    }
+
+    private var freezeToggleBinding: Binding<Bool> {
+        Binding(
+            get: { freezeMembership },
+            set: { newValue in
+                guard modeSelection == .period else {
+                    freezeMembership = false
+                    return
+                }
+                if newValue {
+                    freezeMembership = activeUnlimitedMembership != nil
+                } else {
+                    freezeMembership = false
+                }
+            }
+        )
+    }
+
+    private var freezeDescriptionText: String {
+        guard let membership = activeUnlimitedMembership else {
+            return "Нечего замораживать: нет активного безлимитного абонемента."
+        }
+        let label: String
+        if let code = membership.displayCode, !code.isEmpty {
+            label = "абонемент №\(code)"
+        } else if let endDate = membership.effectiveEndDate {
+            label = "безлимитный абонемент до \(endDate.formattedRuShort)"
+        } else {
+            label = "активный безлимитный абонемент"
+        }
+        if freezeMembership {
+            return "Будет заморожен \(label) на \(periodDaysCount) дн."
+        }
+        return "Найден \(label). Включите заморозку, если нужно."
+    }
+
+    private func applyPeriodFreezeDefaults() {
+        freezeMembership = activeUnlimitedMembership != nil
+    }
+
+    @ViewBuilder
+    private func eventTypeChip(title: String, isSelected: Bool, onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
+            Text(title)
+                .appTypography(.caption)
+                .foregroundStyle(isSelected ? Color.white : .primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(isSelected ? AppColors.accent : AppColors.tertiarySystemFill)
+                )
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 }
 
@@ -2445,7 +2683,7 @@ struct AddMembershipSheet: View {
     let onCancel: () -> Void
 
     @State private var selectedKind: MembershipKind = .byVisits
-    @State private var totalSessionsCount: Int = 10
+    @State private var totalSessionsCount: Int = 12
     @State private var startDate: Date = Date()
     @State private var durationDays: Int = 30
     @State private var priceText: String = ""
@@ -2500,8 +2738,8 @@ struct AddMembershipSheet: View {
                                             membershipKindTile(
                                                 kind: .byVisits,
                                                 icon: "tag",
-                                                title: "По посещению",
-                                                description: "Фиксированное число занятий"
+                                                title: "По посещениям",
+                                                description: "Фиксированное число посещений"
                                             )
                                             membershipKindTile(
                                                 kind: .unlimited,
@@ -2515,7 +2753,7 @@ struct AddMembershipSheet: View {
 
                                 if selectedKind == .byVisits {
                                     SettingsCard(title: "Занятий в абонементе") {
-                                        FormRow(icon: "tag", title: "Количество") {
+                                        FormRow(icon: "tag", title: "Посещения") {
                                             HStack(spacing: 20) {
                                                 Button {
                                                     if totalSessionsCount > minSessions { totalSessionsCount -= 1 }
@@ -2589,7 +2827,7 @@ struct AddMembershipSheet: View {
                                 }
 
                                 SettingsCard(title: "Стоимость (₽, необязательно)") {
-                                    FormRow(icon: "wallet-default", title: "Сумма") {
+                                    FormRow(icon: "currency-rubel", title: "Сумма") {
                                         TextField("5000", text: $priceText)
                                             .keyboardType(.numberPad)
                                             .textFieldStyle(.plain)

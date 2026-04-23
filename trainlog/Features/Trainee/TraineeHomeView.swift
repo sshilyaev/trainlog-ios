@@ -145,113 +145,83 @@ struct TraineeHomeView<NutritionDestination: View, MembershipsDestination: View,
     private var trainerSection: some View {
         if !coachLinks.isEmpty, let coach = primaryCoach {
             ContentCard(
-                title: "Мой тренер",
-                description: "Контакты и рекомендации"
+                title: "Ваш тренер",
+                description: ""
             ) {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Ваш тренер")
-                            .appTypography(.caption)
-                            .foregroundStyle(AppColors.accent)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(AppColors.accent.opacity(0.14), in: Capsule())
-                        Spacer()
-                    }
-                    .padding(.bottom, 12)
-
-                    HStack(alignment: .center, spacing: 14) {
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            AppColors.accent.opacity(0.35),
-                                            AppColors.profileAccent.opacity(0.22),
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
+                HStack(alignment: .center, spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        AppColors.accent.opacity(0.35),
+                                        AppColors.profileAccent.opacity(0.22),
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
-                                .frame(width: 76, height: 76)
-                                .overlay(
-                                    Circle()
-                                        .strokeBorder(AppColors.accent.opacity(0.35), lineWidth: 1)
-                                )
-                            AppTablerIcon(coach.gender == .female ? "person" : "person")
-                                .appIcon(.s32, weight: .medium)
-                                .foregroundStyle(AppColors.label)
-                        }
+                            )
+                            .frame(width: 76, height: 76)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(AppColors.accent.opacity(0.35), lineWidth: 1)
+                            )
+                        AppTablerIcon("person")
+                            .appIcon(.s32, weight: .medium)
+                            .foregroundStyle(AppColors.label)
+                    }
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(coach.name)
-                                .appTypography(.bodyEmphasis)
-                                .foregroundStyle(AppColors.label)
-                                .lineLimit(2)
-                            if let dob = coach.dateOfBirth {
-                                let age = Calendar.current.dateComponents([.year], from: dob, to: Date()).year ?? 0
-                                let ageLabel = age > 0 ? " (\(age))" : ""
-                                Text("\(dob.formattedRuShort)\(ageLabel)")
-                                    .appTypography(.caption)
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                            } else {
-                                Text("Дата рождения не указана")
-                                    .appTypography(.caption)
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                            }
-                            if let gym = coach.gymName?.trimmingCharacters(in: .whitespacesAndNewlines), !gym.isEmpty {
-                                Text(gym)
-                                    .appTypography(.caption)
-                                    .foregroundStyle(AppColors.secondaryLabel)
-                                    .lineLimit(1)
-                            }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(coach.name)
+                            .appTypography(.bodyEmphasis)
+                            .foregroundStyle(AppColors.label)
+                            .lineLimit(2)
+                        if let gym = coach.gymName?.trimmingCharacters(in: .whitespacesAndNewlines), !gym.isEmpty {
+                            Text(gym)
+                                .appTypography(.caption)
+                                .foregroundStyle(AppColors.secondaryLabel)
+                                .lineLimit(1)
                         }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.bottom, 10)
-
-                    if let phone = coach.phoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
-                        Divider()
-                        Button {
-                            let digits = PhoneFormatter.digitsOnly(phone)
-                            guard let url = URL(string: "tel://\(digits)") else { return }
-                            openURL(url)
-                        } label: {
-                            trainerActionRow(icon: "phone", title: "Телефон", value: coachPhoneDisplay ?? phone)
+                        if let dob = coach.dateOfBirth {
+                            let age = Calendar.current.dateComponents([.year], from: dob, to: Date()).year ?? 0
+                            let ageLabel = age > 0 ? " (\(age))" : ""
+                            Text("\(dob.formattedRuShort)\(ageLabel)")
+                                .appTypography(.caption)
+                                .foregroundStyle(AppColors.secondaryLabel)
                         }
-                        .buttonStyle(PressableButtonStyle())
                     }
-                    if let tgRaw = coach.telegramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !tgRaw.isEmpty {
-                        Divider()
-                        Button {
-                            let username = tgRaw.replacingOccurrences(of: "@", with: "")
-                            guard let url = URL(string: "https://t.me/\(username)") else { return }
-                            openURL(url)
-                        } label: {
-                            trainerActionRow(icon: "send-plane-horizontal", title: "Telegram", value: coachTelegramDisplay ?? "@\(tgRaw)")
-                        }
-                        .buttonStyle(PressableButtonStyle())
-                    }
+                    Spacer(minLength: 0)
                 }
-                .padding(AppDesign.cardPadding)
-                .background(
-                    RoundedRectangle(cornerRadius: AppDesign.cornerRadius, style: .continuous)
-                        .fill(AppColors.secondarySystemGroupedBackground)
-                        .shadow(color: AppColors.accent.opacity(0.08), radius: 12, y: 4)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppDesign.cornerRadius, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [AppColors.accent.opacity(0.45), AppColors.profileAccent.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
                 .padding(.bottom, 10)
 
+                if let phone = coach.phoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), !phone.isEmpty {
+                    Divider()
+                    Button {
+                        let digits = PhoneFormatter.digitsOnly(phone)
+                        guard let url = URL(string: "tel://\(digits)") else { return }
+                        openURL(url)
+                    } label: {
+                        trainerActionRow(icon: "phone", title: "Телефон", value: coachPhoneDisplay ?? phone)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+                if let tgRaw = coach.telegramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !tgRaw.isEmpty {
+                    Divider()
+                    Button {
+                        let username = tgRaw.replacingOccurrences(of: "@", with: "")
+                        guard let url = URL(string: "https://t.me/\(username)") else { return }
+                        openURL(url)
+                    } label: {
+                        trainerActionRow(icon: "send-plane-horizontal", title: "Telegram", value: coachTelegramDisplay ?? "@\(tgRaw)")
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+            }
+
+            ContentCard(
+                title: "Контакты и рекомендации",
+                description: ""
+            ) {
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: 10),

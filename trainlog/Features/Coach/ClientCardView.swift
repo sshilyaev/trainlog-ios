@@ -169,7 +169,7 @@ struct ClientCardView: View {
                                 if let age = traineeForDisplay.ageFormatted, !age.isEmpty {
                                     Divider()
                                     CardRow(
-                                        icon: "clock-01",
+                                        icon: "michelin-bib-gourmand",
                                         title: "Возраст",
                                         value: age,
                                         showsDisclosure: false
@@ -196,6 +196,7 @@ struct ClientCardView: View {
                             }
 
                             if traineeForDisplay.phoneNumber != nil || traineeForDisplay.telegramUsername != nil {
+                                Divider()
                                 VStack(spacing: 0) {
                                     if let phone = traineeForDisplay.phoneNumber, !phone.isEmpty {
                                         ClientCardContactRow(
@@ -1217,6 +1218,8 @@ private struct ClientCardVisitsBlock: View {
                     mode: .create(initialDate: date),
                     coachProfileId: coachProfileId,
                     traineeProfileId: trainee.id,
+                    memberships: initialMemberships,
+                    canManageMembershipFreeze: true,
                     eventService: eventService,
                     onSaved: { Task { await onVisitsChanged(); await MainActor.run { pendingEventDate = nil } } },
                     onError: { msg in Task { await MainActor.run { visitsErrorMessage = msg } } },
@@ -1230,6 +1233,8 @@ private struct ClientCardVisitsBlock: View {
                 mode: .edit(ev),
                 coachProfileId: coachProfileId,
                 traineeProfileId: trainee.id,
+                memberships: initialMemberships,
+                canManageMembershipFreeze: true,
                 eventService: eventService,
                 onSaved: { Task { await onVisitsChanged(); await MainActor.run { eventToEdit = nil } } },
                 onError: { msg in Task { await MainActor.run { visitsErrorMessage = msg } } },

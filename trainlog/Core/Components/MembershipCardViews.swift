@@ -103,7 +103,18 @@ struct MembershipFinishedTileView: View {
         if let code = membership.displayCode, !code.isEmpty {
             return "№\(code)"
         }
-        return membership.kind == .unlimited ? "Безлимитный" : "По занятиям"
+        return membership.kind == .unlimited ? "Безлимитный" : "По посещениям"
+    }
+
+    private var periodDaysTotal: Int? {
+        guard membership.kind == .unlimited,
+              let start = membership.startDate,
+              let end = membership.effectiveEndDate else { return nil }
+        let calendar = Calendar.current
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+        let diff = calendar.dateComponents([.day], from: startDay, to: endDay).day ?? 0
+        return max(1, diff + 1)
     }
 
     private var completionDateText: String? {
@@ -137,7 +148,7 @@ struct MembershipFinishedTileView: View {
                             Text(mainTitle)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
-                            Text(membership.kind == .unlimited ? "Безлимит" : "\(membership.totalSessions) занятий")
+                            Text(membership.kind == .unlimited ? "Безлимит" : "\(membership.totalSessions) посещений")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -154,9 +165,15 @@ struct MembershipFinishedTileView: View {
                             }
                         }
                     }
-                    Text("\(membership.usedSessions) из \(membership.totalSessions)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if membership.kind == .unlimited, let periodDaysTotal {
+                        Text("\(membership.usedSessions) занятий за \(periodDaysTotal) дн.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("\(membership.usedSessions) из \(membership.totalSessions)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     if let dateText = completionDateText {
                         HStack(spacing: 4) {
                             Text("Дата завершения:")
@@ -235,7 +252,7 @@ struct MembershipCardNewView: View {
         if let code = membership.displayCode, !code.isEmpty {
             return "№\(code)"
         }
-        return membership.kind == .unlimited ? "Безлимитный" : "По занятиям"
+        return membership.kind == .unlimited ? "Безлимитный" : "По посещениям"
     }
 
     private var progressFraction: Double? {
@@ -360,7 +377,7 @@ struct MembershipCardNewView: View {
                             Text("из \(membership.totalSessions)")
                                 .font(.title3)
                                 .foregroundStyle(.secondary)
-                            Text("занятий")
+                            Text("посещений")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -454,7 +471,7 @@ struct MembershipCardNewView: View {
 
                     HStack(spacing: 12) {
                         if let price = priceFormatted {
-                            Label(price, appIcon: "wallet-default")
+                            Label(price, appIcon: "currency-rubel")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }

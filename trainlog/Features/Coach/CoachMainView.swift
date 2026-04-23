@@ -250,10 +250,10 @@ struct CoachMainView: View {
                     } : nil,
                     onQuickEvent: nil,
                     onEdit: { editTraineeItem = item },
-                    isFavorite: item.link.isFavorite,
                     onFavorite: { Task { await setFavorite(item, !item.link.isFavorite) } },
                     onArchive: isArchived ? nil : { archiveTarget = (item: item, archived: true); showArchiveConfirmation = true },
-                    onUnarchive: isArchived ? { archiveTarget = (item: item, archived: false); showArchiveConfirmation = true } : nil
+                    onUnarchive: isArchived ? { archiveTarget = (item: item, archived: false); showArchiveConfirmation = true } : nil,
+                    isFavorite: item.link.isFavorite
                 )
             }
             .buttonStyle(.plain)
@@ -829,10 +829,27 @@ struct CoachMainView: View {
                     membershipSummaryOverride: $0.membershipSummary
                 )
             }
+            // На части окружений overview может приходить без свежего favorite/archive,
+            // поэтому поверх накладываем актуальные link-поля из /coach-trainee-links.
+            do {
+                let legacy = try await loadTraineesLegacyLinksOnlyFromAPI()
+                let legacyByProfileId = Dictionary(uniqueKeysWithValues: legacy.map { ($0.profile.id, $0.link) })
+                items = items.map { item in
+                    guard let link = legacyByProfileId[item.profile.id] else { return item }
+                    return TraineeItem(
+                        link: link,
+                        profile: item.profile,
+                        activeMembership: item.activeMembership,
+                        membershipSummaryOverride: item.membershipSummaryOverride
+                    )
+                }
+            } catch {
+                // Оставляем данные из overview.
+            }
             // Сразу после добавления подопечного обзор на бэкенде может отставать от списка links — сверяем с /links.
             if forceNetwork {
                 do {
-                    let legacy = try await loadTraineesLegacyFromAPI()
+                    let legacy = try await loadTraineesLegacyLinksOnlyFromAPI()
                     let overviewIds = Set(items.map(\.profile.id))
                     let legacyIds = Set(legacy.map(\.profile.id))
                     if legacyIds != overviewIds {
@@ -933,6 +950,27 @@ struct CoachMainView: View {
                 )
                 let activeMembership = try await membershipTask
                 items.append(TraineeItem(link: link, profile: p, activeMembership: activeMembership))
+            }
+        }
+        return items
+    }
+
+    /// Облегченный legacy-путь только для сверки links/profiles (без N+1 запросов memberships).
+    private func loadTraineesLegacyLinksOnlyFromAPI() async throws -> [TraineeItem] {
+        let response = try await linkService.fetchLinksWithProfiles(profileId: profile.id, as: "coach")
+        let links = response.links
+        let profilesById = Dictionary(uniqueKeysWithValues: response.profiles.map { ($0.id, $0) })
+        var items: [TraineeItem] = []
+        if profilesById.isEmpty {
+            for link in links {
+                if let p = try await profileService.fetchProfile(id: link.traineeProfileId) {
+                    items.append(TraineeItem(link: link, profile: p, activeMembership: nil))
+                }
+            }
+        } else {
+            for link in links {
+                guard let p = profilesById[link.traineeProfileId] else { continue }
+                items.append(TraineeItem(link: link, profile: p, activeMembership: nil))
             }
         }
         return items
@@ -1159,7 +1197,7 @@ private struct TraineeCardRow: View {
                             .foregroundStyle(isArchived ? .secondary : .primary)
                             .lineLimit(1)
                         if isFavorite && !isArchived {
-                            AppTablerIcon("rosette")
+                            AppTablerIcon("award-medal")
                                 .appTypography(.caption)
                                 .foregroundStyle(AppColors.accent)
                         }
@@ -1214,7 +1252,7 @@ private struct TraineeCardRow: View {
                 }
                 if let onFavorite {
                     Button(action: onFavorite) {
-                        Label(isFavorite ? "Убрать из избранного" : "В избранное", appIcon: "rosette")
+                        Label(isFavorite ? "Убрать из избранного" : "В избранное", appIcon: "award-medal")
                     }
                 }
                 if let onUnarchive {
@@ -1362,6 +1400,8 @@ private struct TraineeInlineCalendar: View {
                 mode: .edit(e),
                 coachProfileId: coachProfileId,
                 traineeProfileId: trainee.id,
+                memberships: memberships,
+                canManageMembershipFreeze: true,
                 eventService: eventService,
                 onSaved: { Task { await load(); await MainActor.run { eventToEdit = nil } } },
                 onError: { _ in },

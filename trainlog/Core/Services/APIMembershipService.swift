@@ -148,7 +148,7 @@ final class APIMembershipService: MembershipServiceProtocol {
                 priceRub: priceRub
             )
         } else {
-            let total = max(1, totalSessions ?? 10)
+            let total = max(1, totalSessions ?? 12)
             body = CreateBody(
                 coachProfileId: coachProfileId,
                 traineeProfileId: traineeProfileId,
