@@ -46,7 +46,11 @@ struct TraineeWorkoutsView: View {
 
     private var eventsInSelectedMonth: [Event] {
         guard let interval = calendar.dateInterval(of: .month, for: selectedMonth) else { return [] }
-        return events.filter { $0.date >= interval.start && $0.date < interval.end }
+        return events.filter { event in
+            let start = calendar.startOfDay(for: event.periodStart)
+            let end = calendar.startOfDay(for: event.periodEnd)
+            return start < interval.end && end >= interval.start
+        }
             .sorted { $0.date > $1.date }
     }
 
@@ -86,10 +90,23 @@ struct TraineeWorkoutsView: View {
                                         onMarkAsPaid: nil,
                                         onCancelVisit: nil,
                                         onEventTap: { eventToEdit = $0 },
-                                        onCancelEvent: { ev in
+                                        onCancelEvent: { ev, cancelDate in
                                             Task {
                                                 var updated = ev
-                                                updated.isCancelled = true
+                                                if ev.mode == .period {
+                                                    let calendar = Calendar.current
+                                                    let start = calendar.startOfDay(for: ev.periodStart)
+                                                    let cancelFrom = calendar.startOfDay(for: cancelDate ?? Date())
+                                                    if cancelFrom <= start {
+                                                        updated.isCancelled = true
+                                                        updated.freezeMembership = false
+                                                    } else {
+                                                        updated.periodEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+                                                        updated.date = start
+                                                    }
+                                                } else {
+                                                    updated.isCancelled = true
+                                                }
                                                 try? await eventService.updateEvent(updated)
                                                 await load()
                                             }
@@ -163,10 +180,23 @@ struct TraineeWorkoutsView: View {
                     onMarkAsPaid: nil,
                     onCancelVisit: nil,
                     onEventTap: { eventToEdit = $0 },
-                    onCancelEvent: { ev in
+                    onCancelEvent: { ev, cancelDate in
                         Task {
                             var updated = ev
-                            updated.isCancelled = true
+                            if ev.mode == .period {
+                                let calendar = Calendar.current
+                                let start = calendar.startOfDay(for: ev.periodStart)
+                                let cancelFrom = calendar.startOfDay(for: cancelDate ?? Date())
+                                if cancelFrom <= start {
+                                    updated.isCancelled = true
+                                    updated.freezeMembership = false
+                                } else {
+                                    updated.periodEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+                                    updated.date = start
+                                }
+                            } else {
+                                updated.isCancelled = true
+                            }
                             try? await eventService.updateEvent(updated)
                             await load()
                         }
@@ -249,10 +279,23 @@ struct TraineeWorkoutsView: View {
             onAddVisitWithMembership: nil,
             onAddEvent: primaryCoachProfileId != nil ? { date in pendingEventDate = date } : nil,
             onEditEvent: { eventToEdit = $0 },
-            onCancelEvent: { ev in
+            onCancelEvent: { ev, cancelDate in
                 Task {
                     var updated = ev
-                    updated.isCancelled = true
+                    if ev.mode == .period {
+                        let calendar = Calendar.current
+                        let start = calendar.startOfDay(for: ev.periodStart)
+                        let cancelFrom = calendar.startOfDay(for: cancelDate ?? Date())
+                        if cancelFrom <= start {
+                            updated.isCancelled = true
+                            updated.freezeMembership = false
+                        } else {
+                            updated.periodEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+                            updated.date = start
+                        }
+                    } else {
+                        updated.isCancelled = true
+                    }
                     try? await eventService.updateEvent(updated)
                     await load()
                 }

@@ -31,7 +31,7 @@ struct VisitsCalendarView: View {
     var onAddEvent: ((Date) -> Void)? = nil
     /// Редактировать / отменить событие (тренер).
     var onEditEvent: ((Event) -> Void)? = nil
-    var onCancelEvent: ((Event) -> Void)? = nil
+    var onCancelEvent: ((Event, Date?) -> Void)? = nil
     /// Для тренера: при тапе на день с посещением — те же действия, что в списке «Посещения за месяц» (отменить, отметить оплаченным, списать с абонемента).
     var dayVisitActions: (payableMemberships: [Membership], onMarkAsPaid: (Visit) -> Void, onPayWithMembership: (Visit, Membership) -> Void, onCancelVisit: (Visit) -> Void)? = nil
     /// Показать шит «За день» со списком посещений и событий за выбранную дату.
@@ -263,7 +263,7 @@ private struct VisitsCalendarDayCell: View {
     var onAddVisitWithMembership: ((Date, Membership) -> Void)? = nil
     var onAddEvent: ((Date) -> Void)? = nil
     var onEditEvent: ((Event) -> Void)? = nil
-    var onCancelEvent: ((Event) -> Void)? = nil
+    var onCancelEvent: ((Event, Date?) -> Void)? = nil
 
     var onShowDayDetail: ((Date) -> Void)? = nil
 
@@ -356,7 +356,7 @@ private struct VisitsCalendarDayCell: View {
                             }
                             .appTypography(.caption)
                         }
-                        if let evts = eventsOnDay, !evts.isEmpty, let onEditEvent, let onCancelEvent {
+                                        if let evts = eventsOnDay, !evts.isEmpty, let onEditEvent, let onCancelEvent {
                             ForEach(evts) { e in
                                 Menu {
                                     if let desc = e.eventDescription?.trimmingCharacters(in: .whitespacesAndNewlines), !desc.isEmpty {
@@ -366,7 +366,7 @@ private struct VisitsCalendarDayCell: View {
                                         Label("Редактировать", appIcon: "pencil-edit")
                                     }
                                     .appTypography(.caption)
-                                    Button(role: .destructive) { onCancelEvent(e) } label: {
+                                    Button(role: .destructive) { onCancelEvent(e, nil) } label: {
                                         Label("Удалить", appIcon: "delete-dustbin-01")
                                     }
                                     .appTypography(.caption)
@@ -509,7 +509,7 @@ struct DayDetailSheet: View {
     /// Вызывается после подтверждения в диалоге (диалог показывается внутри щита, поверх контента).
     let onCancelVisit: ((Visit) -> Void)?
     let onEventTap: (Event) -> Void
-    let onCancelEvent: (Event) -> Void
+    let onCancelEvent: (Event, Date?) -> Void
     let onDismiss: () -> Void
     /// Блок «Добавить» в шапке шита (при нажатии на день календаря).
     var onAddOneOffVisit: ((Date) -> Void)? = nil
@@ -609,7 +609,7 @@ struct DayDetailSheet: View {
                                 EventRowView(
                                     event: e,
                                     onEdit: { onEventTap(e) },
-                                    onCancel: { onCancelEvent(e) }
+                                    onCancel: { date in onCancelEvent(e, date) }
                                 )
                                 .listRowBackground(AppColors.secondarySystemGroupedBackground)
                                 .listRowInsets(EdgeInsets(top: 12, leading: AppDesign.cardPadding, bottom: 12, trailing: AppDesign.cardPadding))
@@ -666,7 +666,7 @@ struct CalendarUnifiedListBlockView: View {
     let onMarkAsPaid: ((Visit) -> Void)?
     let onCancelVisit: ((Visit) -> Void)?
     let onEventTap: (Event) -> Void
-    let onCancelEvent: (Event) -> Void
+    let onCancelEvent: (Event, Date?) -> Void
     /// Показать шит «За день» для даты визита.
     var onShowDayDetail: ((Date) -> Void)? = nil
 
@@ -701,7 +701,7 @@ struct CalendarUnifiedListBlockView: View {
                                 EventRowView(
                                     event: e,
                                     onEdit: { onEventTap(e) },
-                                    onCancel: { onCancelEvent(e) }
+                                    onCancel: { date in onCancelEvent(e, date) }
                                 )
                             }
                         }
@@ -716,8 +716,10 @@ struct CalendarUnifiedListBlockView: View {
 private struct EventRowView: View {
     let event: Event
     var onEdit: (() -> Void)? = nil
-    var onCancel: (() -> Void)? = nil
+    var onCancel: ((Date?) -> Void)? = nil
     @State private var isExpanded = false
+    @State private var showCancelPeriodPicker = false
+    @State private var cancelFromDate: Date = Date()
 
     private var dateText: String {
         if event.mode == .period {
@@ -787,7 +789,16 @@ private struct EventRowView: View {
                             EditMenuAction(action: onEdit)
                         }
                         if let onCancel {
-                            CancelMenuAction(action: onCancel)
+                            if event.mode == .period {
+                                Button(role: .destructive) {
+                                    cancelFromDate = Calendar.current.startOfDay(for: Date())
+                                    showCancelPeriodPicker = true
+                                } label: {
+                                    Label("Отменить период…", appIcon: "delete-dustbin-01")
+                                }
+                            } else {
+                                CancelMenuAction(action: { onCancel(nil) })
+                            }
                         }
                     }
                 } else if !event.isCancelled {
@@ -820,6 +831,45 @@ private struct EventRowView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .sheet(isPresented: $showCancelPeriodPicker) {
+            MainSheet(
+                title: "Отменить период с даты",
+                onBack: { showCancelPeriodPicker = false },
+                trailing: {
+                    Button("Применить") {
+                        onCancel?(cancelFromDate)
+                        showCancelPeriodPicker = false
+                    }
+                    .foregroundStyle(.primary)
+                },
+                content: {
+                    VStack(spacing: 10) {
+                        DatePicker("", selection: $cancelFromDate, displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            .labelsHidden()
+                            .environment(\.locale, .ru)
+                        Text("С выбранной даты событие и связанная заморозка перестанут действовать.")
+                            .appTypography(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, AppDesign.cardPadding)
+                        Button("Применить") {
+                            onCancel?(cancelFromDate)
+                            showCancelPeriodPicker = false
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                        .appTypography(.button)
+                        .foregroundStyle(AppColors.white)
+                        .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                        .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .padding(.horizontal, AppDesign.cardPadding)
+                        .padding(.bottom, 8)
+                    }
+                    .padding(.top, 4)
+                }
+            )
+            .mainSheetPresentation(.calendar)
+        }
     }
 }
 
@@ -1035,6 +1085,27 @@ struct ClientVisitsManageView: View {
         }
     }
 
+    private func buildCancelledEvent(_ event: Event, cancelFrom selectedDate: Date?) -> Event {
+        var updated = event
+        guard event.mode == .period else {
+            updated.isCancelled = true
+            return updated
+        }
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: event.periodStart)
+        let cancelFrom = calendar.startOfDay(for: selectedDate ?? Date())
+        if cancelFrom <= start {
+            updated.isCancelled = true
+            updated.freezeMembership = false
+            return updated
+        }
+        let newEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+        updated.periodEnd = newEnd
+        updated.date = start
+        updated.freezeMembership = event.freezeMembership
+        return updated
+    }
+
     @ViewBuilder
     private var mainContent: some View {
         VisitsCalendarView(
@@ -1062,10 +1133,9 @@ struct ClientVisitsManageView: View {
                     dayDetailItem = nil
                     eventToEdit = e
                 },
-                onCancelEvent: { ev in
+                onCancelEvent: { ev, cancelDate in
                     Task {
-                        var updated = ev
-                        updated.isCancelled = true
+                        let updated = buildCancelledEvent(ev, cancelFrom: cancelDate)
                         try? await eventService.updateEvent(updated)
                         await load()
                     }
@@ -1130,10 +1200,9 @@ struct ClientVisitsManageView: View {
                     showCancelConfirmation = true
                 },
                 onEventTap: { eventToEdit = $0 },
-                onCancelEvent: { ev in
+                onCancelEvent: { ev, cancelDate in
                     Task {
-                        var updated = ev
-                        updated.isCancelled = true
+                        let updated = buildCancelledEvent(ev, cancelFrom: cancelDate)
                         try? await eventService.updateEvent(updated)
                         await load()
                     }
@@ -1197,10 +1266,9 @@ struct ClientVisitsManageView: View {
                     dayDetailItem = nil
                     eventToEdit = e
                 },
-                onCancelEvent: { ev in
+                onCancelEvent: { ev, cancelDate in
                     Task {
-                        var updated = ev
-                        updated.isCancelled = true
+                        let updated = buildCancelledEvent(ev, cancelFrom: cancelDate)
                         try? await eventService.updateEvent(updated)
                         await load()
                     }
@@ -2227,6 +2295,7 @@ struct AddEditEventSheet: View {
     @State private var selectedColorHex: String?
     @State private var isSaving = false
     @State private var datePickerField: DatePickerField?
+    @State private var datePickerDraft: Date = Date()
 
     private var isEdit: Bool { if case .edit = mode { return true }; return false }
     private var navigationTitle: String { isEdit ? "Редактировать событие" : "Новое событие" }
@@ -2302,7 +2371,10 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { date = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { datePickerField = .date }
+                                        onTap: {
+                                            datePickerDraft = date
+                                            datePickerField = .date
+                                        }
                                     )
                                 } else {
                                     FormRowDateSelection(
@@ -2312,7 +2384,10 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { periodStart = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { datePickerField = .periodStart }
+                                        onTap: {
+                                            datePickerDraft = periodStart
+                                            datePickerField = .periodStart
+                                        }
                                     )
                                     FormSectionDivider()
                                     FormRowDateSelection(
@@ -2322,7 +2397,10 @@ struct AddEditEventSheet: View {
                                             set: { if let value = $0 { periodEnd = value } }
                                         ),
                                         allowsClear: false,
-                                        onTap: { datePickerField = .periodEnd }
+                                        onTap: {
+                                            datePickerDraft = periodEnd
+                                            datePickerField = .periodEnd
+                                        }
                                     )
                                 }
                                 FormSectionDivider()
@@ -2429,15 +2507,36 @@ struct AddEditEventSheet: View {
                         title: datePickerTitle(for: field),
                         onBack: { datePickerField = nil },
                         trailing: {
-                            Button("Готово") { datePickerField = nil }
+                            Button("Применить") {
+                                applyDatePickerDraft(for: field)
+                                datePickerField = nil
+                            }
                                 .foregroundStyle(.primary)
                         },
                         content: {
-                            DatePicker("", selection: dateBinding(for: field), in: dateRange(for: field), displayedComponents: .date)
-                                .datePickerStyle(.wheel)
-                                .labelsHidden()
-                                .padding()
-                                .environment(\.locale, .ru)
+                            VStack(spacing: 10) {
+                                DatePicker("", selection: $datePickerDraft, in: dateRange(for: field), displayedComponents: .date)
+                                    .datePickerStyle(.graphical)
+                                    .labelsHidden()
+                                    .environment(\.locale, .ru)
+                                Text("Выберите дату и нажмите «Применить», чтобы подтвердить выбор.")
+                                    .appTypography(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, AppDesign.cardPadding)
+                                Button("Применить") {
+                                    applyDatePickerDraft(for: field)
+                                    datePickerField = nil
+                                }
+                                .buttonStyle(PressableButtonStyle())
+                                .appTypography(.button)
+                                .foregroundStyle(AppColors.white)
+                                .frame(maxWidth: .infinity, minHeight: AppDesign.minTouchTarget)
+                                .background(AppColors.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .padding(.horizontal, AppDesign.cardPadding)
+                                .padding(.bottom, 8)
+                            }
+                            .padding(.top, 4)
                         }
                     )
                     .mainSheetPresentation(.detents([.height(320)]))
@@ -2541,23 +2640,27 @@ struct AddEditEventSheet: View {
         }
     }
 
-    private func dateBinding(for field: DatePickerField) -> Binding<Date> {
-        switch field {
-        case .date:
-            return $date
-        case .periodStart:
-            return $periodStart
-        case .periodEnd:
-            return $periodEnd
-        }
-    }
-
     private func dateRange(for field: DatePickerField) -> ClosedRange<Date> {
         switch field {
         case .periodEnd:
             return periodStart...Date.distantFuture
         default:
             return Date.distantPast...Date.distantFuture
+        }
+    }
+
+    private func applyDatePickerDraft(for field: DatePickerField) {
+        switch field {
+        case .date:
+            date = Calendar.current.startOfDay(for: datePickerDraft)
+        case .periodStart:
+            periodStart = Calendar.current.startOfDay(for: datePickerDraft)
+            if periodEnd < periodStart {
+                periodEnd = periodStart
+            }
+        case .periodEnd:
+            let endDay = Calendar.current.startOfDay(for: datePickerDraft)
+            periodEnd = max(endDay, periodStart)
         }
     }
 

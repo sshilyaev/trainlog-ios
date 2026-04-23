@@ -1064,10 +1064,23 @@ private struct ClientCardVisitsBlock: View {
                     dayDetailItem = nil
                     eventToEdit = e
                 },
-                onCancelEvent: { ev in
+                onCancelEvent: { ev, cancelDate in
                     Task {
                         var updated = ev
-                        updated.isCancelled = true
+                        if ev.mode == .period {
+                            let calendar = Calendar.current
+                            let start = calendar.startOfDay(for: ev.periodStart)
+                            let cancelFrom = calendar.startOfDay(for: cancelDate ?? Date())
+                            if cancelFrom <= start {
+                                updated.isCancelled = true
+                                updated.freezeMembership = false
+                            } else {
+                                updated.periodEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+                                updated.date = start
+                            }
+                        } else {
+                            updated.isCancelled = true
+                        }
                         try? await eventService.updateEvent(updated)
                         await onVisitsChanged()
                     }
@@ -1150,10 +1163,23 @@ private struct ClientCardVisitsBlock: View {
                     dayDetailItem = nil
                     eventToEdit = e
                 },
-                onCancelEvent: { ev in
+                onCancelEvent: { ev, cancelDate in
                     Task {
                         var updated = ev
-                        updated.isCancelled = true
+                        if ev.mode == .period {
+                            let calendar = Calendar.current
+                            let start = calendar.startOfDay(for: ev.periodStart)
+                            let cancelFrom = calendar.startOfDay(for: cancelDate ?? Date())
+                            if cancelFrom <= start {
+                                updated.isCancelled = true
+                                updated.freezeMembership = false
+                            } else {
+                                updated.periodEnd = calendar.date(byAdding: .day, value: -1, to: cancelFrom) ?? start
+                                updated.date = start
+                            }
+                        } else {
+                            updated.isCancelled = true
+                        }
                         try? await eventService.updateEvent(updated)
                         await onVisitsChanged()
                     }
